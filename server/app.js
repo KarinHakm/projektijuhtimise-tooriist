@@ -1,9 +1,11 @@
 import express from 'express';
 import { projectsRouter } from './routes/projects.js';
+import { conversationRouter } from './routes/conversation.js';
+import { createAiClient } from './ai/client.js';
 
 // Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
-// oma (ajutise) andmebaasi ja AI-kliendiga. AI-d kasutavad marsruudid lisanduvad loost L04.
-export function createApp({ db, ai } = {}) {
+// oma (ajutise) andmebaasi ja AI-kliendiga. Ilma AI-kliendita annavad AI marsruudid veateate.
+export function createApp({ db, ai = createAiClient() } = {}) {
   const app = express();
   app.use(express.json());
 
@@ -11,7 +13,10 @@ export function createApp({ db, ai } = {}) {
     res.json({ status: 'ok' });
   });
 
-  if (db) app.use('/api/projects', projectsRouter(db));
+  if (db) {
+    app.use('/api/projects/:id/conversation', conversationRouter({ db, ai }));
+    app.use('/api/projects', projectsRouter(db));
+  }
 
   app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Tundmatu API aadress' });

@@ -24,6 +24,19 @@ const MIGRATIONS = [
      decided_at  TEXT
    );
    CREATE INDEX ai_proposals_project ON ai_proposals(project_id)`,
+  // Juhitud vestlus. reply_to seob vastuse sõnumiga, millele vastatakse; UNIQUE tagab, et ühele
+  // sõnumile on kõige rohkem üks vastus (ka topeltpäringu või serveri taaskäivituse korral).
+  `CREATE TABLE conversation_messages (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     role        TEXT    NOT NULL CHECK (role IN ('user', 'assistant')),
+     kind        TEXT    NOT NULL CHECK (kind IN ('idea', 'questions', 'answers', 'summary')),
+     content     TEXT    NOT NULL,
+     reply_to    INTEGER UNIQUE REFERENCES conversation_messages(id) ON DELETE CASCADE,
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );
+   CREATE INDEX conversation_messages_project ON conversation_messages(project_id, id);
+   CREATE UNIQUE INDEX conversation_one_idea ON conversation_messages(project_id) WHERE kind = 'idea'`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
