@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 30.09.2026:** valmis on L01, L03 ja L04. Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 30.09.2026:** valmis on L01, L02, L03 ja L04. Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -21,7 +21,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | # | Lugu | Suurus | Liik | Vastuvõtukatse | Staatus |
 |---|---|---|---|---|---|
 | L01 | Rakenduse karkass ja püsiv andmebaas | M | Kohustuslik | – | Valmis |
-| L02 | Serveripoolne ja valideeritud AI-kiht | M | Kohustuslik | – | Plaanitud |
+| L02 | Serveripoolne ja valideeritud AI-kiht | M | Kohustuslik | – | Valmis |
 | L03 | Projektide loomine ja loend | S | Kohustuslik | 1 | Valmis |
 | L04 | Vestluse algus ühest promptist ja täpsustavad küsimused | M | Kohustuslik | 1, 9 | Valmis |
 | L05 | Rollid | S | Kohustuslik | 9 | Plaanitud |
