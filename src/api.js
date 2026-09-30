@@ -35,3 +35,16 @@ export const createProject = (project) => request('/projects', {
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify(project),
 });
+
+const postJson = (path, body) => request(path, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify(body ?? {}),
+});
+const conversationPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/conversation`;
+
+export const getConversation = (projectId) => request(conversationPath(projectId));
+export const sendIdea = (projectId, text) => postJson(`${conversationPath(projectId)}/idea`, { text });
+export const sendAnswers = (projectId, questionsMessageId, answers) =>
+  postJson(`${conversationPath(projectId)}/answers`, { questionsMessageId, answers });
+export const continueConversation = (projectId) => postJson(`${conversationPath(projectId)}/continue`);

@@ -91,6 +91,40 @@ button:disabled { opacity: 0.6; cursor: default; }
 .ai-error p { margin: 0; }
 .ai-error button { margin-top: 0.5rem; }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.conversation { display: flex; flex-direction: column; gap: 0.75rem; }
+.msg { border-radius: 8px; padding: 0.5rem 0.75rem; max-width: 90%; }
+.msg p { margin: 0.25rem 0; }
+.msg--user { align-self: flex-end; background: #e8effb; }
+.msg--ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); }
+.msg__who { font-size: 0.8rem; color: var(--muted); }
+.msg__list { margin: 0.25rem 0; padding-left: 1.25rem; }
+
+.answer-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.question { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin: 0; }
+.question legend { font-weight: 500; padding: 0 0.25rem; }
+.choices { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.choice {
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  color: var(--accent);
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+}
+.choice[aria-pressed='true'] { color: #fff; background: var(--accent); }
+.choice--skip { color: var(--muted); border-color: var(--border); }
+.choice--skip[aria-pressed='true'] { color: #fff; background: var(--muted); border-color: var(--muted); }
+.other-input { margin-top: 0.5rem; }
+
 .project-list { list-style: none; padding: 0; margin: 0; }
 .project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .project-list a { color: var(--accent); font-weight: 500; }

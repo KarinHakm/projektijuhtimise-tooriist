@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getProject } from '../api.js';
+import Conversation from '../components/Conversation.jsx';
 
 export default function ProjectView() {
   const { id } = useParams();
@@ -19,11 +20,16 @@ export default function ProjectView() {
       {error && <p className="error">{error}</p>}
       {!error && !project && <p className="muted">Laadin…</p>}
       {project && (
-        <section className="card">
-          <h2>{project.name}</h2>
-          {project.description ? <p>{project.description}</p> : <p className="muted">Kirjeldus puudub.</p>}
-          <p className="muted">Juhitud vestlus lisandub loos L04.</p>
-        </section>
+        <>
+          <section className="card">
+            <h2>{project.name}</h2>
+            {project.description ? <p>{project.description}</p> : <p className="muted">Kirjeldus puudub.</p>}
+          </section>
+          <section className="card">
+            <h2>Juhitud vestlus</h2>
+            <Conversation projectId={project.id} />
+          </section>
+        </>
       )}
     </main>
   );
