@@ -125,6 +125,33 @@ button:disabled { opacity: 0.6; cursor: default; }
 .choice--skip[aria-pressed='true'] { color: #fff; background: var(--muted); border-color: var(--muted); }
 .other-input { margin-top: 0.5rem; }
 
+.roles h3 { font-size: 1rem; margin: 0 0 0.5rem; }
+.confirmed-roles { margin: 0 0 1rem; padding-left: 1.25rem; }
+.tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.roles-proposal {
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.roles-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+.role-item { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.role-item__label { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0; font-weight: normal; }
+.role-item__label input { width: auto; margin-top: 0.25rem; }
+.icon-button { margin: 0; padding: 0.15rem 0.5rem; color: var(--muted); background: transparent; border: 1px solid var(--border); }
+.role-add { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.role-add button { margin-top: 0; }
+.actions { display: flex; gap: 0.5rem; }
+button.secondary { color: var(--accent); background: var(--card); border: 1px solid var(--accent); }
+
 .project-list { list-style: none; padding: 0; margin: 0; }
 .project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .project-list a { color: var(--accent); font-weight: 500; }

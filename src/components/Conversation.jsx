@@ -9,7 +9,7 @@ const POLL_MS = 3000;
 
 // Juhitud vestlus (L04): idee → AI täpsustavad küsimused → vastused → kokkuvõte.
 // Vestluse seis tuleb alati serverist; lehe värskendamisel jätkub samast kohast.
-export default function Conversation({ projectId }) {
+export default function Conversation({ projectId, onPhaseChange }) {
   const [data, setData] = useState(null); // { messages, aiRunning }
   const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState(false); // meie enda päring käib
@@ -60,11 +60,13 @@ export default function Conversation({ projectId }) {
     run(() => sendIdea(projectId, idea));
   }
 
+  const phase = data ? conversationPhase(data.messages, data.aiRunning) : null;
+  useEffect(() => { if (phase) onPhaseChange?.(phase); }, [phase, onPhaseChange]);
+
   if (loadError) return <p className="error">Vestlust ei saanud laadida: {loadError}</p>;
   if (!data) return <p className="muted">Laadin vestlust…</p>;
 
   const { messages } = data;
-  const phase = conversationPhase(messages, data.aiRunning);
   const questionsById = new Map(messages.filter((m) => m.kind === 'questions').flatMap((m) => m.content.questions.map((q) => [q.id, q])));
   const openQuestions = phase === 'questions' ? messages.at(-1) : null;
 
@@ -114,7 +116,6 @@ export default function Conversation({ projectId }) {
         />
       )}
 
-      {phase === 'done' && <p className="muted">Järgmine samm (rollid) lisandub loos L05.</p>}
     </section>
   );
 }

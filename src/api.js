@@ -48,3 +48,10 @@ export const sendIdea = (projectId, text) => postJson(`${conversationPath(projec
 export const sendAnswers = (projectId, questionsMessageId, answers) =>
   postJson(`${conversationPath(projectId)}/answers`, { questionsMessageId, answers });
 export const continueConversation = (projectId) => postJson(`${conversationPath(projectId)}/continue`);
+
+const rolesPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/roles`;
+
+export const getRoles = (projectId) => request(rolesPath(projectId));
+export const proposeRoles = (projectId) => postJson(`${rolesPath(projectId)}/propose`);
+export const applyRoles = (projectId, proposalId, roles) => postJson(`${rolesPath(projectId)}/apply`, { proposalId, roles });
+export const rejectRoles = (projectId, proposalId) => postJson(`${rolesPath(projectId)}/reject`, { proposalId });
