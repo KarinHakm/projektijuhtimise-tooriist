@@ -37,6 +37,18 @@ const MIGRATIONS = [
    );
    CREATE INDEX conversation_messages_project ON conversation_messages(project_id, id);
    CREATE UNIQUE INDEX conversation_one_idea ON conversation_messages(project_id) WHERE kind = 'idea'`,
+  // Kinnitatud rollid (L05). AI ettepanek on eraldi tabelis ai_proposals; siia jõuavad rollid
+  // alles kasutaja kinnitusega. name_key on tõstutundetu võti (ka täpitähtedega).
+  `CREATE TABLE project_roles (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     name        TEXT    NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 40),
+     name_key    TEXT    NOT NULL,
+     source      TEXT    NOT NULL CHECK (source IN ('ai', 'manual')),
+     position    INTEGER NOT NULL,
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     UNIQUE (project_id, name_key)
+   )`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

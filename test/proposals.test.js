@@ -105,6 +105,7 @@ test('AI kontekst loetakse andmebaasi hetkeseisust', () => {
   assert.deepEqual(buildProjectContext(db, projectId), {
     project: { name: 'Spordiklubi', description: 'algne', stage: 'idee' },
     conversation: [],
+    roles: [],
   });
   // Käsitsi muudatus peab kohe järgmisesse konteksti jõudma (vahemälu pole).
   db.prepare("UPDATE projects SET name = 'Spordiklubi veeb', description = 'käsitsi muudetud' WHERE id = ?").run(projectId);

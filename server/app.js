@@ -1,6 +1,7 @@
 import express from 'express';
 import { projectsRouter } from './routes/projects.js';
 import { conversationRouter } from './routes/conversation.js';
+import { rolesRouter } from './routes/roles.js';
 import { createAiClient } from './ai/client.js';
 
 // Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
@@ -15,6 +16,7 @@ export function createApp({ db, ai = createAiClient() } = {}) {
 
   if (db) {
     app.use('/api/projects/:id/conversation', conversationRouter({ db, ai }));
+    app.use('/api/projects/:id/roles', rolesRouter({ db, ai }));
     app.use('/api/projects', projectsRouter(db));
   }
 
