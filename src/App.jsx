@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link, Route, Routes } from 'react-router-dom';
 import { getHealth } from './api.js';
+import ProjectList from './pages/ProjectList.jsx';
+import ProjectView from './pages/ProjectView.jsx';
 
 export default function App() {
   const [server, setServer] = useState('kontrollin…');
@@ -11,9 +14,16 @@ export default function App() {
   }, []);
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1>Projektijuhtimise tööriist</h1>
-      <p>Server: {server}</p>
-    </main>
+    <div className="page">
+      <header className="header">
+        <Link to="/" className="brand">Projektijuhtimise tööriist</Link>
+        <span className="muted">Server: {server}</span>
+      </header>
+      <Routes>
+        <Route path="/" element={<ProjectList />} />
+        <Route path="/projects/:id" element={<ProjectView />} />
+        <Route path="*" element={<p>Lehte ei leitud. <Link to="/">Projektide loendisse</Link></p>} />
+      </Routes>
+    </div>
   );
 }
