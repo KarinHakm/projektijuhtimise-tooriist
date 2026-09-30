@@ -55,3 +55,10 @@ export const getRoles = (projectId) => request(rolesPath(projectId));
 export const proposeRoles = (projectId) => postJson(`${rolesPath(projectId)}/propose`);
 export const applyRoles = (projectId, proposalId, roles) => postJson(`${rolesPath(projectId)}/apply`, { proposalId, roles });
 export const rejectRoles = (projectId, proposalId) => postJson(`${rolesPath(projectId)}/reject`, { proposalId });
+
+const storiesPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/stories`;
+
+export const getStories = (projectId) => request(storiesPath(projectId));
+// replace = senise ettepaneku id ("Paku teistsuguseid"); server vahetab selle alles pärast uue edukat salvestamist.
+export const proposeStories = (projectId, replace) => postJson(`${storiesPath(projectId)}/propose`, replace ? { replace } : {});
+export const applyStories = (projectId, proposalId, stories) => postJson(`${storiesPath(projectId)}/apply`, { proposalId, stories });

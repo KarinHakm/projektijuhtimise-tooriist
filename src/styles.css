@@ -152,6 +152,29 @@ button:disabled { opacity: 0.6; cursor: default; }
 .actions { display: flex; gap: 0.5rem; }
 button.secondary { color: var(--accent); background: var(--card); border: 1px solid var(--accent); }
 
+.stories h3 { font-size: 1rem; margin: 0 0 0.5rem; }
+.backlog { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.95rem; }
+.backlog th, .backlog td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.backlog th { font-weight: 600; color: var(--muted); }
+.stories-proposal {
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.story-cards { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.story-card { border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; background: var(--card); }
+.story-card__head { display: flex; gap: 0.5rem; align-items: flex-start; }
+.story-card__number { font-weight: 600; min-width: 1.5rem; }
+.story-card__label { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0; font-weight: normal; }
+.story-card__label input { width: auto; margin-top: 0.3rem; }
+.story-card__meta { margin: 0.25rem 0 0 2rem; }
+.story-card .actions { margin-left: 2rem; }
+.story-card .actions button { margin-top: 0.5rem; }
+.story-edit { margin-left: 2rem; }
+.story-edit select { width: 100%; padding: 0.5rem; font: inherit; border: 1px solid var(--border); border-radius: 6px; }
+.warning { color: #8a5a00; margin: 0.25rem 0 0 2rem; }
+
 .project-list { list-style: none; padding: 0; margin: 0; }
 .project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .project-list a { color: var(--accent); font-weight: 500; }

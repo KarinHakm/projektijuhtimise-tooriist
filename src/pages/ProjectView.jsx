@@ -3,12 +3,14 @@ import { Link, useParams } from 'react-router-dom';
 import { getProject } from '../api.js';
 import Conversation from '../components/Conversation.jsx';
 import RolesPanel from '../components/RolesPanel.jsx';
+import StoriesPanel from '../components/StoriesPanel.jsx';
 
 export default function ProjectView() {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
   const [phase, setPhase] = useState(null);
+  const [rolesVersion, setRolesVersion] = useState(0);
 
   useEffect(() => {
     setProject(null);
@@ -33,7 +35,11 @@ export default function ProjectView() {
           </section>
           <section className="card">
             <h2>Rollid</h2>
-            <RolesPanel projectId={project.id} ready={phase === 'done'} />
+            <RolesPanel projectId={project.id} ready={phase === 'done'} onRolesChanged={() => setRolesVersion((v) => v + 1)} />
+          </section>
+          <section className="card">
+            <h2>Kasutajalood</h2>
+            <StoriesPanel projectId={project.id} rolesVersion={rolesVersion} />
           </section>
         </>
       )}

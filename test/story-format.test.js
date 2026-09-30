@@ -63,10 +63,9 @@ test('tegevuse "et"-kõrvallause annab hoiatuse, mitte vea', () => {
   assert.deepEqual(validateStoryText({ ...EXAMPLE, want: 'näha etenduste kava' }).warnings, []);
 });
 
-// Brauseri pool (src/) lisandub kasutajaliidese etapis ja siis laiendatakse seda testi.
-test('serveri lugude failid kasutavad ühist vormingu moodulit', async () => {
+test('server ja brauser kasutavad sama vormingu moodulit', async () => {
   const { readFileSync } = await import('node:fs');
-  for (const file of ['server/stories.js', 'server/ai/tasks/stories.js', 'server/routes/stories.js']) {
+  for (const file of ['server/stories.js', 'server/ai/tasks/stories.js', 'server/routes/stories.js', 'src/stories/selection.js']) {
     assert.match(readFileSync(file, 'utf8'), /shared\/story-format\.js/, file);
   }
 });

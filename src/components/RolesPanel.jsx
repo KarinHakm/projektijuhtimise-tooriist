@@ -9,7 +9,7 @@ const POLL_MS = 3000;
 
 // Rollid (L05): AI ettepanek → kasutaja valik → "Kinnita rollid". Kinnitatud rollid on eraldi loendis.
 // ready = vestlus on jõudnud kokkuvõtteni (rolle saab pakkuda alles siis).
-export default function RolesPanel({ projectId, ready }) {
+export default function RolesPanel({ projectId, ready, onRolesChanged }) {
   const [data, setData] = useState(null); // { roles, proposal, aiRunning }
   const [loadError, setLoadError] = useState('');
   const [items, setItems] = useState([]);
@@ -63,6 +63,7 @@ export default function RolesPanel({ projectId, ready }) {
     setError('');
     try {
       setData(kind === 'apply' ? await applyRoles(projectId, proposalId, buildSelection(items)) : await rejectRoles(projectId, proposalId));
+      if (kind === 'apply') onRolesChanged?.();
     } catch (e) {
       setError(e.message);
       if (e.code === 'already_decided' || e.code === 'not_found') await refresh();
