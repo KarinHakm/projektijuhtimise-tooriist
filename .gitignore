@@ -1,0 +1,14 @@
+# Sõltuvused ja ehitus
+node_modules/
+dist/
+
+# Kohalik andmebaas (luuakse käivitusel)
+data/
+*.db
+*.db-*
+*.sqlite
+
+# Saladused: ainult .env.example läheb git'i
+.env
+.env.*
+!.env.example
