@@ -1,7 +1,8 @@
 import express from 'express';
 
-// Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada.
-export function createApp() {
+// Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
+// oma (ajutise) andmebaasiga. db-d kasutavad marsruudid lisanduvad loos L03.
+export function createApp({ db } = {}) {
   const app = express();
   app.use(express.json());
 

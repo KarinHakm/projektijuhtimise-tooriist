@@ -28,6 +28,12 @@ npm run dev
 Ava brauseris http://localhost:5175. Server töötab pordil 3001 ja Vite suunab `/api` päringud sinna.
 
 Kui port 5175 või 3001 on hõivatud, annab käivitus vea. Serveri porti saab muuta failis `.env` (`PORT`).
+
+## Andmed
+
+Andmed salvestatakse SQLite faili `data/app.db`. Fail ja kaust luuakse esimesel käivitusel automaatselt ning neid ei lisata git'i. Asukohta saab muuta failis `.env` (`DATABASE_PATH`).
+
+Node näitab käivitusel hoiatust `ExperimentalWarning: SQLite is an experimental feature`. See on ootuspärane, sest rakendus kasutab Node'i sisseehitatud `node:sqlite` moodulit.
 ## Testid
 
 ```bash
