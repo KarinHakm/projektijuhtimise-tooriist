@@ -2,8 +2,8 @@ import express from 'express';
 import { projectsRouter } from './routes/projects.js';
 
 // Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
-// oma (ajutise) andmebaasiga.
-export function createApp({ db } = {}) {
+// oma (ajutise) andmebaasi ja AI-kliendiga. AI-d kasutavad marsruudid lisanduvad loost L04.
+export function createApp({ db, ai } = {}) {
   const app = express();
   app.use(express.json());
 
