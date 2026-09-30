@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openDb } from '../server/db.js';
+import { openDb, SCHEMA_VERSION } from '../server/db.js';
 
 // Iga test saab oma ajutise kausta; arendaja data/app.db faili ei puututa.
 let dir;
@@ -44,10 +44,10 @@ test('uuesti avamine ei käivita skeemi loomist teist korda', () => {
   openDb(path).close();
   const db = openDb(path);
   const version = db.prepare('PRAGMA user_version').get().user_version;
-  const tables = db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'projects'").get().n;
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name);
   db.close();
-  assert.equal(version, 1);
-  assert.equal(tables, 1);
+  assert.equal(version, SCHEMA_VERSION);
+  assert.deepEqual(tables, ['ai_proposals', 'projects']);
 });
 
 test('andmebaas ei luba tühja nime ega ainult tühikutest nime', () => {

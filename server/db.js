@@ -13,7 +13,20 @@ const MIGRATIONS = [
      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
      updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
    )`,
+  // AI ettepanekud: salvestatakse olekuga 'pending' ja muudavad backlog'i alles inimese kinnitusel.
+  `CREATE TABLE ai_proposals (
+     id          TEXT    PRIMARY KEY,
+     project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     kind        TEXT    NOT NULL,
+     payload     TEXT    NOT NULL,
+     status      TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'applied', 'rejected')),
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     decided_at  TEXT
+   );
+   CREATE INDEX ai_proposals_project ON ai_proposals(project_id)`,
 ];
+
+export const SCHEMA_VERSION = MIGRATIONS.length;
 
 // Avab (vajadusel loob) andmebaasi faili ja viib skeemi ajakohaseks.
 export function openDb(path) {
