@@ -17,7 +17,7 @@ npm install
 cp .env.example .env
 ```
 
-`.env` faili ei lisata git'i. Praeguses etapis ei pea seal midagi muutma.
+`.env` faili ei lisata git'i. Rakendus töötab ka ilma AI tokenita: projektide haldus toimib ja AI funktsioonid annavad eestikeelse veateate. AI seadistamine on kirjeldatud allpool.
 
 ## Käivitamine
 
@@ -34,6 +34,48 @@ Kui port 5175 või 3001 on hõivatud, annab käivitus vea. Serveri porti saab mu
 Andmed salvestatakse SQLite faili `data/app.db`. Fail ja kaust luuakse esimesel käivitusel automaatselt ning neid ei lisata git'i. Asukohta saab muuta failis `.env` (`DATABASE_PATH`).
 
 Node näitab käivitusel hoiatust `ExperimentalWarning: SQLite is an experimental feature`. See on ootuspärane, sest rakendus kasutab Node'i sisseehitatud `node:sqlite` moodulit.
+
+## AI-teenuse seadistamine
+
+Rakendus kasutab [Hetzner Experiments Inference API](https://docs.hetzner.com/general/company-and-policy/experiments/inference/)-t (mudel `Qwen3.8-27B`). Kõik AI päringud käivad läbi serveri; token ei jõua kunagi brauserisse. Teenuse valik ja teadaolevad piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
+
+| Muutuja `.env` failis | Tähendus |
+|---|---|
+| `HETZNER_INFERENCE_TOKEN` | API token (saladus, ainult `.env` failis) |
+| `HETZNER_MODEL` | Mudeli nimi, vaikimisi `Qwen3.8-27B` |
+| `AI_TIMEOUT_MS` | Ühe AI-ülesande ajalimiit millisekundites, vaikimisi `150000` |
+
+### Tokeni lisamine
+
+1. Logi sisse aadressil https://experiments.hetzner.com ja vajuta **Create API Token**.
+2. Käivita projekti kaustas oma terminalis järgmine käsk, kleebi token ja vajuta Enter. Sisestatud tokenit ekraanil ei kuvata ja see ei jää käsuajalukku:
+
+   ```bash
+   ( umask 077; read -rsp 'Token: ' T || exit 1; echo; [ -n "$T" ] || { echo 'Token on tühi, .env jäi muutmata.' >&2; exit 1; }; { grep -v '^HETZNER_INFERENCE_TOKEN=' .env; printf 'HETZNER_INFERENCE_TOKEN=%s\n' "$T"; } > .env.uus ) && mv .env.uus .env && chmod 600 .env
+   ```
+
+   Käsk jätab `.env` faili muud read alles, asendab ainult tokeni rea ja seab failile õigused 600 (loeb ainult sinu kasutaja). Kui vajutad lihtsalt Enterit (või sisestad ainult tühikuid) või katkestad sisestamise (Ctrl+C, Ctrl+D), jääb senine `.env` muutmata.
+3. Kontrolli, et `.env` ei lähe git'i: `git check-ignore -v .env` peab näitama `.gitignore` reeglit.
+4. Taaskäivita `npm run dev`, sest server loeb `.env` faili ainult käivitusel. Serveri logis peab olema rida `AI: seadistatud` (tokeni väärtust ei logita).
+
+Ära kleebi tokenit vestlustesse, veateadetesse ega ühtegi git'i minevasse faili.
+
+### Ühenduse kontroll (smoke-test)
+
+```bash
+npm run ai:smoke
+```
+
+Käsk saadab AI-teenusele **täpselt ühe** väikese fikseeritud päringu (kordust ei tehta, andmebaasi ei avata) ja kuvab ainult tulemuse, kestuse, väljundtokenite arvu ja skeemi kontrolli, näiteks:
+
+```
+AI smoke-test: tulemus=ok | kestus=2294 ms | väljundtokeneid=21 | skeem=korras
+```
+
+Vea korral on `tulemus` üks koodidest `not_configured`, `auth_failed`, `timeout`, `rate_limited`, `unavailable` või `invalid_response` koos eestikeelse selgitusega; lõpukood on siis 1. Hetzneri piirang on 10 päringut minutis tokeni kohta.
+
+Server eelistab võrguühendustes IPv4-t, sest mõnes võrgus IPv6 ühendus AI-teenusega ei tööta.
+
 ## Testid
 
 ```bash
