@@ -12,7 +12,8 @@
     "dev:server": "node --watch server/index.js",
     "dev:web": "vite",
     "build": "vite build",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "ai:smoke": "node scripts/ai-smoke.js"
   },
   "dependencies": {
     "ajv": "^8.20.0",
