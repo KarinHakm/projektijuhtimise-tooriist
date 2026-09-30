@@ -49,6 +49,24 @@ const MIGRATIONS = [
      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
      UNIQUE (project_id, name_key)
    )`,
+  // Backlog'i lood (L06). AI ettepanek on ai_proposals tabelis; siia jõuavad lood alles kasutaja lisamisel.
+  `CREATE TABLE stories (
+     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     position     INTEGER NOT NULL,
+     role         TEXT    NOT NULL,
+     role_phrase  TEXT    NOT NULL,
+     want         TEXT    NOT NULL,
+     so_that      TEXT    NOT NULL,
+     size         TEXT    NOT NULL CHECK (size IN ('S', 'M', 'L')),
+     status       TEXT    NOT NULL DEFAULT 'idee' CHECK (status IN ('idee', 'vajab_tapsustamist', 'labivaadatud', 'valmis_arenduseks')),
+     origin       TEXT    NOT NULL CHECK (origin IN ('ai', 'ai_edited', 'manual')),
+     touches_view INTEGER NOT NULL DEFAULT 0 CHECK (touches_view IN (0, 1)),
+     proposal_id  TEXT    REFERENCES ai_proposals(id) ON DELETE SET NULL,
+     created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     updated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );
+   CREATE INDEX stories_project ON stories(project_id, position)`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

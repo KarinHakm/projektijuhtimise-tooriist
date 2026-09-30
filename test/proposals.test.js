@@ -106,6 +106,7 @@ test('AI kontekst loetakse andmebaasi hetkeseisust', () => {
     project: { name: 'Spordiklubi', description: 'algne', stage: 'idee' },
     conversation: [],
     roles: [],
+    stories: [],
   });
   // Käsitsi muudatus peab kohe järgmisesse konteksti jõudma (vahemälu pole).
   db.prepare("UPDATE projects SET name = 'Spordiklubi veeb', description = 'käsitsi muudetud' WHERE id = ?").run(projectId);
