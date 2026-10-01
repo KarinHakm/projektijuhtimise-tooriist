@@ -21,6 +21,22 @@ export function latestMockup(db, storyId) {
   return row ? { version: row.version, createdAt: row.createdAt, ...JSON.parse(row.spec) } : null;
 }
 
+// Kõik kinnitatud mockup'i versioonid, uusim eespool (L22). Vanu versioone ei muudeta ega kustutata.
+export function listMockupVersions(db, storyId) {
+  return db.prepare('SELECT version, spec, created_at AS createdAt FROM mockups WHERE story_id = ? ORDER BY version DESC').all(storyId)
+    .map((r) => ({ version: r.version, createdAt: r.createdAt, ...JSON.parse(r.spec) }));
+}
+
+// Taastab varasema versiooni UUE versioonina (ajalugu jääb alles). Kriteeriumide viited taastatud versiooni
+// elementidele viiakse uuele versioonile (elemendid on samad); viited teistele versioonidele jäävad ja on aegunud.
+// Kutsuda transaktsiooni sees. Tagastab uue versiooni numbri.
+export function restoreMockup(db, storyId, version) {
+  const row = db.prepare('SELECT spec FROM mockups WHERE story_id = ? AND version = ?').get(storyId, version);
+  const next = saveMockup(db, storyId, JSON.parse(row.spec));
+  db.prepare("UPDATE criteria SET ref_version = ? WHERE story_id = ? AND ref_kind = 'element' AND ref_version = ?").run(next, storyId, version);
+  return next;
+}
+
 // Kontrollib salvestatavaid kriteeriume ettepaneku vastu. raw = [{ index?, text }]:
 // index viitab ettepaneku kriteeriumile, ilma indeksita kriteerium on käsitsi lisatud.
 // Päritolu määrab server. Brauser saadab ainult kinnitatud või muudetud kriteeriumid;

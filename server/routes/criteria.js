@@ -6,7 +6,9 @@ import { buildProjectContext } from '../ai/context.js';
 import {
   buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, resolveRef,
 } from '../ai/tasks/criteria.js';
-import { aiRef, appendCriteria, consistencyFor, latestMockup, listCriteria, saveMockup, validateCriteriaSave } from '../criteria.js';
+import {
+  aiRef, appendCriteria, consistencyFor, latestMockup, listCriteria, listMockupVersions, restoreMockup, saveMockup, validateCriteriaSave,
+} from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
@@ -39,6 +41,7 @@ export function criteriaRouter({ db, ai }) {
       story: { id: story.id, title: story.title },
       criteria: listCriteria(db, story.id),
       mockup: latestMockup(db, story.id),
+      mockupVersions: listMockupVersions(db, story.id).slice(1), // L22: varasemad versioonid (uusim on "mockup")
       criteriaProposal: cp
         ? { id: cp.id, message: cp.payload.message, criteria: cp.payload.criteria.map((text, index) => ({ index, text, ref: cp.payload.refs?.[index] ?? null, warnings: checkCriterion(text).map((w) => w.message) })) }
         : null,
@@ -165,6 +168,32 @@ export function criteriaRouter({ db, ai }) {
       return fail(res, err);
     }
     res.json(snapshot(projectId));
+  });
+
+  // L22: varasema versiooni taastamine. Luuakse uus versioon; vana ajalugu jääb alles ja kooskõla ülevaatus aegub
+  // (ülevaatuse sõrmejälg sisaldab mockup'i versiooni). Ainult alustamise loole, AI-d ei kasutata.
+  router.post('/mockup/restore', (req, res) => {
+    const projectId = req.projectId;
+    const story = focusStory(projectId);
+    if (!story || req.body?.storyId !== story.id) {
+      return res.status(409).json({ error: 'Taastada saab ainult alustamise loo mockup\'i. Värskenda lehte.', code: 'not_focus' });
+    }
+    const version = req.body?.version;
+    const versions = listMockupVersions(db, story.id);
+    if (!Number.isInteger(version) || !versions.some((v) => v.version === version)) {
+      return res.status(404).json({ error: 'Sellist mockup\'i versiooni ei leitud.', code: 'not_found' });
+    }
+    if (version === versions[0].version) return res.status(409).json({ error: 'See on juba praegune versioon.', code: 'already_current' });
+    db.exec('BEGIN IMMEDIATE');
+    let created;
+    try {
+      created = restoreMockup(db, story.id, version);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    res.json({ ...snapshot(projectId), restored: { from: version, to: created } });
   });
 
   // [Loobu]: mockup'i ei salvestata.

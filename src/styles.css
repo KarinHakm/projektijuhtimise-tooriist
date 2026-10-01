@@ -401,3 +401,11 @@ button.stage__button:hover { border-color: var(--accent); }
 .mvp-line .icon-button { margin: 0; }
 .tag--mvp { margin: 0 0.25rem 0 0; color: #5b3e8f; background: #f3effa; border-color: #c9b8e6; font-weight: 700; }
 .mvp-add { margin-top: 0.75rem; }
+
+/* L22: mockup'i varasemad versioonid */
+.mockup-versions { margin-top: 0.75rem; font-size: 0.9rem; }
+.mockup-versions > summary { cursor: pointer; color: var(--accent); }
+.mockup-versions__list { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+.mockup-versions__list li { margin: 0.4rem 0; }
+.mockup-versions__list summary { cursor: pointer; }
+.mockup-versions__list button { margin-top: 0.5rem; }

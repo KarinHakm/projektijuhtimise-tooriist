@@ -561,7 +561,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Ühtegi versiooni ei kustutata.
 - Lugu saab siduda rohkem kui ühe mockup'iga.
 
-**Seis 01.10.2026 (L22 osaliselt):** kinnitatud mockup'id salvestuvad versioonidena (1, 2, …) ja eelmine versioon jääb alles. **Pooleli:** versioonide loend, taastamine ja mitu mockup'i ühe loo kohta.
+**Seis 01.10.2026 (L22 osaliselt):** kinnitatud mockup'id salvestuvad versioonidena (1, 2, …) ja eelmine versioon jääb alles. Mockup'i all on lahti volditav „Varasemad versioonid“ (iga versiooni eelvaade) ja „Taasta see versioon“: taastamine loob **uue** versiooni, vanu ridu ei muudeta; kriteeriumide viited taastatud versiooni elementidele viiakse uuele versioonile, teised viited jäävad aegunuks; kooskõla ülevaatus aegub. Ainult alustamise loo mockup, AI-d ei kasutata. **Automaattestid:** uus versioon, ajalugu muutmata, viited, aegunud ülevaatus, keeldumised (praegune/olematu versioon, teine lugu, teine projekt). **Arendaja nägi brauseris (demobaas):** versioonide loend, versiooni 1 taastamine uue versioonina 3, ajalugu (2 ja 1) alles, telefoninumbri kriteeriumi „pole vastet“ hoiatus ja ülevaatuse soovitus. **Teadaolev piirang:** sama sisuga versiooni (nt juba taastatud v1) saab uuesti taastada – tekib koopia. **Pooleli:** mitu mockup'i ühe loo kohta.
 
 ### L23 · Kriteeriumide ja mockup'i kooskõla (M)
 *Projektijuhina soovin, et iga vaadet puudutav kriteerium oleks mockup'is nähtav, et kavand ja kokkulepe ei läheks lahku.*

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { acceptMockup, applyCriteria, getCriteria, linkCriterion, proposeCriteria, proposeMockup, rejectMockup, reviewConsistency } from '../api.js';
+import {
+  acceptMockup, applyCriteria, getCriteria, linkCriterion, proposeCriteria, proposeMockup, rejectMockup, restoreMockupVersion, reviewConsistency,
+} from '../api.js';
 import { componentLabel } from '../../shared/consistency.js';
 import { CheckWarnings, LinkLine, ReviewBox } from './Consistency.jsx';
 import {
@@ -63,7 +65,7 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview }) {
+export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
   const { story, criteria, mockup, criteriaProposal, mockupProposal } = data;
   const disabled = Boolean(busy);
   if (!story) return <p className="muted">Vali enne prioriteedi juures lugu, millest alustada.</p>;
@@ -149,6 +151,27 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
             <>
               <p className="muted">Kinnitatud, versioon {mockup.version}</p>
               <MockupView mockup={mockup} notes={data.consistency?.components ?? null} />
+              {restoreNotice && <p className="notice" role="status">{restoreNotice}</p>}
+              {/* L22: varasemad versioonid jäävad alles; taastamine loob uue versiooni. */}
+              {data.mockupVersions?.length > 0 && (
+                <details className="mockup-versions">
+                  <summary>Varasemad versioonid ({data.mockupVersions.length})</summary>
+                  <ol className="mockup-versions__list">
+                    {data.mockupVersions.map((v) => (
+                      <li key={v.version}>
+                        <details>
+                          <summary>Versioon {v.version} · {new Date(v.createdAt).toLocaleString('et-EE')} · elemente {v.components.length}</summary>
+                          <MockupView mockup={v} />
+                          <button type="button" className="secondary" disabled={disabled} onClick={() => onRestore(v.version)}>
+                            {busy === 'mockup-restore' ? 'Taastan…' : 'Taasta see versioon'}
+                          </button>
+                          <p className="muted">Taastamine loob uue versiooni {mockup.version + 1}. Ajalugu jääb alles; kooskõla ülevaatus aegub.</p>
+                        </details>
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
             </>
           )}
           {mockupProposal && (
@@ -184,6 +207,7 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
   const [aiError, setAiError] = useState(null);
   const [error, setError] = useState('');
   const [mockupError, setMockupError] = useState('');
+  const [restoreNotice, setRestoreNotice] = useState(''); // L22
   const [newText, setNewText] = useState('');
   const [addError, setAddError] = useState('');
   const [linkError, setLinkError] = useState('');
@@ -264,6 +288,16 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
           setLinkError('');
           const [kind, index] = value.startsWith('element-') ? ['element', Number(value.slice(8))] : [value, undefined];
           run('link', () => linkCriterion(projectId, criterionId, kind, index), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
+        }}
+        restoreNotice={restoreNotice}
+        onRestore={(version) => {
+          setMockupError('');
+          setRestoreNotice('');
+          run('mockup-restore', async () => {
+            const result = await restoreMockupVersion(projectId, data.story.id, version);
+            setRestoreNotice(`Versioon ${result.restored.from} taastati uue versioonina ${result.restored.to}. Varasemad versioonid jäid alles. Kooskõla ülevaatus aegus – vaata kriteeriumid ja mockup uuesti üle.`);
+            return result;
+          }, (e) => setMockupError(e.message)).then(() => onConsistencyChanged?.());
         }}
         onReview={() => { setLinkError(''); run('review', () => reviewConsistency(projectId, data.story.id, data.consistency.fingerprint), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.()); }}
       />
