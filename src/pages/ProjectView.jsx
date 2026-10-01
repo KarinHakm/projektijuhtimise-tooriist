@@ -42,8 +42,22 @@ export default function ProjectView() {
     return () => window.removeEventListener('pjt:changed', loadStage);
   }, [loadStage]);
 
+  // Päis jääb kerimisel üles: selle kõrgus läheb CSS-muutujasse, et kaardid ja backlog'i veerg jääksid päise alla.
+  const headerRef = useRef(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return undefined;
+    const update = () => document.documentElement.style.setProperty('--project-header-h', `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty('--project-header-h'); };
+  }, [project]);
+
   // "Mida teeme edasi?" ainult uusima AI väljundi kaardi lõpus; vanemate AI vastuste juurde nuppe ei lisata.
-  const stepsAfter = (card) => stage?.latestAiCard === card && <NextSteps steps={stage.steps} onGo={goToStep} />;
+  // Kui AI väljundit veel pole (uus projekt), on plokk vestluse kaardil.
+  const stepsCard = stage ? stage.latestAiCard ?? 'conversation' : null;
+  const stepsAfter = (card) => stepsCard === card && <NextSteps steps={stage.steps} onGo={goToStep} />;
 
   return (
     <main>
@@ -52,11 +66,10 @@ export default function ProjectView() {
       {!error && !project && <p className="muted">Laadin…</p>}
       {project && (
         <>
-          <section className="card">
-            <h2>{project.name}</h2>
-            {project.description ? <p>{project.description}</p> : <p className="muted">Kirjeldus puudub.</p>}
-          </section>
-          {stage && <StagePanel stage={stage} onGo={goToStep} />}
+          <div ref={headerRef} className="project-header-wrap">
+            {stage ? <StagePanel name={project.name} stage={stage} onGo={goToStep} /> : <h2 className="project-header__title">{project.name}</h2>}
+          </div>
+          {project.description ? <p className="project-description">{project.description}</p> : <p className="muted project-description">Kirjeldus puudub.</p>}
           {/* L07: laial ekraanil vestlus vasakul ja backlog paremal; kitsal ekraanil on backlog lugude all. */}
           <div className="project-layout">
             <div>
@@ -99,7 +112,7 @@ export default function ProjectView() {
                 {stepsAfter('refinement')}
               </section>
             </div>
-            <section className="card" id={CARDS.backlog} tabIndex={-1} aria-labelledby="backlog-heading">
+            <section className="card backlog-column" id={CARDS.backlog} tabIndex={-1} aria-labelledby="backlog-heading">
               <h2 id="backlog-heading">Backlog</h2>
               <BacklogPanel projectId={project.id} version={backlogVersion} />
             </section>

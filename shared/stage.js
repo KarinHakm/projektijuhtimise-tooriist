@@ -143,6 +143,7 @@ export function computeStage(facts) {
     next: next ? { key: next.key, label: next.label } : null,
     allBuiltDone,
     steps,
+    storyCount: f.stories,
     latestAiCard: f.latestAi ? AI_OUTPUT_CARD[f.latestAi.kind] ?? null : null,
   };
 }

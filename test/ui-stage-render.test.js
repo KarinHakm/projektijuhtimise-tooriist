@@ -17,31 +17,40 @@ const NO_PENDING = { roles: false, stories: false, priority: false, criteria: fa
 const facts = (over) => ({ conversation: 'empty', roles: 0, stories: 0, focus: false, criteria: 0, mockup: false, refinements: 0, consistency: null, latestAi: null, ...over, pending: { ...NO_PENDING, ...over.pending } });
 const P101 = computeStage(facts({ roles: 2, stories: 4, focus: true, criteria: 3, mockup: true, refinements: 3, consistency: { warnings: 0, reviewValid: true }, latestAi: { kind: 'refinement' } }));
 const P102 = computeStage(facts({ roles: 2, stories: 3, latestAi: { kind: 'stories' } }));
-const render = (stage) => renderToStaticMarkup(createElement(StagePanel, { stage, onGo: () => {} }));
+const render = (stage) => renderToStaticMarkup(createElement(StagePanel, { name: 'TESTKOOPIA A', stage, onGo: () => {} })).replace(/<!-- -->/g, '');
 const buttons = (html) => [...html.matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => m[1].replace(/<!-- -->/g, '').replace(/&#x27;/g, "'"));
+const stageItem = (html, n) => html.match(new RegExp(`<li class="stage [^"]*"[^>]*>(?:(?!</li>).)*<span class="stage__num">${n}\\.</span>(?:(?!</li>).)*</li>`))[0];
 
-test('projekt 101: „Viimati läbitud etapp: Täpsustused“ ja valikuline järgmine samm; Groomimine hall, mitte nupp', () => {
-  const html = render(P101).replace(/<!-- -->/g, '');
-  assert.match(html, /<strong>Viimati läbitud etapp:<\/strong> Täpsustused/);
-  assert.match(html, /<strong>Soovitatud järgmine samm:<\/strong> Sisesta uus kliendi täpsustus \(valikuline\) – etapp „Täpsustused“/);
-  assert.match(html, /Kõik rakenduses olemasolevad etapid on läbitud; edasised sammud on valikulised\. Groomimist pole veel tehtud\./);
-  assert.match(html, /<span class="stage__name" aria-disabled="true">7\. Groomimine<\/span><span class="stage__status">pole veel tehtud<\/span>/);
-  assert.ok(!buttons(html).some((b) => b.includes('Groomimine')));
-  assert.match(html, /<li class="stage stage--done">.*?5\. Kriteeriumid ja mockup<\/button><span class="stage__status">tehtud ✓<\/span>/);
-  assert.match(html, /1\. Idee<\/button><span class="stage__status">andmed puuduvad<\/span>/);
+test('päis: projekti nimi, link „Backlog (n)“ ja seitse etappi; iga etapi olek on ka tekstina', () => {
+  const html = render(P101);
+  assert.match(html, /<h2 class="project-header__title">TESTKOOPIA A<\/h2><a class="project-header__backlog" href="#kaart-backlog">Backlog \(4\)<\/a>/);
+  assert.equal((html.match(/<li class="stage /g) ?? []).length, 7);
+  assert.match(stageItem(html, 2), /class="stage stage--done".*<span class="stage__mark" aria-hidden="true">✓<\/span>.*Rollid.*<span class="visually-hidden"> – tehtud ✓<\/span>/);
 });
 
-test('projekt 102: soovitatud „Prioriteedid“; kriteeriumide etapp hall koos põhjusega ja ilma nuputa', () => {
-  const html = render(P102).replace(/<!-- -->/g, '');
+test('projekt 101: „Viimati läbitud etapp: Täpsustused“ ja valikuline järgmine samm; Groomimine hall, mitte nupp', () => {
+  const html = render(P101);
+  assert.match(html, /<strong>Viimati läbitud etapp:<\/strong> Täpsustused/);
+  assert.match(html, /<strong>Soovitatud järgmine samm:<\/strong> <button type="button" class="secondary stage-summary__go">Sisesta uus kliendi täpsustus \(valikuline\) \(AI\)<\/button><span class="muted"> – etapp „Täpsustused“<\/span>/);
+  assert.match(html, /Kõik rakenduses olemasolevad etapid on läbitud; edasised sammud on valikulised\./);
+  const groom = stageItem(html, 7);
+  assert.match(groom, /<span class="stage__button stage__button--off" title="7\. Groomimine: pole veel tehtud – Pole veel tehtud – seda funktsiooni rakenduses pole\." aria-disabled="true">/);
+  assert.doesNotMatch(groom, /<button/);
+  assert.match(stageItem(html, 1), /<button[^>]*>.*Idee.* – andmed puuduvad/);
+});
+
+test('projekt 102: soovitatud „Prioriteedid“; kriteeriumide etapp hall, põhjus lahti voldiva rea all', () => {
+  const html = render(P102);
   assert.match(html, /<strong>Viimati läbitud etapp:<\/strong> Lood/);
-  assert.match(html, /<li class="stage stage--next" aria-current="step">.*?4\. Prioriteedid<\/button><span class="stage__status">soovitatud järgmine<\/span>/);
-  assert.match(html, /<span class="stage__name" aria-disabled="true">5\. Kriteeriumid ja mockup<\/span><span class="stage__status">eeldus puudub<\/span><span class="stage__reason">Vali enne alustamise lugu\.<\/span>/);
-  assert.deepEqual(buttons(html).slice(-2), ['Küsi AI-lt prioriteedisoovitus (AI)', 'Vali alustamise lugu ise']);
+  assert.match(stageItem(html, 4), /<li class="stage stage--next" aria-current="step"><button/);
+  assert.match(stageItem(html, 5), /stage__button--off.*aria-disabled="true"/);
+  assert.match(html, /<details class="stage-details"><summary>Miks mõni etapp on hall\?<\/summary><ul>.*<li><strong>Kriteeriumid ja mockup<\/strong> – eeldus puudub: Vali enne alustamise lugu\.<\/li>/);
+  assert.deepEqual(buttons(html).at(-1), 'Küsi AI-lt prioriteedisoovitus (AI)');
   assert.ok(!buttons(html).some((b) => /kriteeri/i.test(b)));
 });
 
-test('vahelejätmise piirang on paneelis nähtav', () => {
-  assert.match(render(P102), /Vahelejätmine: valikulise etapi „Täpsustused“ võib vahele jätta\. Teised etapid sõltuvad eelmistest/);
+test('vahelejätmise piirang on päises (lahti voldiva rea all) olemas', () => {
+  assert.match(render(P102), /<details class="stage-details">.*Vahelejätmine: valikulise etapi „Täpsustused“ võib vahele jätta\. Teised etapid sõltuvad eelmistest/);
 });
 
 test('„Mida teeme edasi?“: 1–4 nuppu, AI tegevusel märge ja selgitus; tühja loendiga plokki pole', () => {
@@ -54,7 +63,8 @@ test('„Mida teeme edasi?“: 1–4 nuppu, AI tegevusel märge ja selgitus; tü
 
 test('projekti vaates on plokk ainult uusima AI väljundi kaardi lõpus (iga AI kaardi jaoks üks koht, backlog’is mitte)', () => {
   const view = readFileSync('src/pages/ProjectView.jsx', 'utf8');
-  assert.match(view, /const stepsAfter = \(card\) => stage\?\.latestAiCard === card && <NextSteps/);
+  assert.match(view, /const stepsCard = stage \? stage\.latestAiCard \?\? 'conversation' : null;/);
+  assert.match(view, /const stepsAfter = \(card\) => stepsCard === card && <NextSteps/);
   for (const card of new Set(Object.values(AI_OUTPUT_CARD))) {
     assert.equal(view.split(`{stepsAfter('${card}')}`).length - 1, 1, card);
     // plokk on sama kaardi sees, kaardi viimase elemendina

@@ -18,7 +18,7 @@ body {
 }
 
 .page { max-width: 760px; margin: 0 auto; padding: 1rem; }
-.page--wide { max-width: 1200px; }
+.page--wide { max-width: 1400px; }
 
 /* L07: kaks veergu alates 1000 px; kitsamal ekraanil üks veerg ja backlog lugude all. */
 .project-layout { display: grid; column-gap: 1.5rem; }
@@ -277,21 +277,53 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .project-list a { color: var(--accent); font-weight: 500; }
 
-/* L13, L14: etappide riba ja "Mida teeme edasi?" */
-.stage-bar { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin: 0 0 0.75rem; padding: 0; }
-.stage { border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.9rem; }
-.stage__button { margin: 0; padding: 0; background: none; color: var(--accent); text-align: left; font-weight: 600; text-decoration: underline; }
-.stage__name { font-weight: 600; color: var(--muted); }
-.stage__status { font-size: 0.8rem; }
-.stage__reason { font-size: 0.8rem; color: var(--muted); }
-.stage--done { border-color: #8cc29b; background: #eef8f0; }
-.stage--done .stage__status { color: #1d6b35; }
-.stage--next { border: 2px solid var(--accent); background: #eef3fc; }
-.stage--next .stage__status { color: var(--accent); font-weight: 600; }
-.stage--skipped { border-style: dashed; }
-.stage--blocked, .stage--not_built { background: #f0f1f3; color: var(--muted); }
-.stage-panel p { margin: 0.25rem 0; }
-.stage-panel__limit { font-size: 0.85rem; }
+/* L13, L14: kompaktne projekti päis etappide ribaga; jääb kerimisel lehe ülaossa. */
+.project-header-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 0.5rem 0; margin-bottom: 0.5rem; }
+.project-header { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; }
+.project-header__top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.project-header__title { margin: 0; font-size: 1.1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-header__backlog { white-space: nowrap; }
+.project-description { margin: 0 0 1rem; }
+.stage-bar { list-style: none; display: flex; gap: 0.25rem; margin: 0.5rem 0 0.25rem; padding: 0; overflow-x: auto; }
+.stage { flex: 1 1 0; min-width: 2.5rem; }
+.stage__button {
+  display: flex; align-items: center; gap: 0.3rem; width: 100%; height: 100%; margin: 0; padding: 0.3rem 0.4rem;
+  font-size: 0.85rem; line-height: 1.2; text-align: left; color: var(--text); background: var(--card);
+  border: 1px solid var(--border); border-radius: 6px;
+}
+button.stage__button:hover { border-color: var(--accent); }
+.stage__mark { flex: none; width: 1.1em; text-align: center; }
+.stage__num { flex: none; font-weight: 600; }
+.stage__label { min-width: 0; }
+.stage--done .stage__button { border-color: #8cc29b; background: #eef8f0; }
+.stage--done .stage__mark { color: #1d6b35; }
+.stage--next .stage__button { border: 2px solid var(--accent); background: #eef3fc; font-weight: 600; }
+.stage--next .stage__mark { color: var(--accent); }
+.stage--skipped .stage__button { border-style: dashed; }
+.stage__button--off { color: var(--muted); background: #f0f1f3; cursor: default; }
+.stage-summary { display: flex; flex-wrap: wrap; column-gap: 1.5rem; row-gap: 0.25rem; align-items: center; margin: 0.25rem 0; font-size: 0.9rem; }
+.stage-summary__go { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.85rem; }
+.stage-details { font-size: 0.85rem; }
+.stage-details summary { cursor: pointer; color: var(--accent); }
+.stage-details[open] > :not(summary) { max-height: 40vh; overflow-y: auto; }
+.stage-details ul, .stage-details p { margin: 0.25rem 0; }
+/* Kaart, kuhu nupp kerib, ei jää päise alla peitu. */
+.card { scroll-margin-top: calc(var(--project-header-h, 0px) + 0.75rem); }
+/* Laial ekraanil jääb backlog paremas veerus kerimisel nähtavale ja kerib vajadusel iseenda sees. */
+@media (min-width: 1000px) {
+  .backlog-column { position: sticky; top: calc(var(--project-header-h, 0px) + 0.5rem); max-height: calc(100vh - var(--project-header-h, 0px) - 1rem); overflow-y: auto; }
+}
+/* Kitsamal ekraanil on ribal ainult märk ja number; nimi on näha ainult soovitatud järgmisel etapil.
+   Teiste etappide nimi jääb ekraanilugejale ja vihjesse, kokkuvõtte rida nimetab etapid sõnadega. */
+@media (max-width: 999px) {
+  .stage:not(.stage--next) .stage__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .stage:not(.stage--next) .stage__button { justify-content: center; }
+  .stage--next { flex: 2 1 auto; }
+}
+/* Madalas aknas (nt suur suum või telefon rõhtasendis) ei jää päis üles kinni, et see ei võtaks pool ekraani. */
+@media (max-height: 600px) {
+  .project-header-wrap { position: static; }
+}
 .next-steps { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
 .next-steps__title { font-weight: 600; margin: 0; }
 .next-steps .actions { flex-wrap: wrap; }

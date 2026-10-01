@@ -1,5 +1,3 @@
-import NextSteps from './NextSteps.jsx';
-
 export const STATUS_LABELS = {
   done: 'tehtud ✓',
   skipped: 'andmed puuduvad',
@@ -8,40 +6,71 @@ export const STATUS_LABELS = {
   blocked: 'eeldus puudub',
   not_built: 'pole veel tehtud',
 };
+// Märk ribal; tähendus on alati ka tekstina (ekraanilugeja ja "Miks mõni etapp on hall?"), mitte ainult värvina.
+const MARKS = { done: '✓', skipped: '!', next: '●', available: '○', blocked: '🔒', not_built: '–' };
 
-// Etappide riba (L14) ja soovitatud järgmine samm (L13). Andmed tulevad serverist (shared/stage.js).
-// Riba kaudu saab avada ainult tehtud, vahele jäetud või kättesaadava etapi; eelduseta etapp on hall koos põhjusega.
-export default function StagePanel({ stage, onGo }) {
-  const { stages, lastDone, steps, allBuiltDone } = stage;
+// Projekti kompaktne päis (L13, L14): nimi, etappide riba, viimati läbitud etapp ja soovitatud järgmine samm.
+// Jääb kerimisel lehe ülaossa. Andmed tulevad serverist (shared/stage.js).
+// Riba kaudu saab avada ainult tehtud, andmeteta või kättesaadava etapi; eelduseta etapp on hall ja põhjus on lahti voldiva rea all.
+export default function StagePanel({ name, stage, onGo }) {
+  const { stages, lastDone, steps, allBuiltDone, storyCount } = stage;
   const first = steps[0];
   const firstStage = first ? stages.find((s) => s.key === first.stage) : null;
+  const explained = stages.filter((s) => s.reason);
   return (
-    <section className="card stage-panel" aria-labelledby="stage-heading">
-      <h2 id="stage-heading" className="visually-hidden">Projekti etapid</h2>
-      <ol className="stage-bar">
-        {stages.map((s, i) => (
-          <li key={s.key} className={`stage stage--${s.status}`} aria-current={s.status === 'next' ? 'step' : undefined}>
-            {s.selectable ? (
-              <button type="button" className="stage__button" onClick={() => onGo({ card: s.card, focus: null })}>{i + 1}. {s.label}</button>
-            ) : (
-              <span className="stage__name" aria-disabled="true">{i + 1}. {s.label}</span>
-            )}
-            <span className="stage__status">{STATUS_LABELS[s.status]}{s.optional && s.status !== 'done' ? ' · valikuline' : ''}</span>
-            {s.reason && <span className="stage__reason">{s.reason}</span>}
-          </li>
-        ))}
+    <header className="project-header" aria-label="Projekt ja etapid">
+      <div className="project-header__top">
+        <h2 className="project-header__title">{name}</h2>
+        <a className="project-header__backlog" href="#kaart-backlog" onClick={(e) => { e.preventDefault(); onGo({ card: 'backlog', focus: null }); }}>
+          Backlog ({storyCount})
+        </a>
+      </div>
+      <ol className="stage-bar" aria-label="Etapid">
+        {stages.map((s, i) => {
+          const content = (
+            <>
+              <span className="stage__mark" aria-hidden="true">{MARKS[s.status]}</span>
+              <span className="stage__num">{i + 1}.</span>
+              <span className="stage__label">{s.label}</span>
+              <span className="visually-hidden"> – {STATUS_LABELS[s.status]}</span>
+            </>
+          );
+          const title = `${i + 1}. ${s.label}: ${STATUS_LABELS[s.status]}${s.reason ? ` – ${s.reason}` : ''}`;
+          return (
+            <li key={s.key} className={`stage stage--${s.status}`} aria-current={s.status === 'next' ? 'step' : undefined}>
+              {s.selectable
+                ? <button type="button" className="stage__button" title={title} onClick={() => onGo({ card: s.card, focus: null })}>{content}</button>
+                : <span className="stage__button stage__button--off" title={title} aria-disabled="true">{content}</span>}
+            </li>
+          );
+        })}
       </ol>
-      <p><strong>Viimati läbitud etapp:</strong> {lastDone ? lastDone.label : 'veel ükski'}</p>
-      <p>
-        <strong>Soovitatud järgmine samm:</strong>{' '}
-        {first ? <>{first.label}{first.optional ? ' (valikuline)' : ''} – etapp „{firstStage.label}“</> : 'pole'}
+      <p className="stage-summary">
+        <span><strong>Viimati läbitud etapp:</strong> {lastDone ? lastDone.label : 'veel ükski'}</span>
+        <span>
+          <strong>Soovitatud järgmine samm:</strong>{' '}
+          {first ? (
+            <button type="button" className="secondary stage-summary__go" onClick={() => onGo(first)}>
+              {first.label}{first.optional ? ' (valikuline)' : ''}{first.ai ? ' (AI)' : ''}
+            </button>
+          ) : 'pole'}
+          {firstStage && <span className="muted"> – etapp „{firstStage.label}“</span>}
+        </span>
       </p>
-      {allBuiltDone && <p className="muted">Kõik rakenduses olemasolevad etapid on läbitud; edasised sammud on valikulised. Groomimist pole veel tehtud.</p>}
-      <NextSteps steps={steps} onGo={onGo} />
-      <p className="muted stage-panel__limit">
-        Vahelejätmine: valikulise etapi „Täpsustused“ võib vahele jätta. Teised etapid sõltuvad eelmistest (nt kriteeriumid vajavad
-        alustamise lugu), seega neid vahele jätta ei saa. „Groomimine“ pole veel tehtud.
-      </p>
-    </section>
+      <details className="stage-details">
+        <summary>Miks mõni etapp on hall?</summary>
+        <ul>
+          {explained.map((s) => (
+            <li key={s.key}><strong>{s.label}</strong> – {STATUS_LABELS[s.status]}: {s.reason}</li>
+          ))}
+        </ul>
+        {allBuiltDone && <p>Kõik rakenduses olemasolevad etapid on läbitud; edasised sammud on valikulised.</p>}
+        <p>
+          Vahelejätmine: valikulise etapi „Täpsustused“ võib vahele jätta. Teised etapid sõltuvad eelmistest (nt kriteeriumid vajavad
+          alustamise lugu), seega neid vahele jätta ei saa. „Groomimine“ pole veel tehtud.
+        </p>
+        {first?.ai && <p>„(AI)“ nupp viib tegevuse juurde; AI-kutse käivitub alles sealse nupuga.</p>}
+      </details>
+    </header>
   );
 }
