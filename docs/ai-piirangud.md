@@ -38,6 +38,14 @@
 
 Väljundkiirus kõikus samal päeval **16–48 tokenit sekundis**.
 
+## Rakenduses mõõdetud (30.09.2026)
+
+Erinevalt ülaltoodud proovidest on see tulemus saadud rakenduse enda kaudu, brauserikontrolli käigus.
+
+| Lugu | Päring | Katseid | Kestus | Väljundtokenid | Tulemus |
+|---|---|---|---|---|---|
+| L06 | Lood happy path'i järjekorras | 1 (kordust ei olnud) | 37,8 s | 693 | 7 lugu. Rollid olid ainult kinnitatud rollid. Kahes loos oli kirjaviga (vt piirang 10) |
+
 ## Teadaolevad AI piirangud
 
 1. **Vastamisaeg kõigub palju.** Proovides kestis üks päring 16–110 sekundit. Õpetaja demo vajab vähemalt viit AI päringut, mis tähendab mõõdetud aegadega kokku umbes 2,5–4 minutit ootamist.
@@ -55,6 +63,17 @@ Väljundkiirus kõikus samal päeval **16–48 tokenit sekundis**.
 7. **Mudel vaatab lugu üksikult, mitte kogu backlog'i taustal.** Liiga suure loo jagamisel tekkis uus lugu, mis oli sõna-sõnalt sama kui olemasolev lugu.
 8. **Skeemi jõustamine ei ole kinnitatud.** API võttis `json_schema` vastu ja kõik mõtlemiseta vastused vastasid skeemile. Kas skeemi jõustatakse genereerimise ajal, ei ole dokumenteeritud.
 9. **Teenus on eksperimentaalne.** Hetzner ei garanteeri jõudlust ega kättesaadavust ja ei soovita seda tootmiskeskkonnas kasutada. Hetzneri blogi järgi tõusis käivitusjärgsel suure nõudluse perioodil p99 vastamisaeg ligi 10 minutini.
+10. **Kirjavead jõuavad kaartidele** (rakenduses, L06). Näiteks „soovin **sada** taotluse kinnitust“ ja „näha **liikmepakete**“. Vormingureeglid kontrollivad lause ülesehitust, mitte õigekirja. Arendaja parandas need käsitsi ✎ Muuda kaudu enne backlog'i lisamist.
+11. **Saatetekst võib mainida kinnitamata rolli** (rakenduses, L06). Lugude ettepaneku saatetekst ütles „…fookuses potentsiaalsetel liikmetel ja **treeneritel**“, kuigi rolli „Treener“ ei olnud kinnitatud.
+    - See ei olnud kinnitamata rolliga kaart: kõigi 7 kaardi rollid olid kinnitatud rollid.
+    - Kaartide rolle kontrollitakse skeemis ja serveris, saateteksti ei kontrollita.
+12. **„et“-kõrvallause hoiatus kontrollib ainult tegevuse välja.** Kui kasu väljas on eraldi „et“-kõrvallause, hoiatust ei tule. Näiteks algne „…, et saaksin olla kindel, **et** minu taotlus on saadetud“ andis pealkirja kahe „et“ sõnaga.
+
+## Rakenduse teadaolevad piirangud (mitte AI)
+
+- **✎ muudatused enne backlog'i lisamist ei ole püsivad** (L06). Lugude ettepanekus tehtud muudatused on ainult brauseri vahelehe mälus.
+  - Serverisse jõuavad need alles nupuga „Lisa valitud“ või „Lisa kõik backlog'i“.
+  - F5 või vahelehe sulgemine kaotab muudatused ja kaardid laaditakse uuesti AI originaaliga. Ootel ettepanek ise jääb alles.
 
 ## Mida see rakenduse jaoks tähendab
 

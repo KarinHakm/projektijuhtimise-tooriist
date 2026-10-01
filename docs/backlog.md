@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 30.09.2026:** valmis on L01, L02, L03 ja L04. Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 30.09.2026:** valmis on L01, L02, L03, L04 ja L05. L06 on **Pooleli**: osa kriteeriumidest on brauseris veel proovimata. Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -24,8 +24,8 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L02 | Serveripoolne ja valideeritud AI-kiht | M | Kohustuslik | – | Valmis |
 | L03 | Projektide loomine ja loend | S | Kohustuslik | 1 | Valmis |
 | L04 | Vestluse algus ühest promptist ja täpsustavad küsimused | M | Kohustuslik | 1, 9 | Valmis |
-| L05 | Rollid | S | Kohustuslik | 9 | Plaanitud |
-| L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Plaanitud |
+| L05 | Rollid | S | Kohustuslik | 9 | Valmis |
+| L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Pooleli |
 | L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Plaanitud |
 | L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Plaanitud |
 | L09 | Vastuvõtukriteeriumid valitud loole | M | Kohustuslik | 4, 9 | Plaanitud |
@@ -154,6 +154,11 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Kinnitatud rollid salvestatakse projekti juurde.
 - AI pakutud lugudes on ainult kinnitatud rollid.
 
+**Kontrollitud 30.09.2026 (projekt „L04 test“):**
+- Kinnitatud rollid on „Potentsiaalne liige“ (AI pakutud) ja „Administraator“ (käsitsi lisatud).
+- Arendaja nägi brauseris, et L06 kaartidel ja ✎ Muuda rollimenüüs olid ainult need kaks rolli.
+- AI saatetekst mainis kinnitamata rolli „treener“. See on eraldi leid, mitte kinnitamata rolliga kaart: ühelgi kaardil seda rolli ei olnud. Vt [ai-piirangud.md](ai-piirangud.md).
+
 ### L06 · Lood happy path'i järjekorras (L)
 *Projektijuhina soovin näha AI pakutud lugusid põhitöövoo järjekorras ja valida, millised backlog'i lähevad, et esialgne backlog tekiks klõpsudega.*
 - AI pakub vähemalt viis lugu kaartidena.
@@ -174,6 +179,33 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Lugude prompt sisaldab näidet, kus kasu on vormis „et saaksin …“.
 - Lugude prompt keelab kasu, mis kordab tegevust.
 - Server hoiatab, kui tegevuse väli sisaldab eraldi „et“-kõrvallauset.
+
+**Kontrollitud 30.09.2026 (projekt „L04 test“):**
+- **AI-kutse:** „Paku lugusid“ tegi ühe päris AI-kutse, mis õnnestus esimesel katsel (37,8 s, 693 väljundtokenit). AI pakkus 7 lugu: 5 peamise rolli ja 2 administraatori lugu.
+- **Muutmine enne lisamist:** arendaja parandas brauseris ✎ Muuda kaudu kahe loo kirjavead.
+  - Lugu 3: „liikmepakete“ → „liikmepakette“.
+  - Lugu 5: „sada“ → „saada“ ja uus kasu.
+- **Lisamine:** arendaja lisas lood nupuga „Lisa valitud (7)“.
+- **Andmebaas pärast lisamist:**
+  - backlog'is on 7 lugu staatusega „Idee“ ja suurustega S/M;
+  - lugude 3 ja 5 päritolu on `ai_edited`, ülejäänud viiel `ai`;
+  - ettepaneku olek on `applied` ja ootel ettepanekuid ei ole;
+  - muud tabelid on samad mis enne L06 skeemiuuendust tehtud varukoopias.
+- **Püsivus:** pärast F5 värskendust oli 7 lugu backlog'is alles ja ootel ettepanekut ei kuvatud.
+- **Järjekord:**
+  - Automaattestid kontrollivad ainult struktuuri: peamise rolli lood on esimesena ja järjest.
+  - Sisulise järjekorra hindas arendaja brauseris üldjoontes loogiliseks: tutvumine → hinnad → taotlus → kinnitus.
+  - See ei tõenda kogu töövoogu. Näiteks tasumise sammu ettepanekus ei olnud.
+- **Nupud:** arendaja nägi brauseris kaartide all nuppe „Lisa kõik backlog'i“, „Lisa valitud“ ja „Paku teistsuguseid“. Neist vajutati ainult nuppu „Lisa valitud“.
+- **Brauseris veel proovimata:**
+  - ✗ Lükka tagasi vajutamise tulemus: kaart eemaldub pakkumisest;
+  - tagasi lükatud loo välistamine nupu „Lisa kõik backlog'i“ korral;
+  - „Lisa kõik backlog'i“ vajutamise tulemus: lisanduvad kõik tagasi lükkamata kaardid;
+  - märkeruudu eemaldamine enne „Lisa valitud“ vajutamist: märkimata lugu ei lisandu;
+  - „Paku teistsuguseid“ vajutamise tulemus: senine ettepanek asendub uuega.
+
+  Neid katavad seni ainult automaattestid (võltsandmetega).
+- **Teadaolev piirang:** kui lugu muuta ✎ Muuda kaudu enne backlog'i lisamist, jääb muudatus ainult brauseri vahelehe mällu. F5 või vahelehe sulgemine kaotab muudatuse ja kaardid laaditakse uuesti AI originaaliga. Ootel ettepanek ise jääb alles.
 
 ### L07 · Backlog'i vaade ja lihtne järjestamine (S)
 *Projektijuhina soovin näha backlog'i vestluse kõrval, et näeksin kohe, mida vestlus muutis.*
