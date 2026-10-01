@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { replaceRoles } from '../server/roles.js';
 import { appendStories } from '../server/stories.js';
@@ -32,18 +33,6 @@ const CRITERIA = [
 
 let dir, db, projectId, otherProjectId, target, other, server, base, ai;
 
-function fakeAi() {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next();
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl }), calls, push: (...r) => queue.push(...r) };
-}
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 300 } }), { status: 200 });
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'pjt-consistency-'));

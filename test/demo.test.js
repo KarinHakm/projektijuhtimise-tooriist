@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { checkStories } from '../server/ai/tasks/stories.js';
 import { checkMockup } from '../server/ai/tasks/criteria.js';
 import { consistencyFor } from '../server/criteria.js';
@@ -117,7 +117,7 @@ async function withDemoServer(fn) {
   const path = createDemoDb(join(dir, 'demo.db'));
   const db = openDb(path);
   let calls = 0;
-  const ai = createAiClient({ token: 't', model: 'm', fetchImpl: async () => { calls++; throw new Error('AI-d ei tohi kutsuda'); } });
+  const ai = { configured: true, timeoutMs: 1000, complete: async () => { calls++; throw new Error('AI-d ei tohi kutsuda'); } };
   const server = createApp({ db, ai }).listen(0);
   await new Promise((r) => server.once('listening', r));
   try {

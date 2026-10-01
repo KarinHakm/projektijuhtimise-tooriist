@@ -3,11 +3,13 @@
 
 const ERRORS = {
   not_configured: { status: 503, message: 'AI ei ole serveris seadistatud. Käsitsi saad edasi töötada.' },
-  auth_failed: { status: 502, message: 'AI-teenus keeldus ligipääsust. Kontrolli serveri AI seadistust.' },
   timeout: { status: 504, message: 'AI ei vastanud õigeaegselt. Proovi uuesti.' },
-  rate_limited: { status: 429, message: 'AI-teenuse päringupiir on täis. Proovi umbes minuti pärast uuesti.' },
   unavailable: { status: 502, message: 'AI-teenus ei ole praegu kättesaadav. Käsitsi saad edasi töötada.' },
   invalid_response: { status: 502, message: 'AI vastus oli vigane. Proovi uuesti.' },
+  // Claude Code CLI (serveri arvutis sisse logitud kasutaja tellimus)
+  cli_missing: { status: 503, message: 'Serveri arvutis ei leitud Claude Code\'i (käsk „claude“). Paigalda see ja logi sisse või kasuta AI-ta näidist. Käsitsi saad edasi töötada.' },
+  not_logged_in: { status: 503, message: 'Claude Code ei ole serveri arvutis sisse logitud. Käivita terminalis „claude“, logi oma kontoga sisse ja proovi uuesti. Käsitsi saad edasi töötada.' },
+  usage_limit: { status: 429, message: 'Claude\'i tellimuse kasutuslimiit on praegu täis. Proovi hiljem uuesti; käsitsi saad edasi töötada.' },
 };
 
 export class AiError extends Error {

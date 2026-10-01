@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { buildProjectContext } from '../server/ai/context.js';
 import { getProposal } from '../server/proposals.js';
@@ -33,22 +34,9 @@ const PROPOSAL = {
 };
 const clone = () => structuredClone(PROPOSAL);
 
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 300 } }), { status: 200 });
-const aiStatus = (status, headers = {}) => () => new Response(`teenuse viga ${FAKE_TOKEN}`, { status, headers });
 
 let dir, db, projectId, otherProjectId, server, base, ai;
 
-function fakeAi(opts = {}) {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next(init);
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl, ...opts }), calls, push: (...r) => queue.push(...r) };
-}
 
 async function startServer(aiClient) {
   server = createApp({ db, ai: aiClient }).listen(0);
@@ -106,11 +94,10 @@ test('kinnitatud rollideta annab "Paku lugusid" 409 ja AI-d ei kutsuta', async (
 
 test('päringu skeemis on rolli lubatud väärtused täpselt kinnitatud rollid', async () => {
   await propose();
-  const schema = ai.calls[0].response_format.json_schema.schema;
+  const schema = ai.calls[0].schema;
   assert.deepEqual(schema.properties.primaryRole.enum, ROLES);
   assert.deepEqual(schema.properties.stories.items.properties.role.enum, ROLES);
   assert.equal(schema.properties.stories.minItems, 5);
-  assert.deepEqual(ai.calls[0].chat_template_kwargs, { enable_thinking: false });
 });
 
 test('prompt sisaldab kinnitatud rolle, kokkuvõtet, "et saaksin" näidet ja ringja kasu keeldu', async () => {
@@ -231,7 +218,7 @@ test('"Paku teistsuguseid" edu: vana lükatakse tagasi ja uus salvestatakse', as
 
 test('"Paku teistsuguseid" AI vea korral jätab senise ettepaneku pending ja kasutatavaks', async () => {
   const first = await propose();
-  for (const failure of [aiStatus(500), aiStatus(429, { 'retry-after': '20' })]) {
+  for (const failure of [aiFail('unavailable'), aiFail('usage_limit', { retryAfterSeconds: 20 })]) {
     ai.push(failure);
     const res = await post(projectId, '/propose', { replace: first.id });
     assert.ok(res.status >= 429);
@@ -257,7 +244,7 @@ test('"Paku teistsuguseid" ajalimiidi korral jätab senise ettepaneku alles', as
   await stopServer();
   ai = fakeAi({ timeoutMs: 50 });
   await startServer(ai.client);
-  ai.push((init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason))));
+  ai.push(aiHang());
   assert.equal((await post(projectId, '/propose', { replace: first.id })).status, 504);
   assert.deepEqual(proposalRows(), [{ id: first.id, status: 'pending' }]);
 });
@@ -355,9 +342,9 @@ test('teise projekti ettepanek annab 404', async () => {
 // --- Vead, kontekst, lekked ---
 
 test('AI teenuse vea või 429 korral ettepanekut ei salvestata', async () => {
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   assert.equal((await post(projectId, '/propose')).status, 502);
-  ai.push(aiStatus(429, { 'retry-after': '30' }));
+  ai.push(aiFail('usage_limit', { retryAfterSeconds: 30 }));
   const r429 = await post(projectId, '/propose');
   assert.equal(r429.status, 429);
   assert.equal((await r429.json()).retryAfterSeconds, 30);
@@ -374,7 +361,7 @@ test('AI kontekstis on backlog’i lood, mitte pooleli ettepaneku lood', async (
 });
 
 test('token ei jõua ühtegi vastusesse', async () => {
-  ai.push(aiStatus(500), aiStatus(401), aiOk(PROPOSAL));
+  ai.push(aiFail('unavailable'), aiFail('not_logged_in'), aiOk(PROPOSAL));
   const bodies = [];
   for (let i = 0; i < 3; i++) bodies.push(await (await post(projectId, '/propose')).text());
   bodies.push(await (await fetch(url(projectId))).text());

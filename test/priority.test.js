@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { replaceRoles } from '../server/roles.js';
 import { appendStories } from '../server/stories.js';
@@ -16,19 +17,6 @@ const s = (want, soThat, size = 'M') => ({ role: 'Külastaja', rolePhrase: 'Kül
 
 let dir, dbPath, db, projectId, otherProjectId, ids, otherStoryId, server, base, ai;
 
-function fakeAi() {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next();
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl }), calls, push: (...r) => queue.push(...r) };
-}
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 80 } }), { status: 200 });
-const aiStatus = (status) => () => new Response(`teenuse viga ${FAKE_TOKEN}`, { status });
 
 async function startServer(client) {
   server = createApp({ db, ai: client }).listen(0);
@@ -95,7 +83,7 @@ test('AI päringus on backlog’i lood tunnustega, kokkuvõte ja skeem lubab ain
   for (const id of ids) assert.match(prompt, new RegExp(`id ${id}: `));
   assert.match(prompt, /Liikmeks astumine käib veebis/);
   assert.doesNotMatch(prompt, /teise projekti lugu/);
-  assert.deepEqual(call.response_format.json_schema.schema.properties.storyId.enum, ids);
+  assert.deepEqual(call.schema.properties.storyId.enum, ids);
 });
 
 test('teise projekti või olematu loo soovitus lükatakse tagasi: kordus, siis 502 ja midagi ei salvestata', async () => {
@@ -146,7 +134,7 @@ test('"Valin ise teise" määrab kasutaja valitud loo ja lükkab AI soovituse ta
 
 test('oma valik töötab ka ilma AI-ta (seadistamata AI)', async () => {
   await stopServer();
-  await startServer(createAiClient({}));
+  await startServer(createDisabledAi());
   const res = await post(projectId, '/choose', { storyId: ids[0] });
   assert.equal(res.status, 200);
   assert.equal(focus(), ids[0]);
@@ -179,7 +167,7 @@ test('alustamise lugu on näha lugude päringus ja püsib pärast andmebaasi uue
 });
 
 test('AI teenuse vea korral soovitust ei salvestata ja token ei jõua vastusesse', async () => {
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   const res = await post(projectId, '/propose');
   assert.equal(res.status, 502);
   assert.doesNotMatch(await res.text(), /TOKEN/);

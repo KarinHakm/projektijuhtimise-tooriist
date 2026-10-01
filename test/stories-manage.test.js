@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { appendStories } from '../server/stories.js';
 import { setFocusStory } from '../server/priority.js';
 import { appendCriteria, saveMockup } from '../server/criteria.js';
@@ -26,7 +26,7 @@ beforeEach(async () => {
   ids = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).map((r) => r.id);
   otherStory = db.prepare('SELECT id FROM stories WHERE project_id = ?').get(otherId).id;
   aiCalls = 0;
-  const ai = createAiClient({ token: 't', model: 'm', fetchImpl: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } });
+  const ai = { configured: true, timeoutMs: 1000, complete: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } };
   server = createApp({ db, ai }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects`;

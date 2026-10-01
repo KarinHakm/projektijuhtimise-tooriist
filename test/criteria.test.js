@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { replaceRoles } from '../server/roles.js';
 import { appendStories } from '../server/stories.js';
@@ -36,18 +37,6 @@ const AI_DATA = {
 
 let dir, db, projectId, otherProjectId, storyId, otherStoryId, server, base, ai;
 
-function fakeAi() {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next();
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl }), calls, push: (...r) => queue.push(...r) };
-}
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 300 } }), { status: 200 });
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'pjt-criteria-'));
@@ -104,7 +93,7 @@ test('AI päringus on valitud lugu ja kriteeriumide reeglid; skeem lubab ainult 
   const prompt = call.messages.map((m) => m.content).join('\n');
   assert.match(prompt, /Valitud kasutajalugu: Külastajana soovin näha liikmepakette ja hindu/);
   assert.match(prompt, /jah või ei/);
-  const types = call.response_format.json_schema.schema.properties.mockup.properties.components.items.properties.type.enum;
+  const types = call.schema.properties.mockup.properties.components.items.properties.type.enum;
   assert.deepEqual(types, ['heading', 'text', 'button', 'input', 'list', 'image', 'card']);
 });
 
@@ -168,7 +157,7 @@ test('[Loobu] ei salvesta mockup’i', async () => {
 
 test('[Paku uus] asendab mockup’i ettepaneku alles pärast edukat AI vastust', async () => {
   const state = await propose();
-  ai.push(() => new Response('viga', { status: 500 }));
+  ai.push(aiFail('unavailable'));
   assert.equal((await post(projectId, '/mockup/propose')).status, 502);
   const still = await (await fetch(url(projectId))).json();
   assert.equal(still.mockupProposal.id, state.mockupProposal.id);

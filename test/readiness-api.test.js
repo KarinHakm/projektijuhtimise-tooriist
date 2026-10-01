@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { appendStories } from '../server/stories.js';
 import { appendCriteria, saveMockup } from '../server/criteria.js';
 
@@ -26,7 +26,7 @@ beforeEach(async () => {
   appendCriteria(db, story, CRITERIA);
   saveMockup(db, story, { title: 'Vorm', components: [{ type: 'input', text: 'E-post', items: [] }, { type: 'button', text: 'Saada', items: [] }] });
   aiCalls = 0;
-  const ai = createAiClient({ token: 't', model: 'm', fetchImpl: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } });
+  const ai = { configured: true, timeoutMs: 1000, complete: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } };
   server = createApp({ db, ai }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects`;

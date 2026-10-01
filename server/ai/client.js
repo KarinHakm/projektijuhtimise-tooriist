@@ -1,66 +1,19 @@
 import { AiError } from './errors.js';
 
-// Ainus fail, mis teab AI-teenusest (Hetzner Inference API, OpenAI-ühilduv).
-// Token antakse sisse loomisel ja seda ei tagastata, logita ega panda üheski veas kaasa.
+// Ühine osa AI klientidele. Rakenduse AI-teenus on Claude Code CLI (server/ai/claude-cli.js);
+// teenuse valib server/ai/provider.js. Iga klient täidab sama liidest:
+//   { configured, timeoutMs, complete({ messages, schema, maxTokens, timeoutMs }) → { content, finishReason, outputTokens } }
 
-export const HETZNER_CHAT_URL = 'https://inference.hetzner.com/api/v1/chat/completions';
 export const DEFAULT_TIMEOUT_MS = 150_000;
 
-export function createAiClient({ token, model, timeoutMs = DEFAULT_TIMEOUT_MS, fetchImpl = globalThis.fetch, url = HETZNER_CHAT_URL } = {}) {
+// AI välja lülitatud (npm run demo, AI_PROVIDER=off, testid): iga kutse annab not_configured, midagi ei saadeta.
+export function createDisabledAi({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   return {
-    configured: Boolean(token && model),
+    configured: false,
+    provider: 'off',
     timeoutMs,
-
-    // Saadab ühe päringu. Tagastab { content, finishReason, outputTokens } või viskab AiError'i.
-    async complete({ messages, schema, schemaName = 'vastus', maxTokens = 4096, temperature = 0.3, timeoutMs: attemptTimeout = timeoutMs }) {
-      if (!token || !model) throw new AiError('not_configured');
-
-      let res;
-      try {
-        res = await fetchImpl(url, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            model,
-            messages,
-            temperature,
-            max_tokens: maxTokens,
-            response_format: { type: 'json_schema', json_schema: { name: schemaName, strict: true, schema } },
-            chat_template_kwargs: { enable_thinking: false },
-          }),
-          signal: AbortSignal.timeout(attemptTimeout),
-        });
-      } catch (err) {
-        if (err?.name === 'TimeoutError' || err?.name === 'AbortError') throw new AiError('timeout');
-        throw new AiError('unavailable');
-      }
-
-      if (!res.ok) {
-        // Veavastuse sisu ei loeta: see võib sisaldada midagi, mida ei tohi logida ega kasutajale näidata.
-        res.body?.cancel?.().catch(() => {});
-        if (res.status === 429) throw new AiError('rate_limited', { retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after')) });
-        if (res.status === 401 || res.status === 403) throw new AiError('auth_failed');
-        throw new AiError('unavailable');
-      }
-
-      let body;
-      try {
-        body = await res.json();
-      } catch (err) {
-        if (err?.name === 'TimeoutError' || err?.name === 'AbortError') throw new AiError('timeout');
-        throw new AiError('invalid_response');
-      }
-      const choice = body?.choices?.[0];
-      return {
-        content: typeof choice?.message?.content === 'string' ? choice.message.content : '',
-        finishReason: choice?.finish_reason ?? null,
-        outputTokens: Number.isFinite(body?.usage?.completion_tokens) ? body.usage.completion_tokens : null,
-      };
+    async complete() {
+      throw new AiError('not_configured');
     },
   };
-}
-
-function parseRetryAfter(value) {
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? Math.ceil(n) : undefined;
 }

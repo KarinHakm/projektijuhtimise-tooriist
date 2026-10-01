@@ -13,7 +13,7 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    ```
    npm install
    ```
-4. **Proovi ilma AI tokenita näidisandmetega:**
+4. **Proovi ilma AI-ta näidisandmetega:**
    ```
    npm run demo
    ```
@@ -28,14 +28,22 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
      5. F5 või serveri taaskäivitus – kõik tehtu on alles; etappide riba ja „Mida teeme edasi?“ näitavad jätkamise kohta.
    - **Teadlik kooskõlahoiatus:** 3. kriteerium nõuab kinnitusteadet, mida mockup'is ei ole. Rakendus näitab hoiatust „pole vastet“. See on kontrollimist vajav vihje, mitte automaatne otsus – kasutaja otsustab (lisab elemendi, seob ise või kinnitab ülevaatuse).
    - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
-   - Näidisrežiimis on AI välja lülitatud: AI nupud (nt „Alusta“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
+   - `npm run demo` režiimis on AI välja lülitatud (AI-ga sama näidis: `npm run demo:ai`, vt samm 5): AI nupud (nt „Alusta“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
    - Kasutusstsenaarium: [docs/kasutusstsenaarium.md](docs/kasutusstsenaarium.md).
-5. **Proovi päris AI-ga (valikuline):** vaja on oma tasuta Hetzneri tokenit (https://experiments.hetzner.com → **Create API Token**).
-   - Windows (PowerShell): `Copy-Item .env.example .env` ja seejärel `notepad .env`
-   - macOS/Linux: `cp .env.example .env` ja ava `.env` tekstiredaktoris
-   - Kirjuta reale tokeni väärtus: `HETZNER_INFERENCE_TOKEN=...`, salvesta ja käivita `npm run dev`. Serveri logis peab olema `AI: seadistatud`.
-   - Üks AI samm võtab tavaliselt 16–110 sekundit.
-   - Ilma `.env` failita töötab `npm run dev` samuti, aga ilma AI-ta (projektid ja tühi andmebaas `data/app.db`).
+5. **Proovi päris AI-ga (Claude Code, API-võtit pole vaja):** rakendus kasutab serveri arvutis **sisse logitud Claude Code'i** (`claude`) ja sinu Claude'i tellimust. Mudel on Sonnet.
+   1. Kontrolli, et käsk on olemas: `claude --version` (näitab versiooni; AI päringut ei tehta).
+   2. Kontrolli sisselogimist: käivita terminalis `claude`. Kui see küsib sisselogimist, logi sisse oma Claude'i kontoga (tellimuse sisselogimine, mitte API-võti). Sisselogitud sessioonis näitab `/status` kontot ja sisselogimise viisi. Välju käsuga `/exit`.
+   3. Käivita rakendus:
+      - `npm run demo:ai` – sama „Spordiklubi veeb“ näidis, AI nupud töötavad (näidis taastatakse algseisu);
+      - või `npm run dev` – oma tühi andmebaas `data/app.db`, alusta „+ Loo projekt“.
+   4. Serveri logis peab olema rida `AI: Claude Code CLI, mudel sonnet (sisselogimist kontrollitakse esimese AI päringu ajal)`.
+   5. Kui midagi on puudu, näitab rakendus AI nupu juures selget teadet ja käsitsi saab edasi töötada:
+      - „Claude Code ei ole serveri arvutis sisse logitud …“ → tee samm 2;
+      - „Claude'i tellimuse kasutuslimiit on praegu täis …“ → proovi hiljem (kui aeg on teada, näidatakse ligikaudset ooteaega);
+      - „Serveri arvutis ei leitud Claude Code'i …“ → paigalda Claude Code või määra `.env` failis `CLAUDE_COMMAND` täielik tee.
+   - **Mida AI näeb ja teeb:** iga AI samm on üks `claude -p` päring (vigase vastuse korral kõige rohkem üks kordus). Claude'i tööriistad (failide lugemine, käsud, veeb), MCP-serverid ja kohandused on keelatud; see töötab tühjas ajutises kaustas ega uuri projekti faile. Vajalik projekti kontekst saadetakse päringus. Päringu sisu ega AI vastust serveri logisse ei kirjutata.
+   - Kui keskkonnas on `ANTHROPIC_API_KEY`, ei anta seda Claude'ile edasi – kasutatakse alati tellimuse sisselogimist. Päringud lähevad tellimuse kasutuslimiidi arvelt.
+   - **Windows:** server käivitab `claude` ilma shellita. npm-iga paigaldatud `claude.cmd` nii ei käivitu – kasuta Claude Code'i natiivset paigaldust (`claude.exe`) või määra `.env` failis `CLAUDE_COMMAND` täielik tee. Windowsis ei ole seda proovitud.
 
 Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine programm, mis neid porte kasutab.
 
@@ -49,6 +57,7 @@ Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine progra
 
 - Node.js 22.22 või uuem (`node -v`)
 - npm
+- AI jaoks (valikuline): Claude Code (`claude`), mis on sisse logitud Claude'i tellimusega – vt kiirjuhendi samm 5
 
 ## Paigaldus
 
@@ -57,7 +66,7 @@ npm install
 cp .env.example .env
 ```
 
-`.env` faili ei lisata git'i. Rakendus töötab ka ilma AI tokenita: projektide haldus toimib ja AI funktsioonid annavad eestikeelse veateate. AI seadistamine on kirjeldatud allpool.
+`.env` faili ei lisata git'i. Rakendus töötab ka ilma AI-ta (`AI_PROVIDER=off` või kui Claude Code puudub / pole sisse logitud): projektide ja backlog'i haldus toimib ning AI funktsioonid annavad eestikeelse veateate. AI seadistamine on kirjeldatud allpool.
 
 ## Käivitamine
 
@@ -77,28 +86,14 @@ Node näitab käivitusel hoiatust `ExperimentalWarning: SQLite is an experimenta
 
 ## AI-teenuse seadistamine
 
-Rakendus kasutab [Hetzner Experiments Inference API](https://docs.hetzner.com/general/company-and-policy/experiments/inference/)-t (mudel `Qwen3.8-27B`). Kõik AI päringud käivad läbi serveri; token ei jõua kunagi brauserisse. Teenuse valik ja teadaolevad piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
+Vaikimisi kasutab rakendus **Claude Code CLI-d** (serveri arvutis sisse logitud kasutaja tellimus, mudel Sonnet; vt kiirjuhendi samm 5). Kõik AI päringud käivad läbi serveri; brauser ei suhtle AI-ga otse. Teenuse valik ja teadaolevad piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
 
 | Muutuja `.env` failis | Tähendus |
 |---|---|
-| `HETZNER_INFERENCE_TOKEN` | API token (saladus, ainult `.env` failis) |
-| `HETZNER_MODEL` | Mudeli nimi, vaikimisi `Qwen3.8-27B` |
+| `AI_PROVIDER` | `claude-cli` (vaikimisi) või `off` (AI välja lülitatud, nagu `npm run demo`) |
+| `CLAUDE_MODEL` | Claude'i mudel, vaikimisi `sonnet` |
+| `CLAUDE_COMMAND` | Käsk või täielik tee, vaikimisi `claude` |
 | `AI_TIMEOUT_MS` | Ühe AI-ülesande ajalimiit millisekundites, vaikimisi `150000` |
-
-### Tokeni lisamine
-
-1. Logi sisse aadressil https://experiments.hetzner.com ja vajuta **Create API Token**.
-2. Käivita projekti kaustas oma terminalis järgmine käsk, kleebi token ja vajuta Enter. Sisestatud tokenit ekraanil ei kuvata ja see ei jää käsuajalukku:
-
-   ```bash
-   ( umask 077; read -rsp 'Token: ' T || exit 1; echo; [ -n "$T" ] || { echo 'Token on tühi, .env jäi muutmata.' >&2; exit 1; }; { grep -v '^HETZNER_INFERENCE_TOKEN=' .env; printf 'HETZNER_INFERENCE_TOKEN=%s\n' "$T"; } > .env.uus ) && mv .env.uus .env && chmod 600 .env
-   ```
-
-   Käsk jätab `.env` faili muud read alles, asendab ainult tokeni rea ja seab failile õigused 600 (loeb ainult sinu kasutaja). Kui vajutad lihtsalt Enterit (või sisestad ainult tühikuid) või katkestad sisestamise (Ctrl+C, Ctrl+D), jääb senine `.env` muutmata.
-3. Kontrolli, et `.env` ei lähe git'i: `git check-ignore -v .env` peab näitama `.gitignore` reeglit.
-4. Taaskäivita `npm run dev`, sest server loeb `.env` faili ainult käivitusel. Serveri logis peab olema rida `AI: seadistatud` (tokeni väärtust ei logita).
-
-Ära kleebi tokenit vestlustesse, veateadetesse ega ühtegi git'i minevasse faili.
 
 ### Ühenduse kontroll (smoke-test)
 
@@ -106,15 +101,13 @@ Rakendus kasutab [Hetzner Experiments Inference API](https://docs.hetzner.com/ge
 npm run ai:smoke
 ```
 
-Käsk saadab AI-teenusele **täpselt ühe** väikese fikseeritud päringu (kordust ei tehta, andmebaasi ei avata) ja kuvab ainult tulemuse, kestuse, väljundtokenite arvu ja skeemi kontrolli, näiteks:
+Käsk saadab valitud AI-teenusele (vaikimisi Claude Code CLI) **täpselt ühe** väikese fikseeritud päringu (kordust ei tehta, andmebaasi ei avata) ja kuvab ainult tulemuse, kestuse, väljundtokenite arvu ja skeemi kontrolli, näiteks:
 
 ```
 AI smoke-test: tulemus=ok | kestus=2294 ms | väljundtokeneid=21 | skeem=korras
 ```
 
-Vea korral on `tulemus` üks koodidest `not_configured`, `auth_failed`, `timeout`, `rate_limited`, `unavailable` või `invalid_response` koos eestikeelse selgitusega; lõpukood on siis 1. Hetzneri piirang on 10 päringut minutis tokeni kohta.
-
-Server eelistab võrguühendustes IPv4-t, sest mõnes võrgus IPv6 ühendus AI-teenusega ei tööta.
+Vea korral on `tulemus` üks koodidest `not_logged_in`, `usage_limit`, `cli_missing`, `not_configured`, `timeout`, `unavailable` või `invalid_response` koos eestikeelse selgitusega; lõpukood on siis 1. **NB!** `npm run ai:smoke` on päris AI päring (tellimuse kasutuslimiidi arvelt).
 
 ## Testid
 

@@ -1,8 +1,9 @@
 // AI päringu veateade koos nupuga „Proovi uuesti“. Teade tuleb serverist (eestikeelne, ohutu);
-// päringupiiri korral näidatakse ka soovituslikku ooteaega.
+// kasutuslimiidi korral näidatakse ka ligikaudset ooteaega.
 export default function AiError({ error, onRetry, retrying = false }) {
   if (!error) return null;
-  const wait = error.code === 'rate_limited' && error.retryAfterSeconds ? ` Oota umbes ${error.retryAfterSeconds} s.` : '';
+  const wait = error.code === 'usage_limit' && error.retryAfterSeconds
+    ? ` Limiit vabaneb umbes ${Math.max(1, Math.round(error.retryAfterSeconds / 60))} min pärast.` : '';
 
   return (
     <div className="ai-error" role="alert">

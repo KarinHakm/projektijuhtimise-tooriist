@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { appendStories } from '../server/stories.js';
 
 // MVP joon (L17). Ajutine andmebaas; AI-d ei kutsuta.
@@ -14,7 +14,7 @@ let dir, path, db, projectId, otherId, server, base;
 
 async function start() {
   db = openDb(path);
-  server = createApp({ db, ai: createAiClient({ token: 't', model: 'm', fetchImpl: async () => { throw new Error('AI-d ei tohi kutsuda'); } }) }).listen(0);
+  server = createApp({ db, ai: { configured: true, timeoutMs: 1000, complete: async () => { throw new Error('AI-d ei tohi kutsuda'); } } }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects`;
 }

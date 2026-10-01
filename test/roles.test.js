@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { buildProjectContext } from '../server/ai/context.js';
 import { getProposal } from '../server/proposals.js';
@@ -22,22 +23,9 @@ const ROLES = {
   ],
 };
 
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 60 } }), { status: 200 });
-const aiStatus = (status, headers = {}) => () => new Response(`teenuse viga ${FAKE_TOKEN}`, { status, headers });
 
 let dir, db, projectId, otherProjectId, server, base, ai;
 
-function fakeAi(opts = {}) {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next(init);
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl, ...opts }), calls, push: (...r) => queue.push(...r) };
-}
 
 async function startServer(aiClient) {
   server = createApp({ db, ai: aiClient }).listen(0);
@@ -114,8 +102,7 @@ test('prompt koostatakse andmebaasist: idee, vabatekstiline vastus ja kokkuvõte
   assert.match(prompt, /muu: Treener/);
   assert.match(prompt, /Kasutajad on külastaja ja treener\./);
   assert.ok(!prompt.includes('TEISE PROJEKTI'));
-  assert.equal(ai.calls[0].response_format.type, 'json_schema');
-  assert.deepEqual(ai.calls[0].chat_template_kwargs, { enable_thinking: false });
+  assert.equal(ai.calls[0].schema.type, 'object');
 });
 
 test('korduv "Paku rollid" (nt pärast värskendamist) tagastab sama ettepaneku ilma AI-kutseta', async () => {
@@ -134,7 +121,7 @@ test('enne vestluse kokkuvõtet annab "Paku rollid" 409 ja AI-d ei kutsuta', asy
 });
 
 test('AI ajalimiidi või 429 korral ettepanekut ei salvestata', async () => {
-  ai.push(aiStatus(429, { 'retry-after': '30' }));
+  ai.push(aiFail('usage_limit', { retryAfterSeconds: 30 }));
   const r429 = await post(projectId, '/propose');
   assert.equal(r429.status, 429);
   assert.equal((await r429.json()).retryAfterSeconds, 30);
@@ -144,7 +131,7 @@ test('AI ajalimiidi või 429 korral ettepanekut ei salvestata', async () => {
   await new Promise((r) => server.close(r));
   ai = fakeAi({ timeoutMs: 50 });
   await startServer(ai.client);
-  ai.push((init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason))));
+  ai.push(aiHang());
   const rTimeout = await post(projectId, '/propose');
   assert.equal(rTimeout.status, 504);
   assert.equal((await getRoles()).proposal, null);
@@ -258,7 +245,7 @@ test('unconfirmedRoles leiab rollid, mida kinnitatud rollide seas ei ole (L06 lu
 });
 
 test('token ei jõua ühtegi vastusesse', async () => {
-  ai.push(aiStatus(500), aiStatus(401), aiOk(ROLES));
+  ai.push(aiFail('unavailable'), aiFail('not_logged_in'), aiOk(ROLES));
   const bodies = [];
   for (let i = 0; i < 3; i++) bodies.push(await (await post(projectId, '/propose')).text());
   bodies.push(await (await fetch(url(projectId))).text());

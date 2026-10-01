@@ -7,11 +7,11 @@ import { priorityRouter } from './routes/priority.js';
 import { criteriaRouter } from './routes/criteria.js';
 import { refinementRouter } from './routes/refinement.js';
 import { stageRouter } from './routes/stage.js';
-import { createAiClient } from './ai/client.js';
+import { createDisabledAi } from './ai/client.js';
 
 // Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
-// oma (ajutise) andmebaasi ja AI-kliendiga. Ilma AI-kliendita annavad AI marsruudid veateate.
-export function createApp({ db, ai = createAiClient() } = {}) {
+// oma (ajutise) andmebaasi ja AI-kliendiga. Ilma AI-kliendita annavad AI marsruudid veateate (AI välja lülitatud).
+export function createApp({ db, ai = createDisabledAi() } = {}) {
   const app = express();
   app.use(express.json());
 

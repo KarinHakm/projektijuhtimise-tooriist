@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 
 // Ajutine andmebaas ja võlts-AI: arendaja data/app.db faili ei puututa ja võrku ei saadeta midagi.
@@ -22,8 +23,6 @@ const QUESTIONS = {
 };
 const SUMMARY = { message: 'Aitäh, sain aru.', questions: [], summary: 'Kasutajad on külastaja ja liige; tasu makstakse veebis.' };
 
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 50 } }), { status: 200 });
-const aiStatus = (status, headers = {}) => () => new Response(`teenuse viga ${FAKE_TOKEN}`, { status, headers });
 
 let dir, db, projectId, server, base, ai;
 beforeEach(async () => {
@@ -42,19 +41,6 @@ afterEach(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-// Võlts-AI: vastused tulevad järjekorrast; iga kutse jäetakse meelde (sh päringu sisu).
-function fakeAi({ timeoutMs } = {}) {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next(init);
-  };
-  const client = createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl, ...(timeoutMs ? { timeoutMs } : {}) });
-  return { client, calls, push: (...r) => queue.push(...r) };
-}
 
 const post = (path, body) => fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 const getConversation = async () => (await fetch(base)).json();
@@ -89,11 +75,10 @@ test('idee salvestatakse ja AI küsimused salvestatakse vestlusse', async () => 
   assert.equal(q.replyTo, messages[0].id);
 });
 
-test('AI päring kasutab JSON-skeemi, mõtlemine on väljas ja idee on andmeplokis', async () => {
+test('AI päring kasutab JSON-skeemi ja idee on andmeplokis', async () => {
   await startWithQuestions();
   const [call] = ai.calls;
-  assert.equal(call.response_format.type, 'json_schema');
-  assert.deepEqual(call.chat_template_kwargs, { enable_thinking: false });
+  assert.equal(call.schema.type, 'object');
   assert.match(lastUserPrompt(), new RegExp(`<andmed>[\\s\\S]*${IDEA}[\\s\\S]*</andmed>`));
 });
 
@@ -129,7 +114,7 @@ test('teistsugune idee pärast alustamist annab 409 ja midagi ei muutu', async (
 });
 
 test('AI vea korral jääb idee alles; sama idee uuesti saatmine ei dubleeri seda ja kutsub AI-d üks kord', async () => {
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   const failed = await post('/idea', { text: IDEA });
   assert.equal(failed.status, 502);
   assert.equal((await failed.json()).code, 'unavailable');
@@ -143,7 +128,7 @@ test('AI vea korral jääb idee alles; sama idee uuesti saatmine ei dubleeri sed
 });
 
 test('continue: vastuseta kasutaja sõnumi korral kutsub AI-d; kui vastus on olemas, ei kutsu', async () => {
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   await post('/idea', { text: IDEA });
   ai.push(aiOk(QUESTIONS));
   assert.equal((await post('/continue')).status, 200);
@@ -156,7 +141,7 @@ test('continue: vastuseta kasutaja sõnumi korral kutsub AI-d; kui vastus on ole
 });
 
 test('kaks samaaegset päringut: üks kutsub AI-d, teine saab 409 in_progress', async () => {
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   await post('/idea', { text: IDEA });
   let release;
   ai.push(() => new Promise((r) => { release = () => r(aiOk(QUESTIONS)()); }));
@@ -242,7 +227,7 @@ test('samade vastuste uuesti saatmine ei lisa rida ega kutsu AI-d; erinevad vast
 
 test('kui AI ebaõnnestub pärast vastuste salvestamist, ei dubleeri samade vastuste uus saatmine neid', async () => {
   const q = await startWithQuestions();
-  ai.push(aiStatus(500));
+  ai.push(aiFail('unavailable'));
   assert.equal((await post('/answers', validAnswers(q))).status, 502);
   ai.push(aiOk(SUMMARY));
   const res = await post('/answers', validAnswers(q));
@@ -309,7 +294,7 @@ test('ajalimiit (võltsvastus) annab 504 timeout ja idee jääb alles', async ()
   server = createApp({ db, ai: ai.client }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects/${projectId}/conversation`;
-  ai.push((init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason))));
+  ai.push(aiHang());
 
   const res = await post('/idea', { text: IDEA });
   assert.equal(res.status, 504);
@@ -317,12 +302,12 @@ test('ajalimiit (võltsvastus) annab 504 timeout ja idee jääb alles', async ()
   assert.deepEqual((await getConversation()).messages.map((m) => m.kind), ['idea']);
 });
 
-test('päringupiir (võltsvastus 429) annab 429 koos ooteajaga', async () => {
-  ai.push(aiStatus(429, { 'retry-after': '40' }));
+test('kasutuslimiit annab 429 koos ooteajaga', async () => {
+  ai.push(aiFail('usage_limit', { retryAfterSeconds: 40 }));
   const res = await post('/idea', { text: IDEA });
   assert.equal(res.status, 429);
   const body = await res.json();
-  assert.equal(body.code, 'rate_limited');
+  assert.equal(body.code, 'usage_limit');
   assert.equal(body.retryAfterSeconds, 40);
   assert.equal(ai.calls.length, 1);
 });
@@ -339,7 +324,7 @@ test('seadistamata AI: päringut ei saadeta, 503 ja idee jääb alles', async ()
 });
 
 test('token ei jõua ühtegi vastusesse', async () => {
-  ai.push(aiStatus(500), aiStatus(401), aiOk(QUESTIONS));
+  ai.push(aiFail('unavailable'), aiFail('not_logged_in'), aiOk(QUESTIONS));
   const bodies = [];
   bodies.push(await (await post('/idea', { text: IDEA })).text());
   bodies.push(await (await post('/continue')).text());

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { appendStories, listStories } from '../server/stories.js';
 
 // Backlog'i järjestamine (L07). Ajutine andmebaas; arendaja data/app.db faili ei puututa ja AI-d ei kutsuta.
@@ -15,7 +15,7 @@ const s = (want, size = 'M') => ({ role: 'Potentsiaalne liige', rolePhrase: 'Pot
 let dir, dbPath, db, projectId, otherProjectId, server, base;
 
 async function startServer() {
-  server = createApp({ db, ai: createAiClient({}) }).listen(0);
+  server = createApp({ db, ai: createDisabledAi() }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects`;
 }

@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { aiFail, aiHang, aiOk, aiText, fakeAi } from './helpers/fake-ai.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { replaceRoles } from '../server/roles.js';
 import { appendStories } from '../server/stories.js';
@@ -21,18 +22,6 @@ const MOCKUP_V2 = { title: 'Paketid', components: [{ type: 'heading', text: 'Pak
 
 let dir, db, projectId, otherProjectId, target, other, otherProjStory, server, base, ai;
 
-function fakeAi() {
-  const queue = [];
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push(JSON.parse(init.body));
-    const next = queue.shift();
-    if (!next) throw new Error('võlts-AI-l pole vastust');
-    return next();
-  };
-  return { client: createAiClient({ token: FAKE_TOKEN, model: 'Qwen3.8-27B', fetchImpl }), calls, push: (...r) => queue.push(...r) };
-}
-const aiOk = (data) => () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }], usage: { completion_tokens: 400 } }), { status: 200 });
 
 const refineData = (overrides = {}) => ({
   message: 'Lisasin käibemaksu märke.',
@@ -120,7 +109,7 @@ test('AI päringus on loo hetkeseis (ka käsitsi kriteerium), mockup, täpsustus
   assert.match(prompt, /Kliendi täpsustus: Paketi hinnas peab olema näha, kas see sisaldab käibemaksu\./);
   assert.match(prompt, /neid sa EI muuda/);
   assert.doesNotMatch(prompt, /teise projekti lugu/);
-  assert.deepEqual(call.response_format.json_schema.schema.properties.otherStories.items.properties.storyId.enum, [other]);
+  assert.deepEqual(call.schema.properties.otherStories.items.properties.storyId.enum, [other]);
 });
 
 test('soovitused teistele lugudele on ainult tekst: kuvamine ei muuda ühtegi rida', async () => {

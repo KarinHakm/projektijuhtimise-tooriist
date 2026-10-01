@@ -14,7 +14,8 @@
     "build": "vite build",
     "test": "node --test \"test/**/*.test.js\"",
     "ai:smoke": "node scripts/ai-smoke.js",
-    "demo": "node scripts/demo.js"
+    "demo": "node scripts/demo.js",
+    "demo:ai": "node scripts/demo.js --ai"
   },
   "dependencies": {
     "ajv": "^8.20.0",

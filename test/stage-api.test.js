@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../server/app.js';
 import { openDb } from '../server/db.js';
-import { createAiClient } from '../server/ai/client.js';
+import { createDisabledAi } from '../server/ai/client.js';
 import { addMessage } from '../server/conversation.js';
 import { replaceRoles } from '../server/roles.js';
 import { appendStories } from '../server/stories.js';
@@ -22,7 +22,7 @@ beforeEach(async () => {
   db = openDb(join(dir, 'app.db'));
   projectId = db.prepare("INSERT INTO projects (name) VALUES ('Spordiklubi') RETURNING id").get().id;
   aiCalls = 0;
-  const ai = createAiClient({ token: 'test-token', model: 'Qwen3.8-27B', fetchImpl: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } });
+  const ai = { configured: true, timeoutMs: 1000, complete: async () => { aiCalls++; throw new Error('AI-d ei tohi kutsuda'); } };
   server = createApp({ db, ai }).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/projects`;

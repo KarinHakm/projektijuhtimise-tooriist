@@ -10,10 +10,10 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 - **Server:** Node.js 22 + Express. Kõik AI päringud käivad läbi serveri.
 - **Kasutajaliides:** React (Vite). Mockup'i joonistab rakendus komponentide JSON-ist ise ja HTML-i ei sisestata kuhugi.
 - **Andmed:** SQLite fail serveris. Andmed jäävad alles ka pärast serveri taaskäivitust.
-- **AI:** Hetzner Experiments Inference API, mudel `Qwen3.8-27B`, mõtlemine välja lülitatud.
-  - See on **esialgne arendusvalik, mitte lõplik demo otsus** (vt [ai-piirangud.md](ai-piirangud.md)).
-  - Kogu AI-kood tuleb ühte serverifaili. Teist AI-teenust ei lisata.
-- **Saladused:** token on ainult serveri `.env` failis, mis on `.gitignore`-is. Repos on ainult `.env.example`, kus on muutujate nimed.
+- **AI:** Claude Code CLI (`claude -p`, mudel Sonnet) serveri arvutis sisse logitud kasutaja tellimusega; API-võtit ei kasutata (vt [ai-piirangud.md](ai-piirangud.md)).
+  - Kuni 01.10.2026 kasutati arenduses teist teenust; see eemaldati, et rakendus töötaks õpetaja olemasoleva Claude Code'iga ilma lisakuluta.
+  - AI-kood on kaustas `server/ai/`; korraga on kasutusel üks teenus.
+- **Saladused:** repos ega `.env.example` failis ei ole ühtegi saladust; Claude'i sisselogimine jääb serveri arvuti kasutaja kontole. `.env` on `.gitignore`-is.
 - **Testid:** automaattestid asendavad AI kutse võltsvastusega. Rakenduses mock-režiimi lülitit ei ole.
 
 ## Järjestus ja MVP joon
@@ -102,11 +102,10 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 
 ### L02 · Serveripoolne ja valideeritud AI-kiht (M)
 *Projektijuhina soovin, et iga AI vastus oleks serveris kontrollitud, et ma ei näeks kunagi katkist vaadet.*
-- Brauseri Network-vahekaardil ei ole ühtegi päringut aadressile `inference.hetzner.com`.
-- Hetzneri token ei esine üheski brauserisse saadetud failis.
-- Hetzneri token ei esine üheski serveri vastuses.
+- Brauser ei suhtle AI-teenusega otse: Network-vahekaardil on ainult päringud oma serverile (`/api/...`).
+- Ükski saladus ega AI-teenuse toorveatekst ei esine brauserisse saadetud failides ega serveri vastustes.
 - Server saadab iga AI päringuga kaasa etapi JSON-skeemi.
-- Server saadab iga AI päringuga kaasa sätte, mis mudeli mõtlemise välja lülitab.
+- AI-teenus ei saa projekti faile lugeda ega käske käivitada (Claude Code'i tööriistad on keelatud, kontekst saadetakse päringus).
 - Server valideerib iga AI vastuse sama JSON-skeemi järgi.
 - Skeemile mittevastava vastuse korral teeb server automaatselt ühe korduspäringu.
 - Korduspäringu ajal näeb kasutaja ooteolekut.
@@ -447,7 +446,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Server logib iga AI päringu väljundtokenite arvu.
 - Vastuvõtukatse sammud 1–5 on läbi tehtud vähemalt kahel eri päeval.
 - Iga läbimise kogu AI ooteaeg on dokumenteeritud.
-- Mõõtmiste põhjal on kirja pandud otsus, kas jääda Hetzneri juurde või vahetada üks kiirem tasuline teenus.
+- Mõõtmiste põhjal on kirja pandud, kas valitud AI-teenus (01.10.2026 seisuga Claude Code CLI, Sonnet) sobib demo jaoks.
 
 ### L14 · Sammude riba (S)
 *Projektijuhina soovin näha protsessi etappe ja nende vahel liikuda, et saaksin etappe vahele jätta või varasema juurde tagasi minna.*
@@ -478,15 +477,15 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Loo kustutamiseks tuleb see kinnitusdialoogis kinnitada.
 - Kriteeriume saab käsitsi lisada, muuta ja kustutada.
 - Käsitsi lisatud loo päritolu on „Käsitsi lisatud“.
-- Kui AI token on vale, töötavad kõik eelnevad toimingud.
-- Kui AI token on vale, näitavad AI nupud veateadet.
+- Kui AI ei ole kättesaadav (Claude Code puudub, pole sisse logitud või AI on välja lülitatud), töötavad kõik eelnevad toimingud.
+- Kui AI ei ole kättesaadav, näitavad AI nupud veateadet.
 - AI järgmine vastus kasutab käsitsi muudetud loo uut sõnastust.
 
 **Seis 01.10.2026 (L15 osaliselt):**
 - **Tehtud (ilma AI-ta):** backlog'is „+ Lisa lugu“ (roll – kinnitatud rollid soovitusena, aga ka vabatekst –, roll olevas käändes, tegevus, kasu, suurus, „Puudutab vaadet“; sama loo vormi kontroll nagu AI lugudel); uus lugu läheb lõppu ehk MVP joone alla, päritolu „Käsitsi lisatud“. Iga loo juures „✎ Muuda“ (järjekord, staatus ja alustamise lugu jäävad; AI loo muutmisel päritolu „AI ettepanek, muudetud“) ja „Kustuta“. Staatust saab muuta L19 lahtris.
 - **Kustutamine (sinu otsused 01.10.2026):** enne on kinnitus, mis loetleb täpselt, mis kaob: kriteeriumid, mockup'i versioonid, küsimused, selle loo ootel ettepanekud (lükatakse tagasi) ja kas tegu on alustamise looga (valik tühjeneb, etapp naaseb „Prioriteedid“). MVP joon nihkub üles, kui lugu oli joone kohal; järjekord tihendatakse. Kustutamine on lõplik (tagasivõtmist L21 pole). Teise loo täpsustuse ettepanek ei näita kustutatud loo kohta soovitust – katkist viidet ei jää.
 - **Automaattestid:** lisamine, vigased väljad, muutmine (päritolu, järjekord, staatus, alustamise lugu), teine projekt, alustamise loo kustutamine koos seotud andmete ja ettepanekutega, MVP joon, järjekord. **Arendaja nägi brauseris (demobaas):** lisamine (lugu kohal 5, MVP joone all, „Käsitsi lisatud“), muutmine, kustutamine kinnitusega ja alustamise loo kustutamise hoiatus koos seotud andmete loeteluga. **Leitud ja parandatud:** väljadesse kirjutatud „soovin:“ ja „et:“ (kooloniga) läksid kontrollist läbi ja pealkiri kordas sõnu – reegel tabab nüüd ka kirjavahemärgiga kuju (kehtib ka AI lugudele).
-- **Pooleli:** loo märkused; kriteeriumide käsitsi lisamine/muutmine/kustutamine väljaspool AI ettepanekut; vale tokeniga proov ja „AI järgmine vastus kasutab uut sõnastust“ (AI kontekstis on lood andmebaasist, aga päris AI-ga proovimata).
+- **Pooleli:** loo märkused; kriteeriumide käsitsi lisamine/muutmine/kustutamine väljaspool AI ettepanekut; „AI järgmine vastus kasutab uut sõnastust“ (AI kontekstis on lood andmebaasist, aga päris AI-ga proovimata). Lisamine, muutmine ja kustutamine on brauseris proovitud AI-ta režiimis.
 
 ### L16 · Järjestamine lohistades (S)
 *Projektijuhina soovin lugusid lohistades ümber järjestada, et saaksin kliendiga koos järjekorda kiiresti muuta.*
@@ -707,7 +706,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 | 2. AI arvestab projekti tegelikku seisu | L02, L15 | Muuda lugu käsitsi, küsi AI-lt ettepanekut ja vaata, kas ta kasutab uut sõnastust. |
 | 2. Struktureeritud vastus, valideerimine ja kordus | L02 | Automaattest võltsitud vigase vastusega; brauseris on näha veateade ja nupp „Proovi uuesti“. |
 | 3. Loo väljad | L06, L15, L19, L20 | Ava loo detailvaade ja veendu, et kõik väljad on olemas. |
-| 3. Käsitsi haldus ka AI tõrke korral | L15 | Pane `.env`-i vale token, taaskäivita server ja lisa, muuda ning kustuta lugu. |
+| 3. Käsitsi haldus ka AI tõrke korral | L15 | Käivita `npm run demo` (AI välja lülitatud) ja lisa, muuda ning kustuta lugu. |
 | 3. Järjestamine lohistades | L16 | Lohista lugu teise kohta ja värskenda lehte. |
 | 3. MVP joon | L17 | Paiguta joon ja värskenda lehte. |
 | 3. Definition of Ready | L18, L19, L23 | Proovi lugu kahe kriteeriumiga valmis märkida: näed puuduste loendit. |
@@ -759,8 +758,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 
 | Risk | Maandamine |
 |---|---|
-| AI-teenuse vastamisaeg kõigub (proovides 16–110 s) | L35 mõõdab kogu töövoo aja enne demo otsust. Täpsustuse lühivorm (ainult muudatused) on proovimata kavand ja seda proovitakse L11 käigus. Ooteajal kuvatakse ooteindikaator. Varuks on salvestatud demovideo. |
-| Hetzneri teenus on eksperimentaalne ja ilma garantiita | Käsitsi haldus peab töötama ilma AI-ta (L15). AI-kood kavandatakse ühte faili, et teenuse vahetus oleks võimalik. Teist teenust ei lisata enne L35 otsust. |
+| AI-teenuse vastamisaeg võib kõikuda (varasema teenuse proovides 16–110 s; Sonneti esimene katse 6 s) | L35 mõõdab kogu töövoo aja enne demo otsust. Täpsustuse lühivorm (ainult muudatused) on proovimata kavand ja seda proovitakse L11 käigus. Ooteajal kuvatakse ooteindikaator. Varuks on salvestatud demovideo. |
+| AI sõltub serveri arvuti Claude Code'i sisselogimisest ja tellimuse kasutuslimiidist | Käsitsi haldus töötab ilma AI-ta (L15); `npm run demo` töötab üldse ilma AI-ta. Sisselogimata ja limiidi olukorras annab rakendus selge teate. |
 | AI vastustes on keelevigu ja sisulisi vigu | Iga ettepanek vajab inimese kinnitust. ✎ Muuda on alati olemas. Promptides on eeskujud. Kood kontrollib, mida saab reeglitega kontrollida. |
 | Groomimine (L25–L29) on mahukas ja jääb lõppu | Groomimise jaoks on aeg eraldi reserveeritud. Käsitsi ja AI variant kasutavad sama rakendamise loogikat. |
 | Tagasivõtmise loogika läheb keeruliseks | Lihtne lahendus: enne iga muudatust salvestatakse mõjutatud lugude koopia. |
