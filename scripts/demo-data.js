@@ -57,6 +57,8 @@ function seed(db, data) {
         appendCriteria(db, focus.id, (p.criteria ?? []).map((text) => ({ text, origin: 'manual', ref: null })));
         if (p.mockup) saveMockup(db, focus.id, p.mockup);
       }
+      // MVP joon (L17): mitu lugu on joonest ülalpool.
+      if (Number.isInteger(p.mvp)) db.prepare('UPDATE projects SET mvp_count = ? WHERE id = ?').run(p.mvp, projectId);
       // Ootel näidisettepanekud: märge demo; rakenduses on need sildiga „Näidis“, mitte AI vastusena.
       if (p.proposal) {
         const proposed = p.proposal.stories.map((s) => ({ ...s, touchesView: true, warnings: [] }));

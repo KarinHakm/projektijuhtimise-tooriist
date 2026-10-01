@@ -30,11 +30,20 @@ export function storiesRouter({ db, ai }) {
     stories: p.payload.stories.map((s, index) => ({ index, ...s, title: composeTitle(s) })),
   });
 
+  // Kuvatav MVP joone koht: salvestatud väärtus piiratakse lugude arvuga. Lugemine andmebaasi ei muuda.
+  const shownMvpCount = (projectId) => {
+    const stored = db.prepare('SELECT mvp_count AS n FROM projects WHERE id = ?').get(projectId)?.n ?? null;
+    if (stored === null) return null;
+    const total = db.prepare('SELECT COUNT(*) AS n FROM stories WHERE project_id = ?').get(projectId).n;
+    return Math.min(stored, total);
+  };
+
   const snapshot = (projectId) => {
     const proposal = findPendingProposal(db, projectId, KIND);
     return {
       stories: withReadiness(db, listStories(db, projectId)), // L19/L20: avatud küsimused ja valmisolek
       focusStoryId: getFocusStoryId(db, projectId), // L08: backlog'is märge "Alustame sellest"
+      mvpCount: shownMvpCount(projectId), // L17: null = joont pole
       proposal: proposal ? publicProposal(proposal) : null,
       roles: listRoles(db, projectId).map((r) => r.name),
       aiRunning: running.has(projectId),
@@ -147,6 +156,17 @@ export function storiesRouter({ db, ai }) {
     if (!Number.isInteger(storyId) || storyId <= 0) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     const result = moveStory(db, req.projectId, storyId, req.body?.direction);
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
+    res.json(snapshot(req.projectId));
+  });
+
+  // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).
+  router.post('/mvp', (req, res) => {
+    const count = req.body?.count;
+    const total = db.prepare('SELECT COUNT(*) AS n FROM stories WHERE project_id = ?').get(req.projectId).n;
+    if (count !== null && !(Number.isInteger(count) && count >= 0 && count <= total)) {
+      return res.status(400).json({ error: `MVP joone koht peab olema 0–${total} või joon eemaldatakse.`, code: 'invalid_mvp' });
+    }
+    db.prepare("UPDATE projects SET mvp_count = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(count, req.projectId);
     res.json(snapshot(req.projectId));
   });
 

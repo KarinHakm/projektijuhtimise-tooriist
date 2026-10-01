@@ -103,6 +103,8 @@ const MIGRATIONS = [
      resolved_at TEXT
    );
    CREATE INDEX story_questions_story ON story_questions(story_id, id)`,
+  // MVP joon (L17): mitu backlog'i lugu on joonest ülalpool (NULL = joont pole). Joon on seotud kohaga, mitte looga.
+  `ALTER TABLE projects ADD COLUMN mvp_count INTEGER CHECK (mvp_count IS NULL OR mvp_count >= 0)`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

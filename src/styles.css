@@ -392,3 +392,12 @@ button.stage__button:hover { border-color: var(--accent); }
 .story-questions .icon-button { margin: 0 0 0 0.25rem; }
 .story-questions__add button { margin-top: 0.5rem; }
 .backlog__expired { color: #8a5a00; font-weight: 600; }
+
+/* L17: MVP joon backlog'is */
+.mvp-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin: 0.25rem 0; padding: 0.4rem 0.5rem; border-top: 3px double #5b3e8f; border-bottom: 3px double #5b3e8f; background: #f3effa; font-size: 0.85rem; list-style: none; }
+.mvp-line__label { font-weight: 700; color: #5b3e8f; letter-spacing: 0.05em; text-transform: uppercase; }
+.mvp-line__hint { color: var(--muted); }
+.mvp-line__actions { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin-left: auto; }
+.mvp-line .icon-button { margin: 0; }
+.tag--mvp { margin: 0 0.25rem 0 0; color: #5b3e8f; background: #f3effa; border-color: #c9b8e6; font-weight: 700; }
+.mvp-add { margin-top: 0.75rem; }

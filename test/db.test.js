@@ -22,7 +22,7 @@ test('andmebaasis on projects tabel oodatud veergudega', () => {
   const db = openDb(join(dir, 'app.db'));
   const cols = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
   db.close();
-  assert.deepEqual(cols, ['id', 'name', 'description', 'stage', 'created_at', 'updated_at', 'focus_story_id']);
+  assert.deepEqual(cols, ['id', 'name', 'description', 'stage', 'created_at', 'updated_at', 'focus_story_id', 'mvp_count']);
 });
 
 test('lisatud projekt on alles pärast andmebaasi sulgemist ja uuesti avamist', () => {

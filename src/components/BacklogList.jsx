@@ -6,11 +6,33 @@ import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
 // buttonRef(id, direction) annab nupu viite, et fookus jääks pärast tõstet samale nupule.
 // L19/L20: loo all on avatav lahter „Valmisolek ja küsimused“ (kui andmetes on readiness).
-export default function BacklogList({ stories, busy = false, highlightId = null, focusStoryId = null, onMove, buttonRef, readiness = null, initialOpenId = null }) {
+// L17: mvpCount = mitu lugu on MVP joonest ülalpool (null = joont pole); onMvp(count, kind) muudab joont.
+export default function BacklogList({
+  stories, busy = false, highlightId = null, focusStoryId = null, onMove, buttonRef, readiness = null, initialOpenId = null,
+  mvpCount = null, onMvp = null,
+}) {
   const [openId, setOpenId] = useState(initialOpenId);
   if (stories.length === 0) return <p className="muted">Backlog on tühi.</p>;
+  const hasLine = mvpCount !== null && mvpCount !== undefined;
+  const mvpLine = hasLine && (
+    <li key="mvp-line" className="mvp-line">
+      <span className="mvp-line__label">MVP joon</span>
+      <span className="mvp-line__hint">{mvpCount === 0 ? 'MVP-s lugusid pole' : `ülalpool ${mvpCount} lugu`}</span>
+      {onMvp && (
+        <span className="mvp-line__actions">
+          <button type="button" className="icon-button" ref={buttonRef?.('mvp', 'up')} disabled={busy || mvpCount === 0}
+            aria-label="Liiguta MVP joont ühe loo võrra üles" onClick={() => onMvp(mvpCount - 1, 'up')}>↑ Joon üles</button>
+          <button type="button" className="icon-button" ref={buttonRef?.('mvp', 'down')} disabled={busy || mvpCount === stories.length}
+            aria-label="Liiguta MVP joont ühe loo võrra alla" onClick={() => onMvp(mvpCount + 1, 'down')}>↓ Joon alla</button>
+          <button type="button" className="icon-button" disabled={busy} onClick={() => onMvp(null, 'remove')}>Eemalda joon</button>
+        </span>
+      )}
+    </li>
+  );
   return (
+    <>
     <ol className="backlog">
+      {hasLine && mvpCount === 0 && mvpLine}
       {stories.map((s, i) => {
         const number = i + 1;
         const arrow = (direction, symbol, verb) => (
@@ -25,11 +47,12 @@ export default function BacklogList({ stories, busy = false, highlightId = null,
             {symbol}
           </button>
         );
-        return (
+        return [
           <li key={s.id} className={s.id === highlightId ? 'backlog__item backlog__item--moved' : 'backlog__item'}>
             <span className="backlog__number">{number}.</span>
             <div>
               <p className="backlog__title">
+                {hasLine && i < mvpCount && <><span className="tag tag--mvp">MVP</span>{' '}</>}
                 {s.id === focusStoryId && <><span className="tag tag--focus">Alustame sellest</span>{' '}</>}{s.title}
               </p>
               <p className="backlog__meta">
@@ -62,9 +85,16 @@ export default function BacklogList({ stories, busy = false, highlightId = null,
                 {arrow('down', '↓', 'alla')}
               </div>
             )}
-          </li>
-        );
+          </li>,
+          hasLine && mvpCount === i + 1 ? mvpLine : null,
+        ];
       })}
     </ol>
+    {!hasLine && onMvp && (
+      <button type="button" className="secondary mvp-add" ref={buttonRef?.('mvp', 'add')} disabled={busy} onClick={() => onMvp(1, 'add')}>
+        Lisa MVP joon
+      </button>
+    )}
+    </>
   );
 }

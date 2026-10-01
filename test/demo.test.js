@@ -60,8 +60,9 @@ test('läbiv näide: vestlus, 2 rolli, 4 lugu, alustamise lugu, 3 kriteeriumi ja
   const stories = read(path, 'SELECT id, origin FROM stories ORDER BY position');
   assert.equal(stories.length, 4);
   assert.ok(stories.every((s) => s.origin === 'manual'));
-  const [{ focus }] = read(path, 'SELECT focus_story_id AS focus FROM projects');
+  const [{ focus, mvp }] = read(path, 'SELECT focus_story_id AS focus, mvp_count AS mvp FROM projects');
   assert.equal(focus, stories[2].id);
+  assert.equal(mvp, 3); // MVP joon kolme loo all
   const criteria = read(path, 'SELECT text, origin, ref_kind FROM criteria WHERE story_id = ? ORDER BY position', focus);
   assert.equal(criteria.length, 3);
   assert.ok(criteria.every((c) => c.origin === 'manual' && c.ref_kind === null));

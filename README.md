@@ -22,7 +22,7 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    - **Ettevalmistatud, mitte AI vastus:** kogu näidise sisu on käsitsi koostatud. Rakenduses on see märgitud lühikese sildiga **„Näidis“** (projekti nimi, vestluse sõnumid, lugude ja täpsustuse ettepanek; sildi vihje „Käsitsi koostatud näidisandmed, mitte AI vastus“). Näidisest lisatud lugude ja kriteeriumide päritolu on „Käsitsi lisatud“.
    - **Mida saab päriselt teha (ilma AI-ta, salvestub):**
      1. lugude ootel ettepanekus lugu ✎ muuta, ✗ tagasi lükata, märkeruute muuta ja „Lisa valitud“ – lood lisanduvad backlog'i;
-     2. backlog'i lugusid ↑/↓ järjestada ja prioriteedi juures valida teine alustamise lugu („Vali teine lugu“);
+     2. backlog'i lugusid ↑/↓ järjestada, MVP joont liigutada (näidises on see kolme loo all) ja prioriteedi juures valida teine alustamise lugu („Vali teine lugu“);
      3. kriteeriume mockup'i elementidega siduda („Seo ise“) ja kooskõla üle vaadata („Kinnitan: vaatasin mockup'i versiooni … ja kriteeriumid üle“);
      4. kliendi täpsustuse ootel ettepanekus („taotluses peab olema ka telefoninumber“) näha eelvaadet enne → pärast ning „Rakenda“, „Muuda“ või „Loobu“. Rakendamine muudab ainult alustamise lugu: lisandub kriteerium ja mockup'i versioon 2; soovitus teisele loole on ainult tekst;
      5. F5 või serveri taaskäivitus – kõik tehtu on alles; etappide riba ja „Mida teeme edasi?“ näitavad jätkamise kohta.
@@ -41,9 +41,9 @@ Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine progra
 
 ### Seis 01.10.2026: mis töötab ja mis puudub
 
-- **Töötab:** projektide loomine ja loend (etapiseisuga); idee ühe lausega → AI täpsustavad küsimused valikunuppudega, „Muu (kirjutan ise)“ ja „Jäta vahele“ → kokkuvõte; rollid (valik, lisamine, eemaldamine); AI lood kaartidena happy path'i järjekorras (muutmine, tagasilükkamine, valik); backlog ja ↑/↓ järjestamine; AI prioriteedisoovitus põhjendusega ja oma valik; alustamise loo kriteeriumid (✓/✎/✗, kontrollitavuse hoiatus) ja mockup komponentide loendist; kliendi täpsustus eelvaatega enne → pärast (Rakenda / Muuda / Loobu), mis muudab ainult valitud lugu; kriteeriumide ja mockup'i kooskõla vihjed koos kasutaja ülevaatusega; etappide riba ja „Mida teeme edasi?“; loo staatus, valmisoleku definitsioon (DoR) ja avatud küsimused backlog'is („Valmis arenduseks“ ainult DoR-i täitmisel); andmed säilivad serveri taaskäivitusel.
+- **Töötab:** projektide loomine ja loend (etapiseisuga); idee ühe lausega → AI täpsustavad küsimused valikunuppudega, „Muu (kirjutan ise)“ ja „Jäta vahele“ → kokkuvõte; rollid (valik, lisamine, eemaldamine); AI lood kaartidena happy path'i järjekorras (muutmine, tagasilükkamine, valik); backlog ja ↑/↓ järjestamine; AI prioriteedisoovitus põhjendusega ja oma valik; alustamise loo kriteeriumid (✓/✎/✗, kontrollitavuse hoiatus) ja mockup komponentide loendist; kliendi täpsustus eelvaatega enne → pärast (Rakenda / Muuda / Loobu), mis muudab ainult valitud lugu; kriteeriumide ja mockup'i kooskõla vihjed koos kasutaja ülevaatusega; etappide riba ja „Mida teeme edasi?“; MVP joon backlog'is; loo staatus, valmisoleku definitsioon (DoR) ja avatud küsimused backlog'is („Valmis arenduseks“ ainult DoR-i täitmisel); andmed säilivad serveri taaskäivitusel.
 - **Osaliselt:** järgmise sammu valikud on ainult uusima AI väljundi juures; etappe saab vahele jätta ainult osaliselt; vabatekst ainult idee, „Muu“ vastuse ja kliendi täpsustusena; mockup'i vanemaid versioone hoitakse, aga nende juurde tagasi minna ei saa.
-- **Puudub:** lugude käsitsi lisamine, muutmine ja kustutamine; MVP joon; tagasivõtmine; uue vaate loomine promptist; groomimine (jagamine, ühendamine, AI ülevaatus). Detailid: [docs/backlog.md](docs/backlog.md), piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
+- **Puudub:** lugude käsitsi lisamine, muutmine ja kustutamine; tagasivõtmine; uue vaate loomine promptist; groomimine (jagamine, ühendamine, AI ülevaatus). Detailid: [docs/backlog.md](docs/backlog.md), piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
 
 ## Nõuded
 

@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -38,7 +38,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L14 | Sammude riba | S | Kohustuslik | – | Pooleli |
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Plaanitud |
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
-| L17 | MVP joon | S | Kohustuslik | – | Plaanitud |
+| L17 | MVP joon | S | Kohustuslik | – | Valmis |
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Pooleli |
 | L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
 | L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Pooleli |
@@ -493,6 +493,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - MVP joont saab backlog'is lugude vahele paigutada.
 - Joonest ülalpool olevad lood on märgisega „MVP“.
 - Joone asukoht püsib pärast lehe värskendamist.
+
+**Seis 01.10.2026 (L17):** „Lisa MVP joon“, joone rida backlog'is („↑ Joon üles“, „↓ Joon alla“, „Eemalda joon“), märk „MVP“ joonest ülalpool olevatel lugudel ja „MVP: N lugu“ kokkuvõttes; teade ekraanilugejale, fookus jääb joone nupule. Andmebaasis `projects.mvp_count` (migratsioon v10) – joon on seotud kohaga, mitte looga: loo tõstmisel üle joone jääb joon samale kohale. Kui salvestatud koht on suurem kui lugude arv, kuvatakse see lugude arvuga piiratult; lugemine andmebaasi ei muuda. `npm run demo` näidises on joon kolme loo all. **Automaattestid:** määramine, liigutamine, eemaldamine, vigased väärtused, teine projekt, püsivus pärast taasavamist, piiramine. **Arendaja nägi brauseris (`npm run demo`):** joon kolme loo all, „Joon üles/alla“ koos teatega, keelatud nupp servas, loo tõstmine üle joone (joon jääb paigale), eemaldamine ja uuesti lisamine, F5 järel sama koht. Piiramine (salvestatud koht > lugude arv) on ainult automaattestiga kaetud.
 
 ### L18 · Kriteeriumide kontrollitavuse kontroll (S)
 *Projektijuhina soovin hoiatust mittekontrollitava kriteeriumi kohta, et iga kriteeriumile saaks vastata jah või ei.*

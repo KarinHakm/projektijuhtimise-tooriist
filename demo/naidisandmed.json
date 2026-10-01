@@ -30,6 +30,7 @@
         { "role": "Administraator", "rolePhrase": "Administraatorina", "want": "näha uusi liitumistaotlusi ühes loendis", "soThat": "saaksin igale taotlejale samal päeval vastata", "size": "M" }
       ],
       "focus": 2,
+      "mvp": 3,
       "criteria": [
         "Taotlusvormil on sisestusväli 'E-posti aadress'.",
         "Taotlusvormil on nupp 'Saada liitumistaotlus'.",

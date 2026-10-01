@@ -110,3 +110,5 @@ export const addStoryQuestion = (projectId, storyId, text) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/questions`, { text });
 export const resolveStoryQuestion = (projectId, storyId, questionId) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/questions/${encodeURIComponent(questionId)}/resolve`, {});
+// L17: MVP joon (count = mitu lugu on joonest ülalpool; null eemaldab joone).
+export const setMvpLine = (projectId, count) => postJson(`${storiesPath(projectId)}/mvp`, { count });
