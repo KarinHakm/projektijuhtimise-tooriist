@@ -38,13 +38,16 @@
 
 Väljundkiirus kõikus samal päeval **16–48 tokenit sekundis**.
 
-## Rakenduses mõõdetud (30.09.2026)
+## Rakenduses mõõdetud (30.09.–01.10.2026)
 
-Erinevalt ülaltoodud proovidest on see tulemus saadud rakenduse enda kaudu, brauserikontrolli käigus.
+Erinevalt ülaltoodud proovidest on need tulemused saadud rakenduse enda kaudu, brauserikontrolli käigus (L08–L11 testandmebaasis).
 
 | Lugu | Päring | Katseid | Kestus | Väljundtokenid | Tulemus |
 |---|---|---|---|---|---|
 | L06 | Lood happy path'i järjekorras | 1 (kordust ei olnud) | 37,8 s | 693 | 7 lugu. Rollid olid ainult kinnitatud rollid. Kahes loos oli kirjaviga (vt piirang 10) |
+| L08 | Prioriteedisoovitus | 1 | 9,6 s | 107 | Üks lugu koos põhjendusega; põhjendus loogiliselt nõrk (vt piirang 13) |
+| L09, L10 | Kriteeriumid ja mockup | 1 | 12,8 s | 437 | 6 kriteeriumi ja mockup; kriteeriumid pinnapealsed (vt piirang 14) |
+| L11 | Kliendi täpsustus | 1 | 12,7 s | 441 | Sünniaja väli eemaldati; väidetud kinnitusteadet mockup'is ei olnud (vt piirang 15) |
 
 ## Teadaolevad AI piirangud
 
@@ -68,6 +71,9 @@ Erinevalt ülaltoodud proovidest on see tulemus saadud rakenduse enda kaudu, bra
     - See ei olnud kinnitamata rolliga kaart: kõigi 7 kaardi rollid olid kinnitatud rollid.
     - Kaartide rolle kontrollitakse skeemis ja serveris, saateteksti ei kontrollita.
 12. **„et“-kõrvallause hoiatus kontrollib ainult tegevuse välja.** Kui kasu väljas on eraldi „et“-kõrvallause, hoiatust ei tule. Näiteks algne „…, et saaksin olla kindel, **et** minu taotlus on saadetud“ andis pealkirja kahe „et“ sõnaga.
+13. **Nõrk või ebaloogiline põhjendus** (rakenduses, L08). Prioriteedisoovitus põhjendas loo valikut nii: „Ilma võimaluseta esitada taotlust ei saa kasutada kinnitust ega näha tunniplaani“ – tunniplaani vaatamine taotlust ei eelda. Soovitus on ainult ettepanek; otsuse teeb inimene („Valin ise teise“).
+14. **Pinnapealsed kriteeriumid** (rakenduses, L09). AI kriteeriumid olid kujul „Kasutaja näeb sisestusvälja 'Eesnimi'“ – formaalselt kontrollitavad, kuid ei kirjelda, mida loo täitmine peab tagama.
+15. **AI väide ei vasta tegelikule muudatusele** (rakenduses, L11). Täpsustuse vastuses kirjutas AI, et lisas kinnitusteate, kuid uues mockup'is seda elementi ei olnud. Eelvaade arvutatakse koodis, seega oli puudumine näha; kooskõlakontroll (L23) seda veel automaatselt ei leia.
 
 ## Rakenduse teadaolevad piirangud (mitte AI)
 

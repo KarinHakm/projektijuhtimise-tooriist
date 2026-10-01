@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01, L02, L03, L04, L05 ja L06. Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L18, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -26,12 +26,12 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L04 | Vestluse algus ühest promptist ja täpsustavad küsimused | M | Kohustuslik | 1, 9 | Valmis |
 | L05 | Rollid | S | Kohustuslik | 9 | Valmis |
 | L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Valmis |
-| L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Plaanitud |
-| L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Plaanitud |
-| L09 | Vastuvõtukriteeriumid valitud loole | M | Kohustuslik | 4, 9 | Plaanitud |
-| L10 | Turvaliselt kuvatav mockup | L | Kohustuslik | 4, 9 | Plaanitud |
-| L11 | Kliendi täpsustus enne/pärast eelvaatega | L | Kohustuslik | 5, 9 | Plaanitud |
-| L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Plaanitud |
+| L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Pooleli |
+| L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Pooleli |
+| L09 | Vastuvõtukriteeriumid valitud loole | M | Kohustuslik | 4, 9 | Valmis |
+| L10 | Turvaliselt kuvatav mockup | L | Kohustuslik | 4, 9 | Pooleli |
+| L11 | Kliendi täpsustus enne/pärast eelvaatega | L | Kohustuslik | 5, 9 | Pooleli |
+| L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Pooleli |
 | L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Plaanitud |
 | | **═══ MVP JOON ═══** | | | | |
 | L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
@@ -39,12 +39,12 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Plaanitud |
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
 | L17 | MVP joon | S | Kohustuslik | – | Plaanitud |
-| L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Plaanitud |
+| L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Pooleli |
 | L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Plaanitud |
 | L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Plaanitud |
 | L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Plaanitud |
-| L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Plaanitud |
-| L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Plaanitud |
+| L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Pooleli |
+| L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Plaanitud |
 | L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Plaanitud |
 | L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Plaanitud |
@@ -293,6 +293,11 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Lugu saab nuppudega ↑ ja ↓ ümber tõsta.
 - Muudetud järjekord püsib pärast lehe värskendamist.
 
+**Kontrollitud 01.10.2026 (testandmebaas, projekt 101):**
+- **Arendaja nägi brauseris:** backlog vestluse kõrval (lai aken); igal real number, pealkiri, staatus, suurus ja päritolu; ↑/↓ tõstmine ja teade „Lugu tõsteti kohale 3.“; esimese rea ↑ ja viimase rea ↓ olid keelatud; pärast F5 värskendust püsis järjekord.
+- **Ainult automaattestiga kaetud:** nuppude keelamine päringu ajal ja veateade (`role="alert"`); server: piirid, teise projekti lugu, `updated_at` ei muutu.
+- **Brauseris proovimata:** backlog'i uuenemine ilma lehte värskendamata pärast lugude lisamist; kitsa ekraani paigutus; fookuse säilimine klaviatuuriga.
+
 ### L08 · Prioriteedisoovitus (S)
 *Projektijuhina soovin AI põhjendatud soovitust, millisest loost alustada, et kliendiga kiiresti kokku leppida.*
 - Pärast lugude lisamist küsib AI, milline lugu on kõige olulisem.
@@ -302,6 +307,11 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - „Valin ise teise“ avab backlog'i lugude valiku.
 - Valitud lugu saab backlog'is märgi „Alustame sellest“.
 
+**Kontrollitud 01.10.2026 (testandmebaas, projekt 101, üks päris AI-kutse 9,6 s):**
+- **Arendaja nägi brauseris:** AI soovitas ühe backlog'i loo koos põhjendusega; nupud „Nõus, alustame sellest“ ja „Valin ise teise“; pärast „Nõus“ said prioriteedi kaart ja backlog'i rida märgi „Alustame sellest“.
+- **Ainult automaattestiga kaetud (brauseris proovimata):** „Valin ise teise“ ja lugude valik; teise projekti loo soovituse tagasilükkamine; topeltkinnituse keeld (409); tühja backlog'i korral AI-d ei kutsuta.
+- **Sisuline märkus:** AI põhjendus oli loogiliselt nõrk (vt [ai-piirangud.md](ai-piirangud.md)); otsuse teeb inimene.
+
 ### L09 · Vastuvõtukriteeriumid valitud loole (M)
 *Projektijuhina soovin, et AI pakuks valitud loole kriteeriumid ja et saaksin igaühe kinnitada, muuta või eemaldada, et kriteeriumid oleksid kliendiga kokku lepitud.*
 - AI pakub valitud loole 3–6 kriteeriumi.
@@ -310,6 +320,12 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Kriteeriumide all on nupud [Kinnita kõik] ja [Lisa kriteerium].
 - Lool on salvestatud ainult kinnitatud või muudetud kriteeriumid.
 - Eemaldatud kriteerium ei ole loo juures salvestatud.
+
+**Kontrollitud 01.10.2026 (testandmebaas, projekt 101, üks päris AI-kutse 12,8 s):**
+- **Arendaja nägi brauseris:** AI pakkus 6 kriteeriumi; igaühe juures ✓ Nõus, ✎ Muuda ja ✗ Eemalda; ✎ avas teksti samas kohas; all olid „Kinnita kõik“ ja „Lisa kriteerium“; kinnitati kaks, eemaldati üks, muudeti üks ja vajutati „Salvesta kinnitatud (3)“.
+- **Andmebaas (ainult lugedes):** loo juures on täpselt 3 kriteeriumi (kaks `ai`, üks `ai_edited`); eemaldatud ja otsustamata kriteeriume ei salvestatud.
+- **Automaattestid:** valiku loogika (eemaldatu ei lähe kaasa ka „Kinnita kõik“ korral), serveri päritolu määramine, renderdus.
+- „Kinnita kõik“ ja „Lisa kriteerium“ vajutamist brauseris ei proovitud (nupud on olemas; loogika on automaattestidega kaetud).
 
 ### L10 · Turvaliselt kuvatav mockup (L)
 *Projektijuhina soovin näha valitud loo lihtsat vaate kavandit kriteeriumide kõrval, et klient saaks lugu visuaalselt kontrollida.*
@@ -326,6 +342,11 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Pärast „Loobu“ vajutamist ei salvestata mockup'i.
 - Kinnitatud mockup seotakse looga.
 - Kinnitatud mockup salvestatakse versioonina 1.
+
+**Kontrollitud 01.10.2026 (testandmebaas, projekt 101):**
+- **Arendaja nägi brauseris:** mockup kriteeriumide kõrval eraldi ettepanekuna nuppudega „Kinnita mockup“, „Paku uus“, „Loobu“; „Kinnita mockup“ andis „Kinnitatud, versioon 1“.
+- **Andmebaas (ainult lugedes):** kinnitatud mockup on looga seotud versioonina 1; kriteeriumide salvestamine mockup'i ei kinnitanud.
+- **Ainult automaattestiga kaetud (brauseris proovimata):** „Paku uus“, „Loobu“, tundmatu komponenditüübi tagasilükkamine, `<script>` kuvamine tavatekstina, `innerHTML`-i ja `dangerouslySetInnerHTML`-i puudumine koodis.
 
 ### L11 · Kliendi täpsustus enne/pärast eelvaatega (L)
 *Projektijuhina soovin sisestada kliendi täpsustuse ja näha enne rakendamist, mis muutub, et klient saaks muudatuse kinnitada.*
@@ -359,6 +380,13 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - Rakendamisel jääb mockup'i eelmine versioon alles.
 - Ettepanek arvestab loo hetkeseisu, sealhulgas käsitsi muudetud kriteeriume.
 
+**Kontrollitud 01.10.2026 (testandmebaas, projekt 101, üks päris AI-kutse 12,7 s):**
+- **Arendaja nägi brauseris:** täpsustus „Sünniaega taotluses ei küsita. Pärast taotluse esitamist kuvatakse kinnitusteade.“ → eelvaade (sõnastus enne/pärast, kriteeriumid märgistusega, vana ja uus mockup kõrvuti, „Sünniaeg“ märgitud eemalduvaks) → „Rakenda“ → mockup „Kinnitatud, versioon 2“ ilma sünniaja väljata.
+- **Andmebaas (ainult lugedes):** mockup'i versioon 1 on alles ja versioon 2 tekkis; muutus ainult valitud loo `updated_at`.
+- **Ainult automaattestiga kaetud (brauseris proovimata):** „Muuda“, „Loobu“, vigase AI vastuse kordus ja veateade, `stale` (lugu muutus pärast ettepanekut).
+- **Pooleli:** mockup'i lühivorm (kasutusel täismockup'i vorm); komponentide id-d ja `parentId` (mockup on lame loend); kriteeriumi mockup'i viite muutuse kuvamine (viiteid veel ei ole, vt L23); mockup'i käsitsi muutmine „Muuda“ all; hoiatus „muudetud, aga tekst sama“ – praegu kuvatakse sellist kriteeriumi lihtsalt „Muutmata“.
+- **AI vastus oli poolik:** AI kirjutas, et lisas kinnitusteate, kuid uues mockup'is seda ei olnud. Eelvaade näitas seda õigesti (koodis arvutatud), vt L23.
+
 ### L12 · Server muudab ainult valitud lugu (M)
 *Projektijuhina soovin, et kliendi täpsustus muudaks ainult valitud lugu, et teised kokkulepped ei muutuks kogemata.*
 Siin on kaks eri asja, mida ei tohi segi ajada:
@@ -377,6 +405,10 @@ Kriteeriumid:
 - Tagasi lükatud rakendamise päring ei salvesta ühtegi muudatust, ka mitte valitud loo osa.
 - Automaattest kinnitab, et pärast rakendamist on teiste lugude andmed muutumata.
 - Automaattest kinnitab, et teist lugu muutev rakendamise päring ei muuda andmebaasi.
+
+**Kontrollitud 01.10.2026:**
+- **Brauseris:** katses AI teisi lugusid ei maininud (plokk „Soovitused teistele lugudele“: „Teisi lugusid see täpsustus ei mõjuta“); andmebaasis jäid projekti 101 teiste lugude ja projekti 102 lugude `updated_at` muutmata.
+- **Ainult automaattestiga kaetud (brauseris proovimata):** teise loo tunnusega või teise loo andmeid sisaldav rakendamise päring lükatakse tervikuna tagasi (`other_story`) ja midagi ei salvestata; soovituste kuvamine ei muuda ühtegi rida; teiste lugude read, kriteeriumid ja mockup'id on pärast rakendamist baithaaval samad; „Täpsusta seda lugu“ avab eraldi täpsustusvoo ega muuda alustamise lugu.
 
 ### L13 · Järgmise sammu pakkumine ja jätkamine samast kohast (M)
 *Projektijuhina soovin, et iga vastus pakuks järgmist sammu ja et projekt jätkuks pärast taasavamist samast kohast, et ma ei jääks kunagi hätta.*
@@ -450,6 +482,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Õpetaja tabeli neli mittekontrollitavat näidet saavad automaattestis hoiatuse.
 - Õpetaja tabeli neli kontrollitavat näidet ei saa automaattestis hoiatust.
 
+**Seis 01.10.2026 (L18 osaliselt):** hinnangusõnade ja „ja/ning/või“ hoiatus on olemas (`shared/criteria-check.js`, server ja brauser kasutavad sama reeglit; õpetaja tabeli 4 + 4 näidet on automaattestis). **Pooleli:** reeglit mitte läbivat AI kriteeriumi ei saadeta AI-le ümbersõnastamiseks – see saab ainult hoiatuse.
+
 ### L19 · Staatused ja Definition of Ready (M)
 *Projektijuhina soovin, et lugu saaks staatuse „Valmis arenduseks“ ainult siis, kui see vastab valmisoleku definitsioonile, et arendajad saaksid ainult valmis lugusid.*
 - Lool on staatused Idee, Vajab täpsustamist, Läbivaadatud ja Valmis arenduseks.
@@ -493,6 +527,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Ühtegi versiooni ei kustutata.
 - Lugu saab siduda rohkem kui ühe mockup'iga.
 
+**Seis 01.10.2026 (L22 osaliselt):** kinnitatud mockup'id salvestuvad versioonidena (1, 2, …) ja eelmine versioon jääb alles. **Pooleli:** versioonide loend, taastamine ja mitu mockup'i ühe loo kohta.
+
 ### L23 · Kriteeriumide ja mockup'i kooskõla (M)
 *Projektijuhina soovin, et iga vaadet puudutav kriteerium oleks mockup'is nähtav, et kavand ja kokkulepe ei läheks lahku.*
 - Iga vaadet puudutav kriteerium viitab ühele mockup'i elemendile.
@@ -503,6 +539,13 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Rakendus ei märgi kriteeriumi ja mockup'i kooskõla kinnitatuks ainult viidatud id olemasolu põhjal.
 - Kooskõla kinnitab kasutaja ise.
 - Kliendi täpsustuse rakendamisel tehakse viidete kontroll uuesti.
+
+**Seis 01.10.2026: kooskõlakontroll on pooleli.**
+- Olemas on ainult osaline vihje: kui kriteeriumis on jutumärkides nimetus, mida mockup'is ei ole, kuvatakse hoiatus (`shared/refine-diff.js`).
+- **Teadaolevad puudujäägid testandmebaasi projektis 101 (mockup'i versioon 2):**
+  - kriteerium „Pärast nupu 'Esita taotlus' vajutamist kuvatakse kinnitusteade.“ – mockup'is ei ole kinnitusteate elementi;
+  - mockup'is on nupp „Salvesta“, millel ei ole ühtegi kriteeriumi (põhjendamatu element).
+- Osaline vihje neid ei leia: „kinnitusteade“ ei ole jutumärkides ja mockup'i liigseid elemente ei kontrollita. Kriteeriumi ja mockup'i elemendi viiteid veel ei ole.
 
 ### L24 · Uue vaate loomine promptist (M)
 *Projektijuhina soovin kirjeldada uue vaate ühe lausega ja saada korraga mockup'i, loo ja kriteeriumid, et klient näeks ideed kohe.*
