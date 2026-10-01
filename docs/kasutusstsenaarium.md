@@ -18,12 +18,11 @@ Näide: spordiklubi tellib veebi. Projektijuht kasutab tööriista kahel kohtumi
 ## 2. Hilisem backlog'i ülevaatus
 
 1. Projektijuht avab projekti avalehelt. Kaardil on näha viimati läbitud etapp ja järgmine samm. Vestlus, lood, kriteeriumid ja mockup'id on alles ka pärast serveri taaskäivitust.
-2. Ta järjestab lood ↑/↓ nuppudega ümber, valib vajadusel uue alustamise loo ja paigutab koos kliendiga MVP joone: joonest ülalpool olevad lood on esimene kasutatav versioon.
+2. Ta lisab, muudab või kustutab lugusid käsitsi (ka siis, kui AI pole kättesaadav), järjestab need ↑/↓ nuppudega ümber, valib vajadusel uue alustamise loo ja paigutab koos kliendiga MVP joone: joonest ülalpool olevad lood on esimene kasutatav versioon.
 3. Ebaselge loo juures lisab ta avatud küsimuse (näiteks „Klient täpsustab maksevõimalused“). Lugu saab staatuse „Vajab täpsustamist“. Staatust „Valmis arenduseks“ saab anda alles siis, kui valmisoleku definitsiooni (DoR) kõik tingimused on täidetud, ja selle otsuse teeb projektijuht ise.
 4. Järgmise loo jaoks küsib ta kriteeriumid ja mockup'i ning kordab täpsustuse sammu.
 
 **Veel puudub** (vt [backlog.md](backlog.md)):
-- lugude käsitsi lisamine, muutmine ja kustutamine;
 - tagasivõtmine;
 - groomimine: jagamine, ühendamine ja AI ülevaatus.
 

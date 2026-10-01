@@ -409,3 +409,20 @@ button.stage__button:hover { border-color: var(--accent); }
 .mockup-versions__list li { margin: 0.4rem 0; }
 .mockup-versions__list summary { cursor: pointer; }
 .mockup-versions__list button { margin-top: 0.5rem; }
+
+/* L15: lugude käsitsi haldus */
+.backlog__add { margin: 0 0 0.5rem; }
+.story-manage { display: inline-flex; gap: 0.75rem; margin-right: 0.75rem; }
+.story-manage__delete { color: var(--error); }
+.story-form-box, .story-form, .delete-confirm { margin: 0.5rem 0; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 0.9rem; }
+.story-form-box .story-form { margin: 0; padding: 0; border: 0; }
+.story-form-box__title, .delete-confirm__title { margin: 0 0 0.25rem; font-weight: 600; }
+.story-form label { margin-top: 0.4rem; }
+.story-form select { font: inherit; padding: 0.4rem; }
+.story-form__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 0.75rem; align-items: end; }
+.story-form__check { display: flex; align-items: center; gap: 0.4rem; font-weight: 400; }
+.story-form__check input { width: auto; }
+.story-form__preview { margin-top: 0.5rem; }
+.delete-confirm { border-color: var(--error); background: #fdf3f2; }
+.delete-confirm ul { margin: 0.25rem 0; padding-left: 1.2rem; }
+button.danger { background: var(--error); }

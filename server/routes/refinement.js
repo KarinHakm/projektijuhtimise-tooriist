@@ -69,7 +69,8 @@ export function refinementRouter({ db, ai }) {
         ),
       },
       // Ainult tekst: mitte ükski väli ei ole andmemuudatus teise loo jaoks.
-      otherStories: p.payload.otherStories.map((o) => ({ storyId: o.storyId, title: titles.get(o.storyId) ?? null, suggestion: o.suggestion })),
+      // Kustutatud loo kohta käivat soovitust ei näidata (L15) – katkist viidet ei teki.
+      otherStories: p.payload.otherStories.filter((o) => titles.has(o.storyId)).map((o) => ({ storyId: o.storyId, title: titles.get(o.storyId), suggestion: o.suggestion })),
     };
   };
 

@@ -118,7 +118,7 @@ export default function ProjectView() {
             </div>
             <section className="card backlog-column" id={CARDS.backlog} tabIndex={-1} aria-labelledby="backlog-heading">
               <h2 id="backlog-heading">Backlog</h2>
-              <BacklogPanel projectId={project.id} version={backlogVersion} />
+              <BacklogPanel projectId={project.id} version={backlogVersion} onBacklogChanged={() => setBacklogVersion((v) => v + 1)} />
             </section>
           </div>
         </>

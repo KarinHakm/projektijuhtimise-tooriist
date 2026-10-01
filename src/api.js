@@ -114,3 +114,9 @@ export const resolveStoryQuestion = (projectId, storyId, questionId) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/questions/${encodeURIComponent(questionId)}/resolve`, {});
 // L17: MVP joon (count = mitu lugu on joonest ülalpool; null eemaldab joone).
 export const setMvpLine = (projectId, count) => postJson(`${storiesPath(projectId)}/mvp`, { count });
+// L15: lugude käsitsi haldus.
+const sendJson = (method) => (path, body) => request(path, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+export const createStory = (projectId, story) => postJson(storiesPath(projectId), story);
+export const updateStory = (projectId, storyId, story) => sendJson('PUT')(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}`, story);
+export const getDeleteImpact = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/delete-impact`);
+export const deleteStory = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}`, { method: 'DELETE' });

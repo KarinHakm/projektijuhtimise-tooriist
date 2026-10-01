@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -36,7 +36,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | | **═══ MVP JOON ═══** | | | | |
 | L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
 | L14 | Sammude riba | S | Kohustuslik | – | Pooleli |
-| L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Plaanitud |
+| L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Pooleli |
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
 | L17 | MVP joon | S | Kohustuslik | – | Valmis |
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Pooleli |
@@ -481,6 +481,12 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Kui AI token on vale, töötavad kõik eelnevad toimingud.
 - Kui AI token on vale, näitavad AI nupud veateadet.
 - AI järgmine vastus kasutab käsitsi muudetud loo uut sõnastust.
+
+**Seis 01.10.2026 (L15 osaliselt):**
+- **Tehtud (ilma AI-ta):** backlog'is „+ Lisa lugu“ (roll – kinnitatud rollid soovitusena, aga ka vabatekst –, roll olevas käändes, tegevus, kasu, suurus, „Puudutab vaadet“; sama loo vormi kontroll nagu AI lugudel); uus lugu läheb lõppu ehk MVP joone alla, päritolu „Käsitsi lisatud“. Iga loo juures „✎ Muuda“ (järjekord, staatus ja alustamise lugu jäävad; AI loo muutmisel päritolu „AI ettepanek, muudetud“) ja „Kustuta“. Staatust saab muuta L19 lahtris.
+- **Kustutamine (sinu otsused 01.10.2026):** enne on kinnitus, mis loetleb täpselt, mis kaob: kriteeriumid, mockup'i versioonid, küsimused, selle loo ootel ettepanekud (lükatakse tagasi) ja kas tegu on alustamise looga (valik tühjeneb, etapp naaseb „Prioriteedid“). MVP joon nihkub üles, kui lugu oli joone kohal; järjekord tihendatakse. Kustutamine on lõplik (tagasivõtmist L21 pole). Teise loo täpsustuse ettepanek ei näita kustutatud loo kohta soovitust – katkist viidet ei jää.
+- **Automaattestid:** lisamine, vigased väljad, muutmine (päritolu, järjekord, staatus, alustamise lugu), teine projekt, alustamise loo kustutamine koos seotud andmete ja ettepanekutega, MVP joon, järjekord. **Arendaja nägi brauseris (demobaas):** lisamine (lugu kohal 5, MVP joone all, „Käsitsi lisatud“), muutmine, kustutamine kinnitusega ja alustamise loo kustutamise hoiatus koos seotud andmete loeteluga. **Leitud ja parandatud:** väljadesse kirjutatud „soovin:“ ja „et:“ (kooloniga) läksid kontrollist läbi ja pealkiri kordas sõnu – reegel tabab nüüd ka kirjavahemärgiga kuju (kehtib ka AI lugudele).
+- **Pooleli:** loo märkused; kriteeriumide käsitsi lisamine/muutmine/kustutamine väljaspool AI ettepanekut; vale tokeniga proov ja „AI järgmine vastus kasutab uut sõnastust“ (AI kontekstis on lood andmebaasist, aga päris AI-ga proovimata).
 
 ### L16 · Järjestamine lohistades (S)
 *Projektijuhina soovin lugusid lohistades ümber järjestada, et saaksin kliendiga koos järjekorda kiiresti muuta.*

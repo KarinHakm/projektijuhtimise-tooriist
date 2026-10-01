@@ -8,7 +8,9 @@ import { buildStoriesMessages, buildStoriesSchema, checkStories } from '../ai/ta
 import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
-import { appendStories, listStories, moveStory, validateApply } from '../stories.js';
+import {
+  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, moveStory, updateManualStory, validateApply, validateManualStory,
+} from '../stories.js';
 import { withReadiness } from '../readiness.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
 
@@ -157,6 +159,36 @@ export function storiesRouter({ db, ai }) {
     const result = moveStory(db, req.projectId, storyId, req.body?.direction);
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
+  });
+
+  // L15: lugude käsitsi lisamine, muutmine ja kustutamine. Ei kasuta AI-d.
+  router.post('/', (req, res) => {
+    const result = validateManualStory(req.body);
+    if (result.error) return res.status(400).json({ error: result.error, field: result.field, code: 'invalid_story' });
+    const id = createManualStory(db, req.projectId, result.value);
+    res.status(201).json({ ...snapshot(req.projectId), createdId: id });
+  });
+
+  router.put('/:storyId', (req, res) => {
+    const storyId = Number(req.params.storyId);
+    const result = validateManualStory(req.body);
+    if (!Number.isInteger(storyId) || !storyIn(req.projectId, storyId)) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    if (result.error) return res.status(400).json({ error: result.error, field: result.field, code: 'invalid_story' });
+    updateManualStory(db, req.projectId, storyId, result.value);
+    res.json(snapshot(req.projectId));
+  });
+
+  // Mida kustutamine kaasa toob (kinnituse jaoks). Ainult lugemine.
+  router.get('/:storyId/delete-impact', (req, res) => {
+    const impact = deletionImpact(db, req.projectId, Number(req.params.storyId));
+    if (!impact) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json(impact);
+  });
+
+  router.delete('/:storyId', (req, res) => {
+    const impact = deleteManualStory(db, req.projectId, Number(req.params.storyId));
+    if (!impact) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json({ ...snapshot(req.projectId), deleted: impact });
   });
 
   // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).

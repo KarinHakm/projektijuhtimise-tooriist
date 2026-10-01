@@ -42,8 +42,9 @@ export function validateStoryText(fields) {
     if (!/na$/iu.test(value.rolePhrase)) error('rolePhrase', 'Roll peab olema olevas käändes (nt „Külastajana“).');
     if (/(^|\s)soovin(\s|$)/iu.test(value.rolePhrase)) error('rolePhrase', 'Rolli väljas ei tohi olla sõna „soovin“ – see lisatakse automaatselt.');
   }
-  if (/^soovin(\s|$)/iu.test(value.want)) error('want', 'Tegevus ei tohi alata sõnaga „soovin“ – see lisatakse automaatselt.');
-  if (/^et(\s|$)/iu.test(value.soThat)) error('soThat', 'Kasu ei tohi alata sõnaga „et“ – see lisatakse automaatselt.');
+  // Ka kirjavahemärgiga kuju („soovin:“, „et,“) – vormi sildid „soovin …“ ja „et …“ võivad selleni viia.
+  if (/^soovin([\s:,;.–-]|$)/iu.test(value.want)) error('want', 'Tegevus ei tohi alata sõnaga „soovin“ – see lisatakse automaatselt.');
+  if (/^et([\s:,;.–-]|$)/iu.test(value.soThat)) error('soThat', 'Kasu ei tohi alata sõnaga „et“ – see lisatakse automaatselt.');
 
   if (/(^|[\s,])et(\s|$)/iu.test(value.want)) {
     warnings.push({ field: 'want', message: 'Tegevus sisaldab eraldi „et“-kõrvallauset; kasu kuulub välja „Kasu“.' });

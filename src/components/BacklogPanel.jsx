@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { addStoryQuestion, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus } from '../api.js';
+import {
+  addStoryQuestion, createStory, deleteStory, getDeleteImpact, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus, updateStory,
+} from '../api.js';
+import StoryForm from './StoryForm.jsx';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
 import BacklogList from './BacklogList.jsx';
 
 const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null }) {
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -16,17 +19,31 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
       </p>
       <p className="backlog__status" role="status" aria-live="polite">{status}</p>
       {error && <p className="error" role="alert">{error}</p>}
-      <BacklogList stories={stories} busy={busy} highlightId={highlightId} focusStoryId={focusStoryId} onMove={onMove} buttonRef={buttonRef} readiness={readiness} mvpCount={mvpCount} onMvp={onMvp} />
+      {/* L15: käsitsi lisamine; uus lugu läheb backlog'i lõppu (MVP joone alla). */}
+      {manage && manage.mode?.type !== 'add' && (
+        <button type="button" className="secondary backlog__add" disabled={busy} onClick={manage.onAdd}>+ Lisa lugu</button>
+      )}
+      {manage?.mode?.type === 'add' && (
+        <section className="story-form-box" aria-label="Uus lugu">
+          <p className="story-form-box__title">Uus lugu (lisatakse backlog'i lõppu)</p>
+          <StoryForm idBase="uus-lugu" roles={manage.roles} stories={stories} busy={busy} error={manage.error}
+            submitLabel="Lisa backlog'i" onSubmit={manage.onCreate} onCancel={manage.onCancel} />
+        </section>
+      )}
+      <BacklogList stories={stories} busy={busy} highlightId={highlightId} focusStoryId={focusStoryId} onMove={onMove} buttonRef={buttonRef} readiness={readiness} mvpCount={mvpCount} onMvp={onMvp} manage={manage} />
     </>
   );
 }
 
 // Backlog vestluse kõrval (L07). version muutub, kui lugusid lisatakse; siis laaditakse loend uuesti.
 // Järjekord muutub ekraanil alles pärast serveri vastust, nii et näha on alati salvestatud seis.
-export default function BacklogPanel({ projectId, version }) {
+export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
   const [stories, setStories] = useState(null);
   const [focusStoryId, setFocusStoryId] = useState(null); // L08: "Alustame sellest"
   const [mvpCount, setMvpCount] = useState(null); // L17
+  const [roles, setRoles] = useState([]); // L15: vormi rollisoovitused
+  const [mode, setMode] = useState(null); // L15: null | { type: 'add' } | { type: 'edit', id } | { type: 'delete', id, impact }
+  const [manageError, setManageError] = useState(null);
   const pendingMvpFocus = useRef(null);
   const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,6 +59,7 @@ export default function BacklogPanel({ projectId, version }) {
       setStories(data.stories);
       setFocusStoryId(data.focusStoryId ?? null);
       setMvpCount(data.mvpCount ?? null);
+      setRoles(data.roles ?? []);
       setLoadError('');
     } catch (e) {
       setLoadError(e.message);
@@ -101,6 +119,47 @@ export default function BacklogPanel({ projectId, version }) {
     else if (kind === 'up' || kind === 'add') (count === 0 ? get('down') : get('up'))?.focus();
     else (count === total ? get('up') : get('down'))?.focus();
   }, [busy, mvpCount]);
+
+  // L15: lugude käsitsi lisamine, muutmine ja kustutamine.
+  async function runManage(call, message) {
+    setBusy(true);
+    setManageError(null);
+    setStatus('');
+    try {
+      const data = await call();
+      setStories(data.stories);
+      setFocusStoryId(data.focusStoryId ?? null);
+      setMvpCount(data.mvpCount ?? null);
+      setMode(null);
+      setStatus(message(data));
+      onBacklogChanged?.(); // prioriteedi, kriteeriumide ja täpsustuse paneelid laadivad uuesti
+    } catch (e) {
+      setManageError({ message: e.message, field: e.field });
+    } finally {
+      setBusy(false);
+    }
+  }
+  const manage = {
+    mode,
+    roles,
+    error: manageError,
+    onAdd: () => { setManageError(null); setMode({ type: 'add' }); },
+    onEdit: (id) => { setManageError(null); setMode({ type: 'edit', id }); },
+    onCancel: () => { setManageError(null); setMode(null); },
+    onCreate: (value) => runManage(() => createStory(projectId, value), (d) => `Lugu lisati backlog'i lõppu (koht ${d.stories.length}).`),
+    onSave: (id, value) => runManage(() => updateStory(projectId, id, value), () => 'Loo muudatus salvestati.'),
+    onDelete: async (id) => {
+      setManageError(null);
+      try {
+        setMode({ type: 'delete', id, impact: await getDeleteImpact(projectId, id) });
+      } catch (e) {
+        setError(e.message);
+        await refresh();
+      }
+    },
+    onConfirmDelete: (id) => runManage(() => deleteStory(projectId, id),
+      (d) => (d.deleted.isFocus ? 'Lugu kustutati. See oli alustamise lugu – vali prioriteedi juures uus.' : 'Lugu kustutati.')),
+  };
 
   const readiness = {
     errorFor: readinessError.id,
@@ -166,6 +225,7 @@ export default function BacklogPanel({ projectId, version }) {
       readiness={readiness}
       mvpCount={mvpCount}
       onMvp={changeMvp}
+      manage={manage}
     />
   );
 }
