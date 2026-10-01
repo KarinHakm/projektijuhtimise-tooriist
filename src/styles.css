@@ -276,3 +276,26 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .project-list { list-style: none; padding: 0; margin: 0; }
 .project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .project-list a { color: var(--accent); font-weight: 500; }
+
+/* L13, L14: etappide riba ja "Mida teeme edasi?" */
+.stage-bar { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin: 0 0 0.75rem; padding: 0; }
+.stage { border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.9rem; }
+.stage__button { margin: 0; padding: 0; background: none; color: var(--accent); text-align: left; font-weight: 600; text-decoration: underline; }
+.stage__name { font-weight: 600; color: var(--muted); }
+.stage__status { font-size: 0.8rem; }
+.stage__reason { font-size: 0.8rem; color: var(--muted); }
+.stage--done { border-color: #8cc29b; background: #eef8f0; }
+.stage--done .stage__status { color: #1d6b35; }
+.stage--next { border: 2px solid var(--accent); background: #eef3fc; }
+.stage--next .stage__status { color: var(--accent); font-weight: 600; }
+.stage--skipped { border-style: dashed; }
+.stage--blocked, .stage--not_built { background: #f0f1f3; color: var(--muted); }
+.stage-panel p { margin: 0.25rem 0; }
+.stage-panel__limit { font-size: 0.85rem; }
+.next-steps { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+.next-steps__title { font-weight: 600; margin: 0; }
+.next-steps .actions { flex-wrap: wrap; }
+.next-steps .actions button { margin-top: 0.5rem; }
+.card:focus { outline: none; }
+.card--highlight { animation: card-highlight 1.6s ease-out; }
+@keyframes card-highlight { from { box-shadow: 0 0 0 4px #9bb8ea; } to { box-shadow: 0 0 0 4px transparent; } }

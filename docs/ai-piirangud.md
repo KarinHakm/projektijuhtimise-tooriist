@@ -85,6 +85,8 @@ Erinevalt ülaltoodud proovidest on need tulemused saadud rakenduse enda kaudu, 
 - **✎ muudatused enne backlog'i lisamist ei ole püsivad** (L06). Lugude ettepanekus tehtud muudatused on ainult brauseri vahelehe mälus.
   - Serverisse jõuavad need alles nupuga „Lisa valitud“ või „Lisa kõik backlog'i“.
   - F5 või vahelehe sulgemine kaotab muudatused ja kaardid laaditakse uuesti AI originaaliga. Ootel ettepanek ise jääb alles.
+- **Järgmise sammu valikud ainult uusima AI väljundi juures** (L13). Õpetaja nõue on 1–4 valikut iga AI vastuse lõpus; rakenduses on need ainult uusima AI väljundi kaardil ja etappide paneelis. Valikud tuletab kood andmetest, AI neid ei koosta.
+- **Etappe saab vahele jätta ainult osaliselt** (L14). Etapid sõltuvad üksteisest, vahele saab jätta ainult valikulise „Täpsustused“; nuppu „Jäta vahele“ ei ole ja Groomimist pole.
 
 ## Mida see rakenduse jaoks tähendab
 

@@ -139,7 +139,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
             </div>
           )}
           {!criteriaProposal && criteria.length === 0 && (
-            <button type="button" onClick={onPropose} disabled={disabled}>Paku kriteeriumid ja mockup</button>
+            <button type="button" data-step="criteria-propose" onClick={onPropose} disabled={disabled}>Paku kriteeriumid ja mockup</button>
           )}
         </section>
 
@@ -163,7 +163,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
             </div>
           )}
           {!mockup && !mockupProposal && (criteria.length > 0 || criteriaProposal) && (
-            <button type="button" className="secondary" onClick={onProposeMockup} disabled={disabled}>Paku mockup</button>
+            <button type="button" className="secondary" data-step="mockup-propose" onClick={onProposeMockup} disabled={disabled}>Paku mockup</button>
           )}
           {mockupError && <p className="error" role="alert">{mockupError}</p>}
         </section>

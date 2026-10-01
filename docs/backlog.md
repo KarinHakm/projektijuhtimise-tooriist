@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L18, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -32,10 +32,10 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L10 | Turvaliselt kuvatav mockup | L | Kohustuslik | 4, 9 | Pooleli |
 | L11 | Kliendi täpsustus enne/pärast eelvaatega | L | Kohustuslik | 5, 9 | Pooleli |
 | L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Pooleli |
-| L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Plaanitud |
+| L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Pooleli |
 | | **═══ MVP JOON ═══** | | | | |
 | L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
-| L14 | Sammude riba | S | Kohustuslik | – | Plaanitud |
+| L14 | Sammude riba | S | Kohustuslik | – | Pooleli |
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Plaanitud |
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
 | L17 | MVP joon | S | Kohustuslik | – | Plaanitud |
@@ -422,6 +422,19 @@ Kriteeriumid:
 - Pärast serveri taaskäivitust on vestlus alles.
 - Igas vestluse olekus on nähtav vähemalt üks järgmise sammu nupp või sisestusväli.
 
+**Seis 01.10.2026 (L13 osaliselt):**
+- **Tehtud:**
+  - etapp ja järgmised sammud tuletatakse andmebaasi hetkeseisust (`shared/stage.js`, `GET /api/projects/:id/stage`), eraldi etapivälja ei salvestata; F5 või serveri taaskäivituse järel arvutatakse sama tulemus;
+  - plokk „Mida teeme edasi?“ (1–4 nuppu) on etappide paneelis ja **uusima AI väljundi** kaardi lõpus (vestluse AI sõnum või mis tahes AI ettepanek);
+  - nupp kerib olemasoleva tegevuseni ja paneb sellele fookuse; AI-kutset nupp ise ei tee („(AI)“ märgiga tegevus käivitub kaardi enda nupuga);
+  - eelduseta tegevust nupuna ei pakuta (nt ilma alustamise loota pole kriteeriumide nuppu); Groomimist ei pakuta.
+- **Arendaja nägi brauseris (testandmebaas, AI-ta):** projektides 101–103 õiged sildid „Viimati läbitud etapp“ ja „Soovitatud järgmine samm“; plokk „Mida teeme edasi?“ uusima AI väljundi kaardil (101 „Kliendi täpsustus“, 102 ja 103 „Kasutajalood“); 102-s kriteeriumide nuppu ei pakuta; nupp kerib tegevuseni ja paneb fookuse täpsustuse väljale; F5 järel sama seis.
+- **Ainult automaattestiga kaetud:** kõik 20 sammu ja nende sihtmärgid; sammude arv 1–4 ja eelduse kontroll kõigis olekute kombinatsioonides; päring ei muuda andmeid ega kutsu AI-d.
+- **Pooleli / piirangud:**
+  - **nõue „iga AI vastuse lõpus 1–4 valikut“ ei ole täielikult täidetud:** valikud on ainult uusima AI väljundi juures, vanemate AI vastuste juures neid ei ole;
+  - valikud on navigeerimisnupud olemasolevate tegevuste juurde, mitte AI enda pakutud vastusevariandid;
+  - testandmebaasi projektides vestlust pole, seega seal on plokk ettepanekute kaartidel (nt „Kliendi täpsustus“, „Kasutajalood“), mitte vestluses.
+
 ### ═══════════ MVP JOON ═══════════
 Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet → kriteeriumid ja mockup → täpsustus → ainult valitud loo uuendus → jätkamine. Vastuvõtukatse sammud 1–5, 8 ja 9 on sellega läbitavad.
 
@@ -444,6 +457,15 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Varasemale etapile minnes andmed ei kao.
 - „Jäta vahele“ viib järgmisesse etappi.
 - Etapi vahetus salvestub andmebaasi.
+
+**Seis 01.10.2026 (L14 osaliselt):**
+- **Tehtud:** riba seitsme etapiga; märked „tehtud ✓“, „soovitatud järgmine“, „saab teha“, „eeldus puudub“ (koos põhjusega), „pole veel tehtud“ (Groomimine) ja „andmed puuduvad“; eraldi read „Viimati läbitud etapp“ ja „Soovitatud järgmine samm“; tehtud või kättesaadava etapi nimele klõpsates kerib leht selle kaardini (tagasiminek, andmed ei muutu).
+- **Arendaja nägi brauseris:** riba kõigis kolmes testprojektis (Groomimine hall, eelduseta etapp koos põhjusega), ribalt kaardini kerimine, F5 järel sama seis ja kitsas vaade (suum ~250%: riba murdub ridadesse, külgkerimist pole). Kitsal ekraanil võtab riba palju ruumi – kompaktsem riba on järgmise paigutuse muudatuse osa.
+- **Pooleli / piirangud:**
+  - **vahelejätmine on piiratud:** etapid sõltuvad üksteisest (lood vajavad rolle, kriteeriumid alustamise lugu), seega vahele saab jätta ainult valikulise etapi „Täpsustused“; nuppu „Jäta vahele“ ei ole; piirang on kirjas ka rakenduse paneelis;
+  - etappi ei salvestata andmebaasi eraldi väljana – see tuletatakse andmetest (andmed ise on püsivad);
+  - Groomimise etappi rakenduses pole;
+  - „andmed puuduvad“ tekib siis, kui hilisemad etapid on tehtud, aga varasema andmed puuduvad (testandmebaasi projektides vestluse kokkuvõte); tavalises töövoos seda ei teki, sest rollid nõuavad kokkuvõtet.
 
 ### L15 · Käsitsi backlog'i haldus, ka AI tõrke korral (M)
 *Projektijuhina soovin lugusid käsitsi lisada, muuta ja kustutada, et saaksin töötada ka siis, kui AI ei ole kättesaadav.*

@@ -124,7 +124,7 @@ export default function RolesPanel({ projectId, ready, onRolesChanged }) {
 
       {!proposal && !ready && <p className="muted">Rolle saab pakkuda pärast vestluse kokkuvõtet.</p>}
       {!proposal && ready && !waiting && (
-        <button type="button" onClick={propose} disabled={Boolean(busy)}>
+        <button type="button" data-step="roles-propose" onClick={propose} disabled={Boolean(busy)}>
           {roles.length ? 'Paku rollid uuesti' : 'Paku rollid'}
         </button>
       )}

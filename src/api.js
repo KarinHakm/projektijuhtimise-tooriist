@@ -18,6 +18,10 @@ async function request(path, options) {
     throw new ApiError('Serveriga ei saa ühendust.', 0);
   }
   const body = await res.json().catch(() => ({}));
+  // Muutev päring (ka ebaõnnestunud – osa andmeid võis salvestuda): projekti vaade laadib etapi ja järgmised sammud uuesti (L13, L14).
+  if (options?.method && options.method !== 'GET' && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('pjt:changed'));
+  }
   if (!res.ok) {
     throw new ApiError(body.error || `Viga (HTTP ${res.status})`, res.status, body.field, {
       code: body.code,
@@ -96,3 +100,5 @@ export const rejectRefinement = (projectId, proposalId) => postJson(`${refinemen
 // direction = 'up' | 'down'; vastuses on uus järjekord (L07).
 export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });
+
+export const getStage = (projectId) => request(`/projects/${encodeURIComponent(projectId)}/stage`);

@@ -58,10 +58,10 @@ export function PriorityView({ data, busy = null, error = '', choosing = false, 
         <>
           {!focusTitle && <p>Milline lugu on kliendile kõige olulisem? AI soovitab, millest alustada; otsuse teed sina.</p>}
           <div className="actions">
-            <button type="button" onClick={onPropose} disabled={disabled}>
+            <button type="button" data-step="priority-propose" onClick={onPropose} disabled={disabled}>
               {focusTitle ? 'Küsi AI-lt uus soovitus' : 'Küsi AI soovitust'}
             </button>
-            <button type="button" className="secondary" onClick={onStartChoosing} disabled={disabled}>
+            <button type="button" className="secondary" data-step="priority-choose" onClick={onStartChoosing} disabled={disabled}>
               {focusTitle ? 'Vali teine lugu' : 'Valin ise'}
             </button>
           </div>

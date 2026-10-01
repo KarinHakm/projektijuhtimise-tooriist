@@ -106,7 +106,7 @@ export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged
 
       {!proposal && roles.length === 0 && <p className="muted">Lugusid saab pakkuda pärast rollide kinnitamist.</p>}
       {!proposal && roles.length > 0 && !waiting && (
-        <button type="button" onClick={() => propose(false)} disabled={Boolean(busy)}>
+        <button type="button" data-step="stories-propose" onClick={() => propose(false)} disabled={Boolean(busy)}>
           {stories.length ? 'Paku veel lugusid' : 'Paku lugusid'}
         </button>
       )}
