@@ -5,6 +5,7 @@ import BacklogPanel from '../components/BacklogPanel.jsx';
 import Conversation from '../components/Conversation.jsx';
 import CriteriaPanel from '../components/CriteriaPanel.jsx';
 import PriorityPanel from '../components/PriorityPanel.jsx';
+import RefinementPanel from '../components/RefinementPanel.jsx';
 import RolesPanel from '../components/RolesPanel.jsx';
 import StoriesPanel from '../components/StoriesPanel.jsx';
 
@@ -63,6 +64,10 @@ export default function ProjectView() {
               <section className="card">
                 <h2>Kriteeriumid ja mockup</h2>
                 <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} />
+              </section>
+              <section className="card">
+                <h2>Kliendi täpsustus</h2>
+                <RefinementPanel projectId={project.id} version={backlogVersion} onApplied={() => setBacklogVersion((v) => v + 1)} />
               </section>
             </div>
             <section className="card" aria-labelledby="backlog-heading">

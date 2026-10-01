@@ -80,6 +80,16 @@ export const acceptMockup = (projectId, proposalId) => postJson(`${criteriaPath(
 export const rejectMockup = (projectId, proposalId) => postJson(`${criteriaPath(projectId)}/mockup/reject`, { proposalId });
 export const proposeMockup = (projectId) => postJson(`${criteriaPath(projectId)}/mockup/propose`);
 
+const refinementPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/refinement`;
+
+// Kliendi täpsustus (L11, L12). storyId valib täpsustatava loo; vaikimisi alustamise lugu.
+export const getRefinement = (projectId, storyId) =>
+  request(`${refinementPath(projectId)}${storyId ? `?storyId=${encodeURIComponent(storyId)}` : ''}`);
+export const proposeRefinement = (projectId, storyId, clarification) => postJson(`${refinementPath(projectId)}/propose`, { storyId, clarification });
+export const applyRefinement = (projectId, proposalId, storyId, changes) =>
+  postJson(`${refinementPath(projectId)}/apply`, changes ? { proposalId, storyId, changes } : { proposalId, storyId });
+export const rejectRefinement = (projectId, proposalId) => postJson(`${refinementPath(projectId)}/reject`, { proposalId });
+
 // direction = 'up' | 'down'; vastuses on uus järjekord (L07).
 export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });

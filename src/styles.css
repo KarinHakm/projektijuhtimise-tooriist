@@ -213,6 +213,34 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .mock-image { padding: 1rem; text-align: center; color: var(--muted); border: 1px dashed var(--muted); background: var(--bg); }
 .mock-card { padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 .mockup-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; }
+.refinement h3 { font-size: 1rem; margin: 0.5rem 0; }
+.refinement h4 { font-size: 0.95rem; margin: 0.75rem 0 0.35rem; }
+.refinement textarea { width: 100%; }
+.refine-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem; }
+.before-after { display: grid; gap: 0.75rem; }
+@media (min-width: 700px) { .before-after { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.before-after__label { margin: 0; font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.diff-list { list-style: none; padding: 0; margin: 0; }
+.diff-list li { padding: 0.35rem 0.5rem; margin: 0.25rem 0; border-left: 4px solid var(--border); border-radius: 4px; }
+.diff__label { display: inline-block; min-width: 5.5rem; font-size: 0.8rem; font-weight: 700; }
+.diff__old { display: block; font-size: 0.85rem; color: var(--muted); text-decoration: line-through; }
+.diff--added { background: #e8f5ec; border-left-color: #1d6b35 !important; }
+.diff--modified { background: #fff4c2; border-left-color: #b88700 !important; }
+.diff--removed { background: #fdecea; border-left-color: var(--error) !important; text-decoration: line-through; }
+.diff--unchanged { color: var(--muted); }
+.mock-mark { position: relative; padding: 0.25rem; border-radius: 4px; }
+.mock-mark--added { outline: 2px solid #1d6b35; background: #e8f5ec; }
+.mock-mark--removed { outline: 2px solid var(--error); background: #fdecea; opacity: 0.8; }
+.mock-mark__label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+.other-stories { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+.other-stories ul { list-style: none; padding: 0; margin: 0; }
+.other-stories li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.other-stories li p { margin: 0.15rem 0; }
+.refine-edit__criteria { padding-left: 1.25rem; }
+.refine-edit__criteria li { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.35rem 0; }
+.refine-edit__criteria .icon-button { white-space: nowrap; }
+.notice { color: #1d6b35; margin: 0.5rem 0; }
+.coverage { margin-top: 0.5rem; }
 .stories-proposal {
   border: 1px dashed var(--accent);
   border-radius: 8px;

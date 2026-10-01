@@ -25,12 +25,15 @@ function Component({ c }) {
   }
 }
 
-export default function MockupView({ mockup }) {
+// marks (valikuline, L11 eelvaade): iga komponendi kohta true, kui see on lisandunud/eemaldatud; mark = 'added' | 'removed'.
+export default function MockupView({ mockup, marks = null, mark = null }) {
   return (
     <figure className="mockup" aria-label={`Mockup: ${mockup.title}`}>
       <figcaption className="mockup__title">{mockup.title}</figcaption>
       <div className="mockup__body">
-        {mockup.components.map((c, i) => <Component key={i} c={c} />)}
+        {mockup.components.map((c, i) => (marks?.[i]
+          ? <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span><Component c={c} /></div>
+          : <Component key={i} c={c} />))}
       </div>
     </figure>
   );
