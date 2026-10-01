@@ -115,7 +115,7 @@ test('kõigi sammude kaardid ja fookuse sihtmärgid on projekti vaates olemas', 
     facts({ roles: 1, stories: 2, focus: true, criteria: 1, mockup: true, consistency: { warnings: 1, reviewValid: false }, pending: { refinement: true } }),
     facts({ roles: 1, stories: 2, focus: true, criteria: 1, mockup: true })];
   for (const v of variants) for (const s of computeStage(v).steps) seen.set(s.id, s);
-  const allIds = [...readFileSync('shared/stage.js', 'utf8').matchAll(/add\(\{ id: '([\w-]+)'/g)].map((m) => m[1]);
+  const allIds = [...readFileSync('shared/stage.js', 'utf8').matchAll(/add(?:Pending)?\(\{ id: '([\w-]+)'/g)].map((m) => m[1]);
   assert.deepEqual([...seen.keys()].sort(), [...new Set(allIds)].sort()); // kõik sammud on läbi proovitud
   for (const s of seen.values()) {
     assert.ok(CARDS[s.card], s.id);
@@ -130,4 +130,17 @@ test('näidisprojekti nimi: eesliide „Näidis: “ eraldatakse märgiks, muu n
   const { splitDemoName } = await import('../src/demo/name.js');
   assert.deepEqual(splitDemoName("Näidis: backlog'i järjestamine"), { demo: true, name: "backlog'i järjestamine" });
   assert.deepEqual(splitDemoName('TESTKOOPIA A – Lisa kõik'), { demo: false, name: 'TESTKOOPIA A – Lisa kõik' });
+});
+
+test('tehtud etapi ootel lisaettepanek on viimane: esimene samm vastab ribal soovitatud etapile (spordiklubi näidis)', () => {
+  const r = computeStage(facts({
+    conversation: 'done', roles: 2, stories: 4, focus: true, criteria: 3, mockup: true,
+    consistency: { warnings: 1, reviewValid: false }, pending: { stories: true, refinement: true }, latestAi: { kind: 'refinement' },
+  }));
+  assert.deepEqual(r.next, { key: 'tapsustused', label: 'Täpsustused' });
+  assert.deepEqual(r.steps.map((s) => [s.id, s.label]), [
+    ['review-refinement', 'Vaata täpsustuse ettepanek üle'],
+    ['review-consistency', 'Vaata kooskõla hoiatused üle'],
+    ['review-stories', "Vali lisalood backlog'i"],
+  ]);
 });

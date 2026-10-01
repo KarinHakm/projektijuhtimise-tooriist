@@ -4,7 +4,9 @@ import { openDb } from '../server/db.js';
 import { addMessage } from '../server/conversation.js';
 import { createProposal } from '../server/proposals.js';
 import { replaceRoles } from '../server/roles.js';
-import { appendStories } from '../server/stories.js';
+import { appendStories, listStories } from '../server/stories.js';
+import { setFocusStory } from '../server/priority.js';
+import { appendCriteria, latestMockup, listCriteria, saveMockup } from '../server/criteria.js';
 
 // Näidisandmebaas õpetajale proovimiseks ilma AI tokenita (npm run demo).
 // Sisu on käsitsi koostatud (demo/naidisandmed.json) ja märgitud näidiseks, mitte AI vastuseks.
@@ -47,16 +49,58 @@ function seed(db, data) {
       if (p.backlog) {
         appendStories(db, projectId, p.backlog.map((s) => ({ ...s, origin: 'manual', touchesView: true })), null);
       }
-      if (p.proposal) {
-        const stories = p.proposal.stories.map((s) => ({ ...s, touchesView: true, warnings: [] }));
-        createProposal(db, { projectId, kind: 'stories', payload: { ...p.proposal, demo: true, stories } });
+      const stories = listStories(db, projectId);
+      // Alustamise lugu, selle käsitsi koostatud kriteeriumid ja kinnitatud mockup (versioon 1).
+      const focus = Number.isInteger(p.focus) ? stories[p.focus] : null;
+      if (focus) {
+        setFocusStory(db, projectId, focus.id);
+        appendCriteria(db, focus.id, (p.criteria ?? []).map((text) => ({ text, origin: 'manual', ref: null })));
+        if (p.mockup) saveMockup(db, focus.id, p.mockup);
       }
+      // Ootel näidisettepanekud: märge demo; rakenduses on need sildiga „Näidis“, mitte AI vastusena.
+      if (p.proposal) {
+        const proposed = p.proposal.stories.map((s) => ({ ...s, touchesView: true, warnings: [] }));
+        createProposal(db, { projectId, kind: 'stories', payload: { ...p.proposal, demo: true, stories: proposed } });
+      }
+      if (focus && p.refinement) createRefinement(db, projectId, focus, stories, p.refinement);
+      // Järjekord ajas: vestlus → lugude ettepanek → täpsustuse ettepanek (uusim näidis on täpsustus).
+      db.prepare("UPDATE conversation_messages SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-60 minutes') WHERE project_id = ?").run(projectId);
+      db.prepare("UPDATE ai_proposals SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 minutes') WHERE project_id = ? AND kind = 'stories'").run(projectId);
     }
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
   }
+}
+
+// Kliendi täpsustuse näidisettepanek samas kujus nagu server/routes/refinement.js loob: "before" on loo praegune seis,
+// seega rakendamise aegumise kontroll töötab nagu päris ettepanekul. Soovitused teistele lugudele on ainult tekst.
+function createRefinement(db, projectId, story, stories, r) {
+  const before = {
+    want: story.want,
+    soThat: story.soThat,
+    criteria: listCriteria(db, story.id).map((c) => ({ text: c.text, origin: c.origin, ref: c.ref })),
+    mockup: latestMockup(db, story.id),
+  };
+  createProposal(db, {
+    projectId,
+    kind: 'refinement',
+    payload: {
+      demo: true,
+      storyId: story.id,
+      clarification: r.clarification,
+      message: r.message,
+      before,
+      after: {
+        want: story.want,
+        soThat: story.soThat,
+        criteria: r.criteria.map((c) => ({ from: c.from, text: c.text, ref: null })),
+        mockup: r.mockup,
+      },
+      otherStories: (r.otherStories ?? []).map((o) => ({ storyId: stories[o.story].id, suggestion: o.suggestion })),
+    },
+  });
 }
 
 // Vestlus samas kujus nagu päris töövoos; "assistendi" sõnumitel on märge demo, et neid ei peetaks AI vastuseks.

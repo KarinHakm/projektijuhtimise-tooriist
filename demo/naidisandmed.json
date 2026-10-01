@@ -1,51 +1,81 @@
 {
-  "markus": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Kasutab käsk npm run demo (scripts/demo.js).",
+  "markus": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastused. Kasutab käsk npm run demo (scripts/demo-data.js); rakenduses on need märgitud sildiga „Näidis“.",
   "projects": [
     {
-      "name": "Näidis: Linnaraamatukogu e-teenus",
-      "description": "Lugejad otsivad ja broneerivad raamatuid veebis. Vestlus ja rollid on valmis, lugude ettepanek ootab valikut.",
-      "roles": ["Lugeja", "Raamatukoguhoidja"],
+      "name": "Näidis: Spordiklubi veeb",
+      "description": "Spordiklubi tahab veebi, kus saab treeningutega tutvuda ja liikmeks astuda.",
+      "roles": ["Külastaja", "Administraator"],
       "conversation": {
-        "idea": "Linnaraamatukogu tahab veebi, kus lugejad saavad raamatuid otsida ja broneerida.",
+        "idea": "Spordiklubi tahab veebi, kus saab treeningutega tutvuda ja liikmeks astuda.",
         "questions": {
-          "message": "Täpsustame paar asja.",
+          "message": "Enne lugude pakkumist täpsustan paari asja.",
           "questions": [
-            { "id": "k1", "text": "Kes rakendust kasutavad?", "multiSelect": true, "options": ["Lugejad", "Raamatukoguhoidjad", "Kooliõpilased"] },
-            { "id": "k2", "text": "Kuidas lugeja saab teada, et broneeritud raamat on kättesaadav?", "multiSelect": false, "options": ["E-kiri", "SMS", "Ainult veebis"] }
+            { "id": "k1", "text": "Kes on rakenduse kasutajad?", "multiSelect": true, "options": ["Külastaja", "Klubi liige", "Treener", "Administraator"] },
+            { "id": "k2", "text": "Kas liikmetasu makstakse rakenduses?", "multiSelect": false, "options": ["Jah, veebis", "Ei, kohapeal", "Otsustame hiljem"] }
           ]
         },
         "answers": [
-          { "questionId": "k1", "selected": ["Lugejad", "Raamatukoguhoidjad"], "other": null, "skipped": false },
-          { "questionId": "k2", "selected": ["E-kiri"], "other": null, "skipped": false }
+          { "questionId": "k1", "selected": ["Külastaja", "Administraator"], "other": null, "skipped": false },
+          { "questionId": "k2", "selected": ["Otsustame hiljem"], "other": null, "skipped": false }
         ],
         "summary": {
           "message": "Aitäh, sellest piisab lugude koostamiseks.",
-          "summary": "Lugejad otsivad ja broneerivad raamatuid veebis ning saavad e-kirja, kui broneeritud raamat on kättesaadav. Raamatukoguhoidjad näevad päeva broneeringuid."
+          "summary": "Külastaja tutvub treeningute ja pakettidega ning esitab veebis liikmeks astumise taotluse. Administraator vaatab taotlused üle. Liikmetasu maksmine otsustatakse hiljem."
         }
       },
+      "backlog": [
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "näha treeningute nädalakava", "soThat": "saaksin valida endale sobiva treeningaja", "size": "M" },
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "näha liikmepakette koos hindadega", "soThat": "saaksin valida endale sobiva paketi", "size": "S" },
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "esitada veebis liikmeks astumise taotluse", "soThat": "saaksin klubiga liituda ilma kohale tulemata", "size": "M" },
+        { "role": "Administraator", "rolePhrase": "Administraatorina", "want": "näha uusi liitumistaotlusi ühes loendis", "soThat": "saaksin igale taotlejale samal päeval vastata", "size": "M" }
+      ],
+      "focus": 2,
+      "criteria": [
+        "Taotlusvormil on sisestusväli 'E-posti aadress'.",
+        "Taotlusvormil on nupp 'Saada liitumistaotlus'.",
+        "Pärast nupu 'Saada liitumistaotlus' vajutamist kuvatakse kinnitusteade."
+      ],
+      "mockup": {
+        "title": "Liikmeks astumine",
+        "components": [
+          { "type": "heading", "text": "Liikmeks astumise taotlus", "items": [] },
+          { "type": "text", "text": "Täida vorm – klubi võtab sinuga ühendust.", "items": [] },
+          { "type": "input", "text": "E-posti aadress", "items": [] },
+          { "type": "button", "text": "Saada liitumistaotlus", "items": [] }
+        ]
+      },
       "proposal": {
-        "message": "Viis lugu lugeja põhitöövoo järjekorras.",
-        "primaryRole": "Lugeja",
+        "message": "Kolm lugu, mis jätkavad külastaja töövoogu.",
+        "primaryRole": "Külastaja",
         "stories": [
-          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "otsida raamatut pealkirja või autori järgi", "soThat": "leiaksin kiiresti soovitud teose", "size": "M" },
-          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "näha, kas raamat on riiulis või välja laenutatud", "soThat": "ei peaks asjata raamatukokku minema", "size": "S" },
-          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "broneerida välja laenutatud raamatu", "soThat": "saaksin selle järgmisena kätte", "size": "M" },
-          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "saada e-kirja, kui broneeritud raamat on kättesaadav", "soThat": "jõuaksin selle õigel ajal ära tuua", "size": "S" },
-          { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "näha tänaseid broneeringuid", "soThat": "saaksin raamatud õigeks ajaks välja panna", "size": "M" }
+          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "saada liitumise kinnitus e-postiga", "soThat": "teaksin, et klubi sai mu taotluse kätte", "size": "S" },
+          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "broneerida koha proovitreeningule", "soThat": "saaksin klubi enne liitumist proovida", "size": "M" },
+          { "role": "Administraator", "rolePhrase": "Administraatorina", "want": "muuta treeningute nädalakava", "soThat": "külastajad näeksid alati õigeid aegu", "size": "M" }
+        ]
+      },
+      "refinement": {
+        "clarification": "Klient soovib, et taotluses oleks ka telefoninumber, sest uutele liikmetele helistatakse.",
+        "message": "Taotlusvormile lisandub telefoninumbri väli ja selle kohta üks kriteerium. Loo sõnastus ei muutu.",
+        "criteria": [
+          { "from": 0, "text": "Taotlusvormil on sisestusväli 'E-posti aadress'." },
+          { "from": -1, "text": "Taotlusvormil on sisestusväli 'Telefoninumber'." },
+          { "from": 1, "text": "Taotlusvormil on nupp 'Saada liitumistaotlus'." },
+          { "from": 2, "text": "Pärast nupu 'Saada liitumistaotlus' vajutamist kuvatakse kinnitusteade." }
+        ],
+        "mockup": {
+          "title": "Liikmeks astumine",
+          "components": [
+            { "type": "heading", "text": "Liikmeks astumise taotlus", "items": [] },
+            { "type": "text", "text": "Täida vorm – klubi võtab sinuga ühendust.", "items": [] },
+            { "type": "input", "text": "E-posti aadress", "items": [] },
+            { "type": "input", "text": "Telefoninumber", "items": [] },
+            { "type": "button", "text": "Saada liitumistaotlus", "items": [] }
+          ]
+        },
+        "otherStories": [
+          { "story": 3, "suggestion": "Taotluste loendis võiks näha ka taotleja telefoninumbrit. See on ainult soovitus – seda lugu ei muudeta." }
         ]
       }
-    },
-    {
-      "name": "Näidis: backlog'i järjestamine",
-      "description": "Backlog'is on viis lugu, mida saab ↑/↓ nuppudega järjestada.",
-      "roles": ["Lugeja", "Raamatukoguhoidja"],
-      "backlog": [
-        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "pikendada laenutust veebis", "soThat": "ei peaks maksma viivist", "size": "S" },
-        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "näha oma laenutuste ajalugu", "soThat": "mäletaksin, mida olen lugenud", "size": "S" },
-        { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "lisada uue raamatu kataloogi", "soThat": "lugejad leiaksid uued teosed", "size": "M" },
-        { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "saata meeldetuletuse tähtaja ületanud lugejatele", "soThat": "raamatud jõuaksid tagasi", "size": "M" },
-        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "hinnata loetud raamatut", "soThat": "teised lugejad saaksid soovitusi", "size": "L" }
-      ]
     }
   ]
 }

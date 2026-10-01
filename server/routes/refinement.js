@@ -53,6 +53,7 @@ export function refinementRouter({ db, ai }) {
     const titles = new Map(listStories(db, projectId).map((s) => [s.id, s.title]));
     return {
       id: p.id,
+      demo: p.payload.demo === true, // käsitsi koostatud näidisettepanek (npm run demo), mitte AI vastus
       message: p.payload.message,
       clarification: p.payload.clarification,
       before: { want: before.want, soThat: before.soThat, criteria: before.criteria, mockup: before.mockup },
@@ -202,6 +203,7 @@ export function refinementRouter({ db, ai }) {
       if (from >= 0) seenFrom.add(from);
       let origin;
       if (from >= 0 && cleanCriterion(before.criteria[from].text) === t) origin = before.criteria[from].origin;
+      else if (proposal.payload.demo === true) origin = 'manual'; // näidisettepanek on käsitsi koostatud, mitte AI
       else if (from >= 0) origin = 'ai_edited';
       else origin = aiTexts.has(t) ? 'ai' : 'ai_edited';
       const ref = Number.isInteger(c?.ref) && c.ref >= -1 && c.ref < after.mockup.components.length ? c.ref : null;

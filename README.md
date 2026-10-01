@@ -18,10 +18,18 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    npm run demo
    ```
    Ava brauseris http://localhost:5175. Peatamiseks vajuta terminalis Ctrl+C.
-   - Näidises on kaks projekti, mille nimi algab „Näidis:“. Esimeses on vestlus ja rollid valmis ning lugude **näidisettepanek** ootab valikut (✎ Muuda, ✗ Lükka tagasi, märkeruudud, „Lisa valitud“). Teises saab backlog'i lugusid ↑/↓ nuppudega järjestada.
-   - **Näidisandmed on käsitsi koostatud, mitte AI vastused.** Rakenduses on need märgitud lühikese sildiga **„Näidis“** (projekti nime, vestluse sõnumite ja lugude ettepaneku juures; sildi vihje: „Käsitsi koostatud näidisandmed, mitte AI vastus“) ja näidisettepanekust lisatud lugude päritolu on „Käsitsi lisatud“.
+   - Näidises on üks projekt **„Spordiklubi veeb“** (märk **„Näidis“**). Selles on valmis idee ja vestlus (2 täpsustavat küsimust, vastused, kokkuvõte), 2 rolli, 4 lugu backlog'is, valitud alustamise lugu „liikmeks astumise taotlus“, selle 3 vastuvõtukriteeriumi ja kinnitatud mockup (versioon 1).
+   - **Ettevalmistatud, mitte AI vastus:** kogu näidise sisu on käsitsi koostatud. Rakenduses on see märgitud lühikese sildiga **„Näidis“** (projekti nimi, vestluse sõnumid, lugude ja täpsustuse ettepanek; sildi vihje „Käsitsi koostatud näidisandmed, mitte AI vastus“). Näidisest lisatud lugude ja kriteeriumide päritolu on „Käsitsi lisatud“.
+   - **Mida saab päriselt teha (ilma AI-ta, salvestub):**
+     1. lugude ootel ettepanekus lugu ✎ muuta, ✗ tagasi lükata, märkeruute muuta ja „Lisa valitud“ – lood lisanduvad backlog'i;
+     2. backlog'i lugusid ↑/↓ järjestada ja prioriteedi juures valida teine alustamise lugu („Vali teine lugu“);
+     3. kriteeriume mockup'i elementidega siduda („Seo ise“) ja kooskõla üle vaadata („Kinnitan: vaatasin mockup'i versiooni … ja kriteeriumid üle“);
+     4. kliendi täpsustuse ootel ettepanekus („taotluses peab olema ka telefoninumber“) näha eelvaadet enne → pärast ning „Rakenda“, „Muuda“ või „Loobu“. Rakendamine muudab ainult alustamise lugu: lisandub kriteerium ja mockup'i versioon 2; soovitus teisele loole on ainult tekst;
+     5. F5 või serveri taaskäivitus – kõik tehtu on alles; etappide riba ja „Mida teeme edasi?“ näitavad jätkamise kohta.
+   - **Teadlik kooskõlahoiatus:** 3. kriteerium nõuab kinnitusteadet, mida mockup'is ei ole. Rakendus näitab hoiatust „pole vastet“. See on kontrollimist vajav vihje, mitte automaatne otsus – kasutaja otsustab (lisab elemendi, seob ise või kinnitab ülevaatuse).
    - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
-   - Näidisrežiimis on AI välja lülitatud: AI nupud („Alusta“, „Paku rolle“, „Paku veel lugusid“, „Paku teistsuguseid“) annavad teate „AI ei ole serveris seadistatud“.
+   - Näidisrežiimis on AI välja lülitatud: AI nupud (nt „Alusta“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
+   - Kasutusstsenaarium: [docs/kasutusstsenaarium.md](docs/kasutusstsenaarium.md).
 5. **Proovi päris AI-ga (valikuline):** vaja on oma tasuta Hetzneri tokenit (https://experiments.hetzner.com → **Create API Token**).
    - Windows (PowerShell): `Copy-Item .env.example .env` ja seejärel `notepad .env`
    - macOS/Linux: `cp .env.example .env` ja ava `.env` tekstiredaktoris
@@ -33,9 +41,9 @@ Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine progra
 
 ### Seis 01.10.2026: mis töötab ja mis puudub
 
-- **Töötab (L01–L07):** projektide loomine ja loend; idee ühe lausega → AI täpsustavad küsimused valikunuppudega, „Muu (kirjutan ise)“ ja „Jäta vahele“ → kokkuvõte; rollide ettepanek, kinnitamine, lisamine ja eemaldamine; AI lugude ettepanek kaartidena (muutmine, tagasilükkamine, valik, lisamine backlog'i); backlog vestluse kõrval ja ↑/↓ järjestamine; andmed säilivad serveri taaskäivitusel.
-- **Veel puudub:** alati nähtav vabateksti väli AI-le kirjutamiseks (praegu saab vabalt kirjutada ainult idee ja „Muu“ vastusena), prioriteedisoovitus, vastuvõtukriteeriumid ja mockup, kliendi täpsustus, järgmise sammu nupud, etappide riba ja groomimine (lood L08 jj, vt [docs/backlog.md](docs/backlog.md)).
-- **Teadaolev piirang:** lugude ettepanekus ✎ Muuda kaudu tehtud muudatused kaovad lehe värskendamisel, kui lugu pole veel backlog'i lisatud.
+- **Töötab:** projektide loomine ja loend (etapiseisuga); idee ühe lausega → AI täpsustavad küsimused valikunuppudega, „Muu (kirjutan ise)“ ja „Jäta vahele“ → kokkuvõte; rollid (valik, lisamine, eemaldamine); AI lood kaartidena happy path'i järjekorras (muutmine, tagasilükkamine, valik); backlog ja ↑/↓ järjestamine; AI prioriteedisoovitus põhjendusega ja oma valik; alustamise loo kriteeriumid (✓/✎/✗, kontrollitavuse hoiatus) ja mockup komponentide loendist; kliendi täpsustus eelvaatega enne → pärast (Rakenda / Muuda / Loobu), mis muudab ainult valitud lugu; kriteeriumide ja mockup'i kooskõla vihjed koos kasutaja ülevaatusega; etappide riba ja „Mida teeme edasi?“; andmed säilivad serveri taaskäivitusel.
+- **Osaliselt:** järgmise sammu valikud on ainult uusima AI väljundi juures; etappe saab vahele jätta ainult osaliselt; vabatekst ainult idee, „Muu“ vastuse ja kliendi täpsustusena; mockup'i vanemaid versioone hoitakse, aga nende juurde tagasi minna ei saa.
+- **Puudub:** lugude käsitsi lisamine, muutmine ja kustutamine; MVP joon; staatuse muutmine, Definition of Ready ja avatud küsimused; tagasivõtmine; uue vaate loomine promptist; groomimine (jagamine, ühendamine, AI ülevaatus). Detailid: [docs/backlog.md](docs/backlog.md), piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
 
 ## Nõuded
 

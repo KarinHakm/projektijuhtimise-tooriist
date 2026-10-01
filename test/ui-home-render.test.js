@@ -24,7 +24,7 @@ const NEW = {
   progress: { stages: stages(['next', 'blocked', 'blocked', 'blocked', 'blocked', 'blocked', 'not_built']), lastDone: null, next: 'Idee',
     nextStep: 'Kirjelda projekti idee', allBuiltDone: false, storyCount: 0 },
 };
-const DEMO = { ...NEW, id: 8, name: 'Näidis: Linnaraamatukogu e-teenus' };
+const DEMO = { ...NEW, id: 8, name: 'Näidis: Spordiklubi veeb' };
 const render = (props) => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(ProjectListView, { onOpenForm: () => {}, ...props })))
   .replace(/<!-- -->/g, '');
 
@@ -68,6 +68,6 @@ test('õnnestunud loomise järel avatakse loodud projekt', () => {
 
 test('näidisprojektil on nime asemel eesliite „Näidis:“ kohal lühike märk „Näidis“ (vihjega)', () => {
   const html = render({ projects: [DEMO] });
-  assert.match(html, /<span class="project-card__name">Linnaraamatukogu e-teenus<span class="tag tag--demo" title="Käsitsi koostatud näidisandmed, mitte AI vastus">Näidis<\/span><\/span>/);
+  assert.match(html, /<span class="project-card__name">Spordiklubi veeb<span class="tag tag--demo" title="Käsitsi koostatud näidisandmed, mitte AI vastus">Näidis<\/span><\/span>/);
   assert.doesNotMatch(render({ projects: [P101] }), /tag--demo/);
 });

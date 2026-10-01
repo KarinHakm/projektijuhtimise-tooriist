@@ -4,6 +4,7 @@ import { applyRefinement, getRefinement, proposeRefinement, rejectRefinement } f
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import MockupView from './MockupView.jsx';
+import DemoTag from './DemoTag.jsx';
 import { CheckWarnings, LinkLine } from './Consistency.jsx';
 
 const POLL_MS = 3000;
@@ -70,7 +71,7 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
 
       {proposal && (
         <section className="refine-proposal" aria-labelledby="refine-title">
-          <h3 id="refine-title">Muudatusettepanek – ei ole veel rakendatud</h3>
+          <h3 id="refine-title">{proposal.demo && <><DemoTag /> </>}Muudatusettepanek – ei ole veel rakendatud</h3>
           <p className="muted">Kliendi täpsustus: „{proposal.clarification}“</p>
           {proposal.message && <p>{proposal.message}</p>}
 
@@ -116,8 +117,10 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
               </div>
               {proposal.preview.consistency && (
                 <p className="muted">
-                  Kooskõla pärast muudatust: kontrollimist vajavaid hoiatusi {proposal.preview.consistency.warningCount}. Seosed pakkus AI – kontrolli need üle;
-                  rakendamise järel saad seoseid muuta ja uue versiooni üle vaadata.
+                  Kooskõla pärast muudatust: kontrollimist vajavaid hoiatusi {proposal.preview.consistency.warningCount}.
+                  {proposal.demo
+                    ? 'Rakendamise järel saad kriteeriume mockup\'i elementidega siduda ja uue versiooni üle vaadata.'
+                    : 'Seosed pakkus AI – kontrolli need üle; rakendamise järel saad seoseid muuta ja uue versiooni üle vaadata.'}
                 </p>
               )}
 

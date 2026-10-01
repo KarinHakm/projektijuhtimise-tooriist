@@ -292,6 +292,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .empty-state__title { margin: 0; font-size: 1.1rem; font-weight: 600; }
 .project-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
 @media (min-width: 860px) { .project-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.project-cards > li:only-child { grid-column: 1 / -1; }
 .project-card {
   display: flex; flex-direction: column; gap: 0.5rem; height: 100%; padding: 1rem 1.25rem;
   color: var(--text); text-decoration: none; background: var(--card);

@@ -95,15 +95,18 @@ export function computeStage(facts) {
     if (steps.length < MAX_STEPS && !steps.some((x) => x.id === step.id)) steps.push({ ai: false, optional: false, ...step });
   };
 
-  // 1. Pooleli otsused (AI ettepanek ootab kasutajat) etappide järjekorras.
+  // 1. Pooleli otsused (AI ettepanek ootab kasutajat) etappides, mis pole veel tehtud, etappide järjekorras.
+  //    Juba tehtud etapi ootel lisaettepanek (nt veel lugusid) on valikuline ja tuleb lõppu (vt 5).
+  const doneStagePending = [];
+  const addPending = (step) => (done[step.stage] ? doneStagePending.push(step) : add(step));
   if (f.conversation === 'questions') add({ id: 'answer-questions', stage: 'idee', label: 'Vasta AI küsimustele', card: 'conversation', focus: '.answer-form' });
   if (f.conversation === 'unanswered') add({ id: 'retry-conversation', stage: 'idee', label: 'Küsi AI vastus uuesti', card: 'conversation', focus: '.conversation', ai: true });
-  if (p.roles) add({ id: 'review-roles', stage: 'rollid', label: 'Vaata rollide ettepanek üle', card: 'roles', focus: '.roles-proposal' });
-  if (p.stories) add({ id: 'review-stories', stage: 'lood', label: "Vali lood backlog'i", card: 'stories', focus: '.stories-proposal' });
-  if (p.priority) add({ id: 'review-priority', stage: 'prioriteedid', label: 'Vaata prioriteedisoovitus üle', card: 'priority', focus: '.priority-proposal' });
-  if (f.focus && p.criteria) add({ id: 'review-criteria', stage: 'kriteeriumid', label: 'Vaata kriteeriumid üle', card: 'criteria', focus: '.criteria-proposal' });
-  if (f.focus && p.mockup) add({ id: 'review-mockup', stage: 'kriteeriumid', label: 'Kinnita või lükka mockup tagasi', card: 'criteria', focus: '.mockup-proposal' });
-  if (f.focus && p.refinement) add({ id: 'review-refinement', stage: 'tapsustused', label: 'Vaata täpsustuse ettepanek üle', card: 'refinement', focus: '.refine-proposal' });
+  if (p.roles) addPending({ id: 'review-roles', stage: 'rollid', label: 'Vaata rollide ettepanek üle', card: 'roles', focus: '.roles-proposal' });
+  if (p.stories) addPending({ id: 'review-stories', stage: 'lood', label: done.lood ? "Vali lisalood backlog'i" : "Vali lood backlog'i", card: 'stories', focus: '.stories-proposal' });
+  if (p.priority) addPending({ id: 'review-priority', stage: 'prioriteedid', label: 'Vaata prioriteedisoovitus üle', card: 'priority', focus: '.priority-proposal' });
+  if (f.focus && p.criteria) addPending({ id: 'review-criteria', stage: 'kriteeriumid', label: 'Vaata kriteeriumid üle', card: 'criteria', focus: '.criteria-proposal' });
+  if (f.focus && p.mockup) addPending({ id: 'review-mockup', stage: 'kriteeriumid', label: 'Kinnita või lükka mockup tagasi', card: 'criteria', focus: '.mockup-proposal' });
+  if (f.focus && p.refinement) addPending({ id: 'review-refinement', stage: 'tapsustused', label: 'Vaata täpsustuse ettepanek üle', card: 'refinement', focus: '.refine-proposal' });
 
   // 2. Kooskõla hoiatused, mida kasutaja pole selles seisus üle vaadanud.
   if (done.kriteeriumid && f.consistency?.warnings > 0 && !f.consistency.reviewValid) {
@@ -133,6 +136,9 @@ export function computeStage(facts) {
     add({ id: 'view-backlog', stage: 'tapsustused', label: "Vaata backlog'i üle", card: 'backlog', focus: null, optional: true });
     if (f.stories > 1 && !p.priority) add({ id: 'choose-other', stage: 'prioriteedid', label: 'Vali teine alustamise lugu', card: 'priority', focus: '[data-step="priority-choose"]', optional: true });
   }
+
+  // 5. Juba tehtud etapi ootel lisaettepanekud.
+  for (const step of doneStagePending) add(step);
 
   const lastDone = lastDoneIndex >= 0 ? { key: STAGES[lastDoneIndex].key, label: STAGES[lastDoneIndex].label } : null;
   // Kõik rakenduses olemasolevad etapid on läbitud (Groomimist pole veel tehtud).
