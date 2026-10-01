@@ -3,13 +3,13 @@ import { applyStories, getStories, proposeStories } from '../api.js';
 import { buildApply, fromProposal, rejectStory, saveEdit, toggleChecked } from '../stories/selection.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
-import BacklogList from './BacklogList.jsx';
 import StoriesProposal from './StoriesProposal.jsx';
 
 const POLL_MS = 3000;
 
 // Lood (L06): AI ettepanek kaartidena → kasutaja valik → backlog. rolesVersion muutub, kui rolle kinnitatakse.
-export default function StoriesPanel({ projectId, rolesVersion }) {
+// Backlog ise on eraldi paneelis (L07); onBacklogChanged annab sellele teada, et lugusid lisati.
+export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged }) {
   const [data, setData] = useState(null); // { stories, proposal, roles, aiRunning }
   const [loadError, setLoadError] = useState('');
   const [items, setItems] = useState([]);
@@ -64,6 +64,7 @@ export default function StoriesPanel({ projectId, rolesVersion }) {
     setReplaceError(null);
     try {
       setData(await applyStories(projectId, proposalId, buildApply(items, mode)));
+      onBacklogChanged?.();
     } catch (e) {
       setError(e.message);
       if (e.code === 'already_decided' || e.code === 'not_found') await refresh();
@@ -86,9 +87,6 @@ export default function StoriesPanel({ projectId, rolesVersion }) {
 
   return (
     <div className="stories">
-      <h3>Backlog</h3>
-      <BacklogList stories={stories} />
-
       {proposal && (
         <StoriesProposal
           proposal={proposal}

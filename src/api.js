@@ -62,3 +62,6 @@ export const getStories = (projectId) => request(storiesPath(projectId));
 // replace = senise ettepaneku id ("Paku teistsuguseid"); server vahetab selle alles pärast uue edukat salvestamist.
 export const proposeStories = (projectId, replace) => postJson(`${storiesPath(projectId)}/propose`, replace ? { replace } : {});
 export const applyStories = (projectId, proposalId, stories) => postJson(`${storiesPath(projectId)}/apply`, { proposalId, stories });
+// direction = 'up' | 'down'; vastuses on uus järjekord (L07).
+export const moveStory = (projectId, storyId, direction) =>
+  postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes, useMatch } from 'react-router-dom';
 import { getHealth } from './api.js';
 import ProjectList from './pages/ProjectList.jsx';
 import ProjectView from './pages/ProjectView.jsx';
 
 export default function App() {
   const [server, setServer] = useState('kontrollin…');
+  const projectPage = useMatch('/projects/:id'); // projekti vaade on kaheveeruline ja vajab laiemat lehte (L07)
 
   useEffect(() => {
     getHealth()
@@ -14,7 +15,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="page">
+    <div className={projectPage ? 'page page--wide' : 'page'}>
       <header className="header">
         <Link to="/" className="brand">Projektijuhtimise tööriist</Link>
         <span className="muted">Server: {server}</span>

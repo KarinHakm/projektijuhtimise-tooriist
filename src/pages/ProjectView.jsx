@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getProject } from '../api.js';
+import BacklogPanel from '../components/BacklogPanel.jsx';
 import Conversation from '../components/Conversation.jsx';
 import RolesPanel from '../components/RolesPanel.jsx';
 import StoriesPanel from '../components/StoriesPanel.jsx';
@@ -11,6 +12,7 @@ export default function ProjectView() {
   const [error, setError] = useState('');
   const [phase, setPhase] = useState(null);
   const [rolesVersion, setRolesVersion] = useState(0);
+  const [backlogVersion, setBacklogVersion] = useState(0);
 
   useEffect(() => {
     setProject(null);
@@ -29,18 +31,31 @@ export default function ProjectView() {
             <h2>{project.name}</h2>
             {project.description ? <p>{project.description}</p> : <p className="muted">Kirjeldus puudub.</p>}
           </section>
-          <section className="card">
-            <h2>Juhitud vestlus</h2>
-            <Conversation projectId={project.id} onPhaseChange={setPhase} />
-          </section>
-          <section className="card">
-            <h2>Rollid</h2>
-            <RolesPanel projectId={project.id} ready={phase === 'done'} onRolesChanged={() => setRolesVersion((v) => v + 1)} />
-          </section>
-          <section className="card">
-            <h2>Kasutajalood</h2>
-            <StoriesPanel projectId={project.id} rolesVersion={rolesVersion} />
-          </section>
+          {/* L07: laial ekraanil vestlus vasakul ja backlog paremal; kitsal ekraanil on backlog lugude all. */}
+          <div className="project-layout">
+            <div>
+              <section className="card">
+                <h2>Juhitud vestlus</h2>
+                <Conversation projectId={project.id} onPhaseChange={setPhase} />
+              </section>
+              <section className="card">
+                <h2>Rollid</h2>
+                <RolesPanel projectId={project.id} ready={phase === 'done'} onRolesChanged={() => setRolesVersion((v) => v + 1)} />
+              </section>
+              <section className="card">
+                <h2>Kasutajalood</h2>
+                <StoriesPanel
+                  projectId={project.id}
+                  rolesVersion={rolesVersion}
+                  onBacklogChanged={() => setBacklogVersion((v) => v + 1)}
+                />
+              </section>
+            </div>
+            <section className="card" aria-labelledby="backlog-heading">
+              <h2 id="backlog-heading">Backlog</h2>
+              <BacklogPanel projectId={project.id} version={backlogVersion} />
+            </section>
+          </div>
         </>
       )}
     </main>

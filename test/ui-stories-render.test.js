@@ -6,11 +6,10 @@ import { importJsx } from './helpers/jsx.js';
 import { fromProposal, rejectStory, toggleChecked } from '../src/stories/selection.js';
 
 // Lugude komponendid renderdatakse võltsandmetega HTML-iks (brauserit, serverit ega AI-d pole vaja).
-let StoriesProposal, StoryCard, BacklogList;
+let StoriesProposal, StoryCard;
 before(async () => {
   ({ default: StoriesProposal } = await importJsx('src/components/StoriesProposal.jsx'));
   ({ default: StoryCard } = await importJsx('src/components/StoryCard.jsx'));
-  ({ default: BacklogList } = await importJsx('src/components/BacklogList.jsx'));
 });
 
 const ROLES = ['Potentsiaalne liige', 'Administraator'];
@@ -121,14 +120,4 @@ test('✎ Muuda vormis on rolli valikus ainult kinnitatud rollid ja väljade vih
   assert.ok(button(html, 'Salvesta'));
 });
 
-test('backlog’i loend näitab numbrit, pealkirja, staatust, suurust ja päritolu', () => {
-  const html = renderToStaticMarkup(createElement(BacklogList, {
-    stories: [
-      { id: 7, position: 1, title: 'Potentsiaalse liikmena soovin näha liikmepakette ja nende hindu, et saaksin valida endale sobiva paketi.', status: 'idee', size: 'S', origin: 'ai' },
-      { id: 8, position: 2, title: 'Administraatorina soovin lisada uue paketi, et hinnakiri oleks ajakohane.', status: 'idee', size: 'M', origin: 'ai_edited' },
-    ],
-  }));
-  assert.match(html, /<td>1<\/td><td>Potentsiaalse liikmena soovin näha liikmepakette[^<]*<\/td><td>Idee<\/td><td>S<\/td><td>AI ettepanek<\/td>/);
-  assert.match(html, /<td>2<\/td><td>Administraatorina[^<]*<\/td><td>Idee<\/td><td>M<\/td><td>AI ettepanek, muudetud<\/td>/);
-  assert.match(renderToStaticMarkup(createElement(BacklogList, { stories: [] })), /Backlog on tühi\./);
-});
+// Backlog'i loendi testid on failis ui-backlog-render.test.js (L07).

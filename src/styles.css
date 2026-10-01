@@ -18,6 +18,13 @@ body {
 }
 
 .page { max-width: 760px; margin: 0 auto; padding: 1rem; }
+.page--wide { max-width: 1200px; }
+
+/* L07: kaks veergu alates 1000 px; kitsamal ekraanil üks veerg ja backlog lugude all. */
+.project-layout { display: grid; column-gap: 1.5rem; }
+@media (min-width: 1000px) {
+  .project-layout { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+}
 
 .header {
   display: flex;
@@ -153,9 +160,25 @@ button:disabled { opacity: 0.6; cursor: default; }
 button.secondary { color: var(--accent); background: var(--card); border: 1px solid var(--accent); }
 
 .stories h3 { font-size: 1rem; margin: 0 0 0.5rem; }
-.backlog { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.95rem; }
-.backlog th, .backlog td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-.backlog th { font-weight: 600; color: var(--muted); }
+.backlog { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.backlog__item {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.backlog__number { font-weight: 600; color: var(--muted); }
+.backlog__title { margin: 0; overflow-wrap: anywhere; }
+.backlog__meta { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.backlog__actions { display: flex; gap: 0.25rem; }
+.backlog__actions .icon-button { min-width: 2.25rem; min-height: 2.25rem; }
+.backlog__summary { margin: 0; }
+.backlog__status { min-height: 1.25rem; margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--muted); }
+.backlog__item--moved { animation: backlog-moved 1.5s ease-out; }
+@keyframes backlog-moved { from { background: #fff4c2; } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .backlog__item--moved { animation: none; background: #fff4c2; } }
 .stories-proposal {
   border: 1px dashed var(--accent);
   border-radius: 8px;
