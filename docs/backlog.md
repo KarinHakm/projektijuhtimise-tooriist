@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01, L02, L03, L04 ja L05. L06 on **Pooleli**: brauseris on proovimata „Paku teistsuguseid“ õnnestunud asendus. Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01, L02, L03, L04, L05 ja L06. Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -25,7 +25,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L03 | Projektide loomine ja loend | S | Kohustuslik | 1 | Valmis |
 | L04 | Vestluse algus ühest promptist ja täpsustavad küsimused | M | Kohustuslik | 1, 9 | Valmis |
 | L05 | Rollid | S | Kohustuslik | 9 | Valmis |
-| L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Pooleli |
+| L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Valmis |
 | L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Plaanitud |
 | L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Plaanitud |
 | L09 | Vastuvõtukriteeriumid valitud loole | M | Kohustuslik | 4, 9 | Plaanitud |
@@ -256,6 +256,34 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
     - ebaõnnestunud „Paku teistsuguseid“ järel on kaardid nähtavad, nupud lubatud ning kuvatakse veateade ja „Proovi uuesti“.
 
     Renderdustest ei klõpsa nuppe, ei kasuta brauserit ega tõenda õnnestunud asendust.
+
+**Hoiatuse kuvamine, kontrollitud 01.10.2026 (sama testandmebaas, projekt 103, tühi AI-token):**
+- **Arendaja nägi brauseris:**
+  - kaardi 1 ✎ Muuda kaudu sai tegevuseks „näha tunniplaani, et valida sobiv aeg“;
+  - pärast Salvesta kuvati kaardil „et“-kõrvallause ⚠ hoiatus, salvestamine ei olnud keelatud ja kaardil oli silt „muudetud“;
+  - pärast F5 värskendust oli kaart 1 jälle algsel kujul ja ootel ettepanek alles (ekraanipilt).
+- **Andmebaas (ainult lugedes):** projekti 103 ettepanek on endiselt `pending`, kaardi 1 tegevus serveris on algne ja backlog on tühi. AI-kutseid ei tehtud.
+- Brauseris nähtud hoiatus tuli ✎ muutmisest, mitte AI vastusest. Mõlemal juhul kasutatakse sama reeglit (`shared/story-format.js`).
+
+**Miks L06 on „Valmis“:**
+- **Brauseris proovitud kriteeriumid:**
+  - **30.09.2026, päris AI-kutse:**
+    - vähemalt viis nummerdatud kaarti, pealkiri kujul „[Rollina] soovin …, et …“ ja vaikimisi märgitud märkeruut;
+    - ✎ Muuda ja päritolu „AI ettepanek, muudetud“;
+    - enne nupuvajutust backlog'i midagi ei lisandu;
+    - päritolu „AI ettepanek“, staatus „Idee“ ja suurus S/M/L;
+    - nuppude „Lisa kõik backlog'i“, „Lisa valitud“ ja „Paku teistsuguseid“ olemasolu.
+  - **01.10.2026, võltsitud ettepanekud:**
+    - ✗ Lükka tagasi;
+    - tagasi lükatud loo välistamine „Lisa kõik“ korral;
+    - „Lisa kõik backlog'i“ ja „Lisa valitud“;
+    - „Paku teistsuguseid“ tõrge;
+    - hoiatuse kuvamine.
+- **Ainult automaattestiga kaetud:**
+  - **„Paku teistsuguseid“ õnnestunud asendus** (`test/stories.test.js`, võlts-AI vastus). Kriteerium nõuab nupu olemasolu, mitte õnnestunud asendust brauseris, seega ei ole see „Valmis“ reegli järgi kohustuslik brauserikatse. Päris AI-ga ei ole asendust proovitud.
+  - **Server lisab hoiatuse AI ettepanekule:** `test/stories.test.js`. AI vastuses ei olnud „et“-kõrvallauset, seega serveri loodud hoiatust brauseris ei nähtud.
+  - **Prompti kaks nõuet:** „et saaksin“ näide ja ringja kasu keeld (`test/stories.test.js`). Brauseris neid näha ei saa.
+- **Sisuline järjekord:** hindas arendaja brauseris üldjoontes loogiliseks. Kogu töövoogu, näiteks tasumise sammu, see ei tõenda.
 
 ### L07 · Backlog'i vaade ja lihtne järjestamine (S)
 *Projektijuhina soovin näha backlog'i vestluse kõrval, et näeksin kohe, mida vestlus muutis.*
