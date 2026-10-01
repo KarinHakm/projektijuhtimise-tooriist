@@ -67,6 +67,8 @@ const MIGRATIONS = [
      updated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
    );
    CREATE INDEX stories_project ON stories(project_id, position)`,
+  // Lugu, millest alustatakse (L08). Määratakse ainult kasutaja kinnitusel (AI soovitus või oma valik).
+  `ALTER TABLE projects ADD COLUMN focus_story_id INTEGER REFERENCES stories(id) ON DELETE SET NULL`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

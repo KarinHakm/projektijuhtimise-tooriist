@@ -62,6 +62,14 @@ export const getStories = (projectId) => request(storiesPath(projectId));
 // replace = senise ettepaneku id ("Paku teistsuguseid"); server vahetab selle alles pärast uue edukat salvestamist.
 export const proposeStories = (projectId, replace) => postJson(`${storiesPath(projectId)}/propose`, replace ? { replace } : {});
 export const applyStories = (projectId, proposalId, stories) => postJson(`${storiesPath(projectId)}/apply`, { proposalId, stories });
+const priorityPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/priority`;
+
+// Prioriteet (L08): AI soovitus, millest alustada; kinnitamine või oma valik.
+export const getPriority = (projectId) => request(priorityPath(projectId));
+export const proposePriority = (projectId) => postJson(`${priorityPath(projectId)}/propose`);
+export const acceptPriority = (projectId, proposalId) => postJson(`${priorityPath(projectId)}/accept`, { proposalId });
+export const choosePriority = (projectId, storyId) => postJson(`${priorityPath(projectId)}/choose`, { storyId });
+
 // direction = 'up' | 'down'; vastuses on uus järjekord (L07).
 export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });

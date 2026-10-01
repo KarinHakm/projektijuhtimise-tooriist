@@ -6,6 +6,7 @@ import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildStoriesMessages, buildStoriesSchema, checkStories } from '../ai/tasks/stories.js';
 import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
+import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
 import { appendStories, listStories, moveStory, validateApply } from '../stories.js';
 
@@ -29,6 +30,7 @@ export function storiesRouter({ db, ai }) {
     const proposal = findPendingProposal(db, projectId, KIND);
     return {
       stories: listStories(db, projectId),
+      focusStoryId: getFocusStoryId(db, projectId), // L08: backlog'is märge "Alustame sellest"
       proposal: proposal ? publicProposal(proposal) : null,
       roles: listRoles(db, projectId).map((r) => r.name),
       aiRunning: running.has(projectId),

@@ -3,7 +3,7 @@ import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
 // buttonRef(id, direction) annab nupu viite, et fookus jääks pärast tõstet samale nupule.
-export default function BacklogList({ stories, busy = false, highlightId = null, onMove, buttonRef }) {
+export default function BacklogList({ stories, busy = false, highlightId = null, focusStoryId = null, onMove, buttonRef }) {
   if (stories.length === 0) return <p className="muted">Backlog on tühi.</p>;
   return (
     <ol className="backlog">
@@ -25,7 +25,9 @@ export default function BacklogList({ stories, busy = false, highlightId = null,
           <li key={s.id} className={s.id === highlightId ? 'backlog__item backlog__item--moved' : 'backlog__item'}>
             <span className="backlog__number">{number}.</span>
             <div>
-              <p className="backlog__title">{s.title}</p>
+              <p className="backlog__title">
+                {s.id === focusStoryId && <><span className="tag tag--focus">Alustame sellest</span>{' '}</>}{s.title}
+              </p>
               <p className="backlog__meta">
                 Staatus: {STATUS_LABELS[s.status] ?? s.status} · Suurus: {s.size} · Päritolu: {ORIGIN_LABELS[s.origin] ?? s.origin}
               </p>

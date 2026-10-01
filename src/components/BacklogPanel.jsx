@@ -6,7 +6,7 @@ import BacklogList from './BacklogList.jsx';
 const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function BacklogView({ stories, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef }) {
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -15,7 +15,7 @@ export function BacklogView({ stories, busy = false, error = '', status = '', hi
       </p>
       <p className="backlog__status" role="status" aria-live="polite">{status}</p>
       {error && <p className="error" role="alert">{error}</p>}
-      <BacklogList stories={stories} busy={busy} highlightId={highlightId} onMove={onMove} buttonRef={buttonRef} />
+      <BacklogList stories={stories} busy={busy} highlightId={highlightId} focusStoryId={focusStoryId} onMove={onMove} buttonRef={buttonRef} />
     </>
   );
 }
@@ -24,6 +24,7 @@ export function BacklogView({ stories, busy = false, error = '', status = '', hi
 // Järjekord muutub ekraanil alles pärast serveri vastust, nii et näha on alati salvestatud seis.
 export default function BacklogPanel({ projectId, version }) {
   const [stories, setStories] = useState(null);
+  const [focusStoryId, setFocusStoryId] = useState(null); // L08: "Alustame sellest"
   const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +35,9 @@ export default function BacklogPanel({ projectId, version }) {
 
   const refresh = useCallback(async () => {
     try {
-      setStories((await getStories(projectId)).stories);
+      const data = await getStories(projectId);
+      setStories(data.stories);
+      setFocusStoryId(data.focusStoryId ?? null);
       setLoadError('');
     } catch (e) {
       setLoadError(e.message);
@@ -70,6 +73,7 @@ export default function BacklogPanel({ projectId, version }) {
     try {
       const data = await moveStory(projectId, id, direction);
       setStories(data.stories);
+      setFocusStoryId(data.focusStoryId ?? null);
       setStatus(movedMessage(data.stories, id));
       setHighlight({ id });
       pendingFocus.current = { id, direction };
@@ -87,6 +91,7 @@ export default function BacklogPanel({ projectId, version }) {
   return (
     <BacklogView
       stories={stories}
+      focusStoryId={focusStoryId}
       busy={busy}
       error={error}
       status={status}
