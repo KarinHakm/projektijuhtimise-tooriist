@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 30.09.2026:** valmis on L01, L02, L03, L04 ja L05. L06 on **Pooleli**: osa kriteeriumidest on brauseris veel proovimata. Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01, L02, L03, L04 ja L05. L06 on **Pooleli**: brauseris on proovimata „Paku teistsuguseid“ õnnestunud asendus. Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -197,7 +197,7 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
   - Sisulise järjekorra hindas arendaja brauseris üldjoontes loogiliseks: tutvumine → hinnad → taotlus → kinnitus.
   - See ei tõenda kogu töövoogu. Näiteks tasumise sammu ettepanekus ei olnud.
 - **Nupud:** arendaja nägi brauseris kaartide all nuppe „Lisa kõik backlog'i“, „Lisa valitud“ ja „Paku teistsuguseid“. Neist vajutati ainult nuppu „Lisa valitud“.
-- **Brauseris veel proovimata:**
+- **30.09.2026 seisuga brauseris proovimata** (01.10.2026 katsete tulemused on allpool):
   - ✗ Lükka tagasi vajutamise tulemus: kaart eemaldub pakkumisest;
   - tagasi lükatud loo välistamine nupu „Lisa kõik backlog'i“ korral;
   - „Lisa kõik backlog'i“ vajutamise tulemus: lisanduvad kõik tagasi lükkamata kaardid;
@@ -206,6 +206,56 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 
   Neid katavad seni ainult automaattestid (võltsandmetega).
 - **Teadaolev piirang:** kui lugu muuta ✎ Muuda kaudu enne backlog'i lisamist, jääb muudatus ainult brauseri vahelehe mällu. F5 või vahelehe sulgemine kaotab muudatuse ja kaardid laaditakse uuesti AI originaaliga. Ootel ettepanek ise jääb alles.
+
+**Kontrollitud 01.10.2026 (eraldi testandmebaas, võltsitud ootel ettepanekud):**
+- **Katsekeskkond:**
+  - Testandmebaas loodi nullist väljaspool repot (`~/projektijuhtimise-tooriist-testid/2026-10-01_0904_l06/`). Selles on projektid 101–103, kinnitatud rollid „Potentsiaalne liige“ ja „Administraator“ ning igas projektis üks võltsitud ootel ettepanek viie looga.
+  - Server töötas selle andmebaasiga ja tühja AI-tokeniga. Enne käivitust tõendati võlts-`.env` failiga, et käsureal antud `DATABASE_PATH` ja tühi token jäävad kehtima ka pärast `.env` laadimist.
+  - Päris `data/app.db` ja `app.db-wal` räsid olid pärast katseid samad mis enne. Katse ajal ei hoidnud ükski protsess neid faile avatuna.
+- **Võltsandmed:** ettepanekud ei olnud AI vastused, saatetekst oli „VÕLTSANDMED – brauserikatse jaoks, mitte AI vastus.“ Katsed tõendavad kasutajaliidese ja serveri käitumist, **mitte AI sisu**. AI-kutseid ei tehtud.
+- **Katse A (projekt 101), kriteeriumid ✗ Lükka tagasi, tagasi lükatud loo välistamine ja „Lisa kõik backlog'i“:**
+  - **Arendaja nägi brauseris:**
+    - pärast ✗ vajutamist kaart 2 kadus ja tuli teade „Tagasi lükatud: 1“;
+    - pärast kaardi 4 märke eemaldamist jäi nupp kujule „Lisa kõik backlog'i (4)“;
+    - pärast lisamist ja F5 värskendust oli backlog'is 4 lugu ja lugu 2 puudus.
+  - **Andmebaas (ainult lugedes):**
+    - backlog'is on 4 lugu: algsed 1, 3, 4 ja 5 järjekorras 1–4;
+    - kõigi staatus on „Idee“ ja päritolu `ai`, kõik samast ettepanekust;
+    - ettepaneku olek on `applied`.
+- **Katse B (projekt 102), kriteerium „Lisa valitud“ lisab ainult märgitud lood:**
+  - **Arendaja nägi brauseris:**
+    - kui kõik märked olid eemaldatud, oli „Lisa valitud (0)“ keelatud;
+    - pärast lugude 1, 3 ja 5 märkimist, lisamist ja F5 värskendust oli backlog'is 3 lugu.
+  - **Andmebaas (ainult lugedes):**
+    - backlog'is on täpselt algsed lood 1, 3 ja 5;
+    - märkimata lood 2 ja 4 ei ole lisatud;
+    - ettepaneku olek on `applied`.
+- **Katse C (projekt 103), „Paku teistsuguseid“ tõrge ilma AI-tokenita:**
+  - **Arendaja nägi brauseris:**
+    - tuli teade „AI ei ole serveris seadistatud. Käsitsi saad edasi töötada.“ ja nupp „Proovi uuesti“;
+    - kõik 5 kaarti jäid nähtavaks ja lisamisnupud aktiivseks;
+    - pärast F5 värskendust oli sama ettepanek alles ja veateadet ei olnud.
+  - **Andmebaas ja serverilogi:**
+    - projektis 103 on endiselt üks ettepanek (sama id) olekuga `pending` ja backlog on tühi;
+    - logis oli `result: not_configured` (1 ms), seega võrgupäringut ei tehtud.
+- **Seis pärast 01.10.2026 katseid:**
+  - Brauseris on proovitud: ✗ Lükka tagasi, tagasi lükatud loo välistamine „Lisa kõik“ korral, „Lisa kõik backlog'i“, „Lisa valitud“ ja „Paku teistsuguseid“ tõrkeolukord.
+  - **Brauseris on proovimata „Paku teistsuguseid“ õnnestunud asendus**, kus senine ettepanek asendub uuega. Seda katab seni ainult automaattest võlts-AI vastusega (`test/stories.test.js`). Brauseris vajab see päris AI-kutset.
+- **Automaattestid** (võltsandmed, ilma brauserita):
+  - `test/ui-stories.test.js` kontrollib valiku loogikat: „Lisa kõik“ ei lisa tagasi lükatud lugusid ja „Lisa valitud“ lisab ainult märgitud lood.
+  - `test/stories.test.js` kontrollib serverit:
+    - „Paku teistsuguseid“ õnnestumist võlts-AI vastusega;
+    - tõrgete korral jääb senine ettepanek alles;
+    - topeltlisamine annab 409.
+  - `test/ui-stories-render.test.js` renderdab komponendid staatiliseks HTML-iks ja kontrollib ainult kasutajaliidese olekuid etteantud andmetega:
+    - tagasi lükatud kaart puudub pakkumisest, „Lisa kõik backlog'i“ arv seda ei sisalda ja kuvatakse „Tagasi lükatud: 1“;
+    - „Lisa valitud“ arv sisaldab ainult märgitud lugusid ja ilma valikuta on nupp keelatud;
+    - kui päringut ei käi, on kolm nuppu lubatud;
+    - lisamise ajal on kõik nupud ja märkeruudud keelatud;
+    - „Paku teistsuguseid“ ajal on nupud keelatud ja senised kaardid nähtavad;
+    - ebaõnnestunud „Paku teistsuguseid“ järel on kaardid nähtavad, nupud lubatud ning kuvatakse veateade ja „Proovi uuesti“.
+
+    Renderdustest ei klõpsa nuppe, ei kasuta brauserit ega tõenda õnnestunud asendust.
 
 ### L07 · Backlog'i vaade ja lihtne järjestamine (S)
 *Projektijuhina soovin näha backlog'i vestluse kõrval, et näeksin kohe, mida vestlus muutis.*
