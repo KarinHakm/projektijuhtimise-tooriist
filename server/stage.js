@@ -61,3 +61,17 @@ export function stageFacts(db, projectId) {
 }
 
 export const stageFor = (db, projectId) => computeStage(stageFacts(db, projectId));
+
+// Avalehe projektikaardi lühike etapiseis (sama loogika mis projekti päises).
+export function progressFor(db, projectId) {
+  const r = stageFor(db, projectId);
+  const first = r.steps[0] ?? null;
+  return {
+    stages: r.stages.map(({ key, label, status }) => ({ key, label, status })),
+    lastDone: r.lastDone?.label ?? null,
+    next: r.next?.label ?? null,
+    nextStep: first ? `${first.label}${first.optional ? ' (valikuline)' : ''}` : null,
+    allBuiltDone: r.allBuiltDone,
+    storyCount: r.storyCount,
+  };
+}

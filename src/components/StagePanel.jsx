@@ -1,3 +1,5 @@
+import DemoTag from './DemoTag.jsx';
+
 export const STATUS_LABELS = {
   done: 'tehtud ✓',
   skipped: 'andmed puuduvad',
@@ -7,12 +9,12 @@ export const STATUS_LABELS = {
   not_built: 'pole veel tehtud',
 };
 // Märk ribal; tähendus on alati ka tekstina (ekraanilugeja ja "Miks mõni etapp on hall?"), mitte ainult värvina.
-const MARKS = { done: '✓', skipped: '!', next: '●', available: '○', blocked: '🔒', not_built: '–' };
+export const MARKS = { done: '✓', skipped: '!', next: '●', available: '○', blocked: '🔒', not_built: '–' };
 
 // Projekti kompaktne päis (L13, L14): nimi, etappide riba, viimati läbitud etapp ja soovitatud järgmine samm.
 // Jääb kerimisel lehe ülaossa. Andmed tulevad serverist (shared/stage.js).
 // Riba kaudu saab avada ainult tehtud, andmeteta või kättesaadava etapi; eelduseta etapp on hall ja põhjus on lahti voldiva rea all.
-export default function StagePanel({ name, stage, onGo }) {
+export default function StagePanel({ name, demo = false, stage, onGo }) {
   const { stages, lastDone, steps, allBuiltDone, storyCount } = stage;
   const first = steps[0];
   const firstStage = first ? stages.find((s) => s.key === first.stage) : null;
@@ -20,7 +22,7 @@ export default function StagePanel({ name, stage, onGo }) {
   return (
     <header className="project-header" aria-label="Projekt ja etapid">
       <div className="project-header__top">
-        <h2 className="project-header__title">{name}</h2>
+        <h2 className="project-header__title">{name}{demo && <DemoTag />}</h2>
         <a className="project-header__backlog" href="#kaart-backlog" onClick={(e) => { e.preventDefault(); onGo({ card: 'backlog', focus: null }); }}>
           Backlog ({storyCount})
         </a>

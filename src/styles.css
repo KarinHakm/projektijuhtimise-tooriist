@@ -3,6 +3,8 @@
   --muted: #5f6670;
   --border: #d5d9de;
   --accent: #2458b3;
+  --accent-hover: #1c4690;
+  --accent-soft: #eef3fc;
   --error: #b3261e;
   --bg: #f7f8fa;
   --card: #ffffff;
@@ -179,6 +181,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .backlog__item--moved { animation: backlog-moved 1.5s ease-out; }
 @keyframes backlog-moved { from { background: #fff4c2; } to { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .backlog__item--moved { animation: none; background: #fff4c2; } }
+.tag--demo { color: #5b3e8f; background: #f3effa; border-color: #c9b8e6; font-weight: 600; }
 .tag--focus { margin: 0 0.25rem 0 0; color: #7a4b00; background: #fff4c2; border-color: #e0c060; font-weight: 600; }
 .priority h3 { font-size: 1rem; margin: 0 0 0.5rem; }
 .priority__focus { margin: 0 0 0.75rem; }
@@ -273,9 +276,49 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .story-edit select { width: 100%; padding: 0.5rem; font: inherit; border: 1px solid var(--border); border-radius: 6px; }
 .warning { color: #8a5a00; margin: 0.25rem 0 0 2rem; }
 
-.project-list { list-style: none; padding: 0; margin: 0; }
-.project-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-.project-list a { color: var(--accent); font-weight: 500; }
+/* Avaleht: pealkiri, selgitus, "+ Loo projekt" ja projektikaardid. Samm 0.5 / 1 / 1.5 / 2 rem. */
+.page--home { max-width: 960px; }
+.brand__mark { color: var(--accent); }
+.home__intro { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem 2rem; margin: 1rem 0 1.5rem; }
+.home__title { margin: 0; font-size: 1.6rem; font-weight: 600; }
+.home__lead { margin: 0.5rem 0 0; max-width: 40rem; color: var(--muted); line-height: 1.45; }
+.home__create { flex: none; margin: 0; padding: 0.65rem 1.25rem; font-weight: 600; }
+.home button:not(.secondary):not(:disabled):hover { background: var(--accent-hover); }
+.home button.secondary:not(:disabled):hover { background: var(--accent-soft); }
+.new-project { border-color: var(--accent); }
+.new-project h2 { margin-bottom: 0; }
+.new-project .actions button { margin-top: 1rem; }
+.empty-state { text-align: center; padding: 2rem 1rem; border: 2px dashed var(--border); border-radius: 8px; background: var(--card); }
+.empty-state__title { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.project-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+@media (min-width: 860px) { .project-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.project-card {
+  display: flex; flex-direction: column; gap: 0.5rem; height: 100%; padding: 1rem 1.25rem;
+  color: var(--text); text-decoration: none; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(28, 31, 35, 0.06);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.project-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(36, 88, 179, 0.12); transform: translateY(-1px); }
+.project-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.project-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.project-card__name { font-size: 1.1rem; font-weight: 600; }
+.project-card__open { flex: none; font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+.project-card:hover .project-card__open { text-decoration: underline; }
+.project-card__desc {
+  color: var(--muted); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.project-card__progress { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin-top: auto; font-size: 0.9rem; }
+.stage-dots { display: inline-flex; gap: 0.2rem; }
+.stage-dot {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem;
+  font-size: 0.7rem; border-radius: 50%; border: 1px solid var(--border); background: #f0f1f3; color: var(--muted);
+}
+.stage-dot--done { background: #eef8f0; border-color: #8cc29b; color: #1d6b35; }
+.stage-dot--next { background: #eef3fc; border-color: var(--accent); color: var(--accent); }
+.stage-dot--available { background: var(--card); }
+.stage-dot--skipped { border-style: dashed; background: var(--card); }
+.project-card__meta { font-size: 0.8rem; color: var(--muted); }
 
 /* L13, L14: kompaktne projekti päis etappide ribaga; jääb kerimisel lehe ülaossa. */
 .project-header-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 0.5rem 0; margin-bottom: 0.5rem; }

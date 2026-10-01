@@ -105,6 +105,6 @@ test('loodud projekt on alles pärast andmebaasi sulgemist ja uuesti avamist', a
   // withApi sulges serveri ja andmebaasi; uus rakendus avab sama faili uuesti.
   await withApi(async ({ base }) => {
     const list = await (await fetch(base)).json();
-    assert.deepEqual(list, [created]);
+    assert.deepEqual(list.map(({ progress, ...p }) => p), [created]);
   });
 });

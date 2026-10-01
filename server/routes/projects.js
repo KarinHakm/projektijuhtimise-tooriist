@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { progressFor } from '../stage.js';
 
 const NAME_MAX = 200;
 const DESCRIPTION_MAX = 2000;
@@ -27,7 +28,8 @@ export function projectsRouter(db) {
   const insertStmt = db.prepare(`INSERT INTO projects (name, description) VALUES (?, ?) RETURNING ${COLUMNS}`);
 
   router.get('/', (req, res) => {
-    res.json(listStmt.all());
+    // Avalehe kaartidele lisatakse etapi kokkuvõte (ainult lugemine, AI-d ei kasutata).
+    res.json(listStmt.all().map((p) => ({ ...p, progress: progressFor(db, p.id) })));
   });
 
   router.post('/', (req, res) => {

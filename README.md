@@ -19,7 +19,7 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    ```
    Ava brauseris http://localhost:5175. Peatamiseks vajuta terminalis Ctrl+C.
    - Näidises on kaks projekti, mille nimi algab „Näidis:“. Esimeses on vestlus ja rollid valmis ning lugude **näidisettepanek** ootab valikut (✎ Muuda, ✗ Lükka tagasi, märkeruudud, „Lisa valitud“). Teises saab backlog'i lugusid ↑/↓ nuppudega järjestada.
-   - **Näidisandmed on käsitsi koostatud, mitte AI vastused.** Rakenduses on need märgitud sildiga „Näidis (käsitsi koostatud, mitte AI)“ ja näidisettepanekust lisatud lugude päritolu on „Käsitsi lisatud“.
+   - **Näidisandmed on käsitsi koostatud, mitte AI vastused.** Rakenduses on need märgitud lühikese sildiga **„Näidis“** (projekti nime, vestluse sõnumite ja lugude ettepaneku juures; sildi vihje: „Käsitsi koostatud näidisandmed, mitte AI vastus“) ja näidisettepanekust lisatud lugude päritolu on „Käsitsi lisatud“.
    - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
    - Näidisrežiimis on AI välja lülitatud: AI nupud („Alusta“, „Paku rolle“, „Paku veel lugusid“, „Paku teistsuguseid“) annavad teate „AI ei ole serveris seadistatud“.
 5. **Proovi päris AI-ga (valikuline):** vaja on oma tasuta Hetzneri tokenit (https://experiments.hetzner.com → **Create API Token**).

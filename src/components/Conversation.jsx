@@ -3,6 +3,7 @@ import { continueConversation, getConversation, sendAnswers, sendIdea } from '..
 import { allAnswered, buildAnswers, conversationPhase, describeAnswer, emptyDraft } from '../conversation/answers.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
+import DemoTag from './DemoTag.jsx';
 import QuestionCard from './QuestionCard.jsx';
 
 const POLL_MS = 3000;
@@ -124,7 +125,7 @@ function Message({ message, questionsById, isOpen }) {
   const { role, kind, content } = message;
   return (
     <div className={`msg ${role === 'user' ? 'msg--user' : 'msg--ai'}`}>
-      <p className="msg__who">{role === 'user' ? 'Sina' : content.demo ? 'Näidis (käsitsi koostatud, mitte AI)' : 'AI'}</p>
+      <p className="msg__who">{role === 'user' ? 'Sina' : content.demo ? <DemoTag /> : 'AI'}</p>
       {kind === 'idea' && <p>{content.text}</p>}
       {kind === 'questions' && (
         <>

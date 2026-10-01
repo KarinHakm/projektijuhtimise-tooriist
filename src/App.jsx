@@ -7,6 +7,7 @@ import ProjectView from './pages/ProjectView.jsx';
 export default function App() {
   const [server, setServer] = useState('kontrollin…');
   const projectPage = useMatch('/projects/:id'); // projekti vaade on kaheveeruline ja vajab laiemat lehte (L07)
+  const homePage = useMatch('/'); // avalehe kaardid kahes veerus
 
   useEffect(() => {
     getHealth()
@@ -15,10 +16,11 @@ export default function App() {
   }, []);
 
   return (
-    <div className={projectPage ? 'page page--wide' : 'page'}>
+    <div className={projectPage ? 'page page--wide' : homePage ? 'page page--home' : 'page'}>
       <header className="header">
-        <Link to="/" className="brand">Projektijuhtimise tööriist</Link>
-        <span className="muted">Server: {server}</span>
+        <Link to="/" className="brand"><span className="brand__mark" aria-hidden="true">◆</span> Projektijuhtimise tööriist</Link>
+        {/* Serveri olek ainult siis, kui midagi on valesti (arendaja info ei ole kliendi jaoks). */}
+        {server !== 'OK' && server !== 'kontrollin…' && <span className="error">Server {server}</span>}
       </header>
       <Routes>
         <Route path="/" element={<ProjectList />} />

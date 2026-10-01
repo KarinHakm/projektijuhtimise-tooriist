@@ -95,3 +95,17 @@ test('alustamise loo järgsed etapid; teise loo ootel ettepanek ei loe', async (
   assert.equal(r.stages.find((x) => x.key === 'groomimine').status, 'not_built');
   assert.equal(aiCalls, 0);
 });
+
+test('projektide loendis on iga projekti etapi kokkuvõte (ainult lugemine)', async () => {
+  replaceRoles(db, projectId, [{ name: 'Külastaja', source: 'ai' }]);
+  appendStories(db, projectId, [s('esitada taotluse')], null);
+  const before = dump();
+  const list = await (await fetch(base)).json();
+  assert.deepEqual(list[0].progress, {
+    stages: list[0].progress.stages,
+    lastDone: 'Lood', next: 'Prioriteedid', nextStep: 'Küsi AI-lt prioriteedisoovitus', allBuiltDone: false, storyCount: 1,
+  });
+  assert.deepEqual(list[0].progress.stages.map((x) => x.status), ['skipped', 'done', 'done', 'next', 'blocked', 'blocked', 'not_built']);
+  assert.deepEqual(dump(), before);
+  assert.equal(aiCalls, 0);
+});

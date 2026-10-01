@@ -43,9 +43,9 @@ test('pealkiri ütleb, et ettepanek ei ole veel backlog’is; peamine roll on ni
   assert.match(html, /peamise rolli \(Potentsiaalne liige\) põhitöövoo järjekorras/);
 });
 
-test('näidisettepanekul (npm run demo) ütleb pealkiri, et see on käsitsi koostatud, mitte AI', () => {
+test('näidisettepanekul (npm run demo) on pealkirjas märk „Näidis“ (vihjes: käsitsi koostatud, mitte AI), mitte „AI ettepanek“', () => {
   const html = renderProposal({ proposal: { ...PROPOSAL, demo: true } });
-  assert.match(html, /<h3[^>]*>Näidisettepanek \(käsitsi koostatud, mitte AI\) – ei ole veel backlog&#x27;is<\/h3>/);
+  assert.match(html, /<h3[^>]*><span class="tag tag--demo" title="Käsitsi koostatud näidisandmed, mitte AI vastus">Näidis<\/span> Ettepanek – ei ole veel backlog&#x27;is<\/h3>/);
   assert.doesNotMatch(html, /AI ettepanek – ei ole veel/);
 });
 

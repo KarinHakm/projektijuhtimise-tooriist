@@ -48,7 +48,7 @@ test('projektid on märgitud näidiseks ja sisu ei pärine arendaja projektidest
   assert.equal(projects.length, 2);
   for (const p of projects) {
     assert.match(p.name, /^Näidis: /);
-    assert.match(p.description, /NÄIDISANDMED – käsitsi koostatud, mitte AI vastus/);
+    assert.doesNotMatch(p.description, /NÄIDISANDMED/); // näidise märk on rakenduses lühike silt „Näidis“
   }
   const text = JSON.stringify(loadFixture());
   for (const own of ['Spordiklubi', 'L04 test', 'Potentsiaalne liige', 'treening']) assert.ok(!text.includes(own), own);
@@ -71,7 +71,6 @@ test('näidisettepanek on ootel, märgitud demo ja läbib rakenduse enda lugude 
   assert.equal(row.status, 'pending');
   const payload = JSON.parse(row.payload);
   assert.equal(payload.demo, true);
-  assert.match(payload.message, /NÄIDISANDMED/);
   assert.deepEqual(checkStories(payload, ['Lugeja', 'Raamatukoguhoidja']), []);
   for (const s of payload.stories) assert.deepEqual(validateStoryText(s).errors, [], s.want);
 });

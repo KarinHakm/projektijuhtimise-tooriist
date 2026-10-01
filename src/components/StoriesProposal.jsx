@@ -1,5 +1,6 @@
 import { buildApply, visibleStories } from '../stories/selection.js';
 import AiError from './AiError.jsx';
+import DemoTag from './DemoTag.jsx';
 import StoryCard from './StoryCard.jsx';
 
 // AI lugude ettepanek (ainult kuvamine; olek on StoriesPanel'is). Ettepanek on andmebaasis olekuga
@@ -18,7 +19,7 @@ export default function StoriesProposal({
   return (
     <section className="stories-proposal" aria-labelledby="stories-proposal-title">
       <h3 id="stories-proposal-title">
-        {proposal.demo ? 'Näidisettepanek (käsitsi koostatud, mitte AI) – ei ole veel backlog\'is' : 'AI ettepanek – ei ole veel backlog\'is'}
+        {proposal.demo ? <><DemoTag /> Ettepanek – ei ole veel backlog'is</> : 'AI ettepanek – ei ole veel backlog\'is'}
       </h3>
       {proposal.message && <p>{proposal.message}</p>}
       <p className="muted">Lood on peamise rolli ({proposal.primaryRole}) põhitöövoo järjekorras.</p>

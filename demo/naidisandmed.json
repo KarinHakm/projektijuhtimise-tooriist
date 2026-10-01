@@ -3,7 +3,7 @@
   "projects": [
     {
       "name": "Näidis: Linnaraamatukogu e-teenus",
-      "description": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Vestlus ja rollid on valmis; lugude näidisettepanek ootab valikut.",
+      "description": "Lugejad otsivad ja broneerivad raamatuid veebis. Vestlus ja rollid on valmis, lugude ettepanek ootab valikut.",
       "roles": ["Lugeja", "Raamatukoguhoidja"],
       "conversation": {
         "idea": "Linnaraamatukogu tahab veebi, kus lugejad saavad raamatuid otsida ja broneerida.",
@@ -24,7 +24,7 @@
         }
       },
       "proposal": {
-        "message": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus.",
+        "message": "Viis lugu lugeja põhitöövoo järjekorras.",
         "primaryRole": "Lugeja",
         "stories": [
           { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "otsida raamatut pealkirja või autori järgi", "soThat": "leiaksin kiiresti soovitud teose", "size": "M" },
@@ -37,7 +37,7 @@
     },
     {
       "name": "Näidis: backlog'i järjestamine",
-      "description": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Backlog'is on viis lugu ↑/↓ järjestamise proovimiseks.",
+      "description": "Backlog'is on viis lugu, mida saab ↑/↓ nuppudega järjestada.",
       "roles": ["Lugeja", "Raamatukoguhoidja"],
       "backlog": [
         { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "pikendada laenutust veebis", "soThat": "ei peaks maksma viivist", "size": "S" },

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { getProject, getStage } from '../api.js';
 import { CARDS } from '../../shared/stage.js';
 import { goToStep } from '../stage/navigate.js';
+import { splitDemoName } from '../demo/name.js';
+import DemoTag from '../components/DemoTag.jsx';
 import BacklogPanel from '../components/BacklogPanel.jsx';
 import Conversation from '../components/Conversation.jsx';
 import CriteriaPanel from '../components/CriteriaPanel.jsx';
@@ -67,7 +69,9 @@ export default function ProjectView() {
       {project && (
         <>
           <div ref={headerRef} className="project-header-wrap">
-            {stage ? <StagePanel name={project.name} stage={stage} onGo={goToStep} /> : <h2 className="project-header__title">{project.name}</h2>}
+            {stage
+              ? <StagePanel {...splitDemoName(project.name)} stage={stage} onGo={goToStep} />
+              : <h2 className="project-header__title">{splitDemoName(project.name).name}{splitDemoName(project.name).demo && <DemoTag />}</h2>}
           </div>
           {project.description ? <p className="project-description">{project.description}</p> : <p className="muted project-description">Kirjeldus puudub.</p>}
           {/* L07: laial ekraanil vestlus vasakul ja backlog paremal; kitsal ekraanil on backlog lugude all. */}

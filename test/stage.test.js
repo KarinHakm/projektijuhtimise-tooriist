@@ -125,3 +125,9 @@ test('kõigi sammude kaardid ja fookuse sihtmärgid on projekti vaates olemas', 
     assert.ok(components.includes(pattern), `${s.id}: ${pattern}`);
   }
 });
+
+test('näidisprojekti nimi: eesliide „Näidis: “ eraldatakse märgiks, muu nimi jääb samaks', async () => {
+  const { splitDemoName } = await import('../src/demo/name.js');
+  assert.deepEqual(splitDemoName("Näidis: backlog'i järjestamine"), { demo: true, name: "backlog'i järjestamine" });
+  assert.deepEqual(splitDemoName('TESTKOOPIA A – Lisa kõik'), { demo: false, name: 'TESTKOOPIA A – Lisa kõik' });
+});
