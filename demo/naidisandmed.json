@@ -1,0 +1,51 @@
+{
+  "markus": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Kasutab käsk npm run demo (scripts/demo.js).",
+  "projects": [
+    {
+      "name": "Näidis: Linnaraamatukogu e-teenus",
+      "description": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Vestlus ja rollid on valmis; lugude näidisettepanek ootab valikut.",
+      "roles": ["Lugeja", "Raamatukoguhoidja"],
+      "conversation": {
+        "idea": "Linnaraamatukogu tahab veebi, kus lugejad saavad raamatuid otsida ja broneerida.",
+        "questions": {
+          "message": "Täpsustame paar asja.",
+          "questions": [
+            { "id": "k1", "text": "Kes rakendust kasutavad?", "multiSelect": true, "options": ["Lugejad", "Raamatukoguhoidjad", "Kooliõpilased"] },
+            { "id": "k2", "text": "Kuidas lugeja saab teada, et broneeritud raamat on kättesaadav?", "multiSelect": false, "options": ["E-kiri", "SMS", "Ainult veebis"] }
+          ]
+        },
+        "answers": [
+          { "questionId": "k1", "selected": ["Lugejad", "Raamatukoguhoidjad"], "other": null, "skipped": false },
+          { "questionId": "k2", "selected": ["E-kiri"], "other": null, "skipped": false }
+        ],
+        "summary": {
+          "message": "Aitäh, sellest piisab lugude koostamiseks.",
+          "summary": "Lugejad otsivad ja broneerivad raamatuid veebis ning saavad e-kirja, kui broneeritud raamat on kättesaadav. Raamatukoguhoidjad näevad päeva broneeringuid."
+        }
+      },
+      "proposal": {
+        "message": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus.",
+        "primaryRole": "Lugeja",
+        "stories": [
+          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "otsida raamatut pealkirja või autori järgi", "soThat": "leiaksin kiiresti soovitud teose", "size": "M" },
+          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "näha, kas raamat on riiulis või välja laenutatud", "soThat": "ei peaks asjata raamatukokku minema", "size": "S" },
+          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "broneerida välja laenutatud raamatu", "soThat": "saaksin selle järgmisena kätte", "size": "M" },
+          { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "saada e-kirja, kui broneeritud raamat on kättesaadav", "soThat": "jõuaksin selle õigel ajal ära tuua", "size": "S" },
+          { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "näha tänaseid broneeringuid", "soThat": "saaksin raamatud õigeks ajaks välja panna", "size": "M" }
+        ]
+      }
+    },
+    {
+      "name": "Näidis: backlog'i järjestamine",
+      "description": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastus. Backlog'is on viis lugu ↑/↓ järjestamise proovimiseks.",
+      "roles": ["Lugeja", "Raamatukoguhoidja"],
+      "backlog": [
+        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "pikendada laenutust veebis", "soThat": "ei peaks maksma viivist", "size": "S" },
+        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "näha oma laenutuste ajalugu", "soThat": "mäletaksin, mida olen lugenud", "size": "S" },
+        { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "lisada uue raamatu kataloogi", "soThat": "lugejad leiaksid uued teosed", "size": "M" },
+        { "role": "Raamatukoguhoidja", "rolePhrase": "Raamatukoguhoidjana", "want": "saata meeldetuletuse tähtaja ületanud lugejatele", "soThat": "raamatud jõuaksid tagasi", "size": "M" },
+        { "role": "Lugeja", "rolePhrase": "Lugejana", "want": "hinnata loetud raamatut", "soThat": "teised lugejad saaksid soovitusi", "size": "L" }
+      ]
+    }
+  ]
+}

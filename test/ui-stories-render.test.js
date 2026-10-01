@@ -43,6 +43,12 @@ test('pealkiri ütleb, et ettepanek ei ole veel backlog’is; peamine roll on ni
   assert.match(html, /peamise rolli \(Potentsiaalne liige\) põhitöövoo järjekorras/);
 });
 
+test('näidisettepanekul (npm run demo) ütleb pealkiri, et see on käsitsi koostatud, mitte AI', () => {
+  const html = renderProposal({ proposal: { ...PROPOSAL, demo: true } });
+  assert.match(html, /<h3[^>]*>Näidisettepanek \(käsitsi koostatud, mitte AI\) – ei ole veel backlog&#x27;is<\/h3>/);
+  assert.doesNotMatch(html, /AI ettepanek – ei ole veel/);
+});
+
 test('kaardid on nummerdatud, pealkiri on Connextra kujul ja märkeruut on vaikimisi märgitud', () => {
   const html = renderProposal();
   for (const n of [1, 2, 3, 4]) assert.match(html, new RegExp(`aria-label="Lugu ${n}">${n}\\.<`));

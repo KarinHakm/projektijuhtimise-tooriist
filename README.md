@@ -5,6 +5,38 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
 > Minimaalne README (lugu L01). Täiendatakse lõplikult loos L30.
 > Arenduse plaan: [docs/backlog.md](docs/backlog.md). AI-teenuse valik ja piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
 
+## Õpetajale: kiirjuhend (Windows, macOS, Linux)
+
+1. Paigalda [Node.js](https://nodejs.org) LTS-versioon. Kontrolli terminalis: `node -v` peab näitama vähemalt `v22.22`.
+2. Paki projekt lahti ja ava selle kaustas terminal (Windowsis PowerShell: kaustas Shift + paremklõps → „Ava PowerShelli aken siin“ või „Open in Terminal“).
+3. Paigalda sõltuvused:
+   ```
+   npm install
+   ```
+4. **Proovi ilma AI tokenita näidisandmetega:**
+   ```
+   npm run demo
+   ```
+   Ava brauseris http://localhost:5175. Peatamiseks vajuta terminalis Ctrl+C.
+   - Näidises on kaks projekti, mille nimi algab „Näidis:“. Esimeses on vestlus ja rollid valmis ning lugude **näidisettepanek** ootab valikut (✎ Muuda, ✗ Lükka tagasi, märkeruudud, „Lisa valitud“). Teises saab backlog'i lugusid ↑/↓ nuppudega järjestada.
+   - **Näidisandmed on käsitsi koostatud, mitte AI vastused.** Rakenduses on need märgitud sildiga „Näidis (käsitsi koostatud, mitte AI)“ ja näidisettepanekust lisatud lugude päritolu on „Käsitsi lisatud“.
+   - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
+   - Näidisrežiimis on AI välja lülitatud: AI nupud („Alusta“, „Paku rolle“, „Paku veel lugusid“, „Paku teistsuguseid“) annavad teate „AI ei ole serveris seadistatud“.
+5. **Proovi päris AI-ga (valikuline):** vaja on oma tasuta Hetzneri tokenit (https://experiments.hetzner.com → **Create API Token**).
+   - Windows (PowerShell): `Copy-Item .env.example .env` ja seejärel `notepad .env`
+   - macOS/Linux: `cp .env.example .env` ja ava `.env` tekstiredaktoris
+   - Kirjuta reale tokeni väärtus: `HETZNER_INFERENCE_TOKEN=...`, salvesta ja käivita `npm run dev`. Serveri logis peab olema `AI: seadistatud`.
+   - Üks AI samm võtab tavaliselt 16–110 sekundit.
+   - Ilma `.env` failita töötab `npm run dev` samuti, aga ilma AI-ta (projektid ja tühi andmebaas `data/app.db`).
+
+Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine programm, mis neid porte kasutab.
+
+### Seis 01.10.2026: mis töötab ja mis puudub
+
+- **Töötab (L01–L07):** projektide loomine ja loend; idee ühe lausega → AI täpsustavad küsimused valikunuppudega, „Muu (kirjutan ise)“ ja „Jäta vahele“ → kokkuvõte; rollide ettepanek, kinnitamine, lisamine ja eemaldamine; AI lugude ettepanek kaartidena (muutmine, tagasilükkamine, valik, lisamine backlog'i); backlog vestluse kõrval ja ↑/↓ järjestamine; andmed säilivad serveri taaskäivitusel.
+- **Veel puudub:** alati nähtav vabateksti väli AI-le kirjutamiseks (praegu saab vabalt kirjutada ainult idee ja „Muu“ vastusena), prioriteedisoovitus, vastuvõtukriteeriumid ja mockup, kliendi täpsustus, järgmise sammu nupud, etappide riba ja groomimine (lood L08 jj, vt [docs/backlog.md](docs/backlog.md)).
+- **Teadaolev piirang:** lugude ettepanekus ✎ Muuda kaudu tehtud muudatused kaovad lehe värskendamisel, kui lugu pole veel backlog'i lisatud.
+
 ## Nõuded
 
 - Node.js 22.22 või uuem (`node -v`)

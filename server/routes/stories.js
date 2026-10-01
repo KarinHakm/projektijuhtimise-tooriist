@@ -19,6 +19,7 @@ export function storiesRouter({ db, ai }) {
 
   const publicProposal = (p) => ({
     id: p.id,
+    demo: p.payload.demo === true, // käsitsi koostatud näidisettepanek (npm run demo), mitte AI vastus
     message: p.payload.message,
     primaryRole: p.payload.primaryRole,
     stories: p.payload.stories.map((s, index) => ({ index, ...s, title: composeTitle(s) })),
@@ -113,8 +114,10 @@ export function storiesRouter({ db, ai }) {
     }
     const selection = validateApply(db, projectId, req.body?.stories, proposal.payload.stories);
     if (selection.error) return res.status(400).json({ error: selection.error, code: 'invalid_stories' });
+    // Näidisettepanek on käsitsi koostatud, seega ei märgita lugusid AI päritoluga.
+    const stories = proposal.payload.demo === true ? selection.stories.map((s) => ({ ...s, origin: 'manual' })) : selection.stories;
     try {
-      applyProposal(db, proposal.id, (tx) => appendStories(tx, projectId, selection.stories, proposal.id), { projectId, kind: KIND });
+      applyProposal(db, proposal.id, (tx) => appendStories(tx, projectId, stories, proposal.id), { projectId, kind: KIND });
     } catch (err) {
       if (err instanceof ProposalError) return res.status(err.status).json({ error: err.message, code: err.code });
       throw err;

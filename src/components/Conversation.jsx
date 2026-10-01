@@ -124,7 +124,7 @@ function Message({ message, questionsById, isOpen }) {
   const { role, kind, content } = message;
   return (
     <div className={`msg ${role === 'user' ? 'msg--user' : 'msg--ai'}`}>
-      <p className="msg__who">{role === 'user' ? 'Sina' : 'AI'}</p>
+      <p className="msg__who">{role === 'user' ? 'Sina' : content.demo ? 'Näidis (käsitsi koostatud, mitte AI)' : 'AI'}</p>
       {kind === 'idea' && <p>{content.text}</p>}
       {kind === 'questions' && (
         <>

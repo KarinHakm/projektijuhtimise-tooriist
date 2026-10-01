@@ -17,7 +17,9 @@ export default function StoriesProposal({
 
   return (
     <section className="stories-proposal" aria-labelledby="stories-proposal-title">
-      <h3 id="stories-proposal-title">AI ettepanek – ei ole veel backlog'is</h3>
+      <h3 id="stories-proposal-title">
+        {proposal.demo ? 'Näidisettepanek (käsitsi koostatud, mitte AI) – ei ole veel backlog\'is' : 'AI ettepanek – ei ole veel backlog\'is'}
+      </h3>
       {proposal.message && <p>{proposal.message}</p>}
       <p className="muted">Lood on peamise rolli ({proposal.primaryRole}) põhitöövoo järjekorras.</p>
 
