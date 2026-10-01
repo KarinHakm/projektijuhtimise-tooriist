@@ -540,12 +540,28 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Kooskõla kinnitab kasutaja ise.
 - Kliendi täpsustuse rakendamisel tehakse viidete kontroll uuesti.
 
-**Seis 01.10.2026: kooskõlakontroll on pooleli.**
-- Olemas on ainult osaline vihje: kui kriteeriumis on jutumärkides nimetus, mida mockup'is ei ole, kuvatakse hoiatus (`shared/refine-diff.js`).
-- **Teadaolevad puudujäägid testandmebaasi projektis 101 (mockup'i versioon 2):**
-  - kriteerium „Pärast nupu 'Esita taotlus' vajutamist kuvatakse kinnitusteade.“ – mockup'is ei ole kinnitusteate elementi;
-  - mockup'is on nupp „Salvesta“, millel ei ole ühtegi kriteeriumi (põhjendamatu element).
-- Osaline vihje neid ei leia: „kinnitusteade“ ei ole jutumärkides ja mockup'i liigseid elemente ei kontrollita. Kriteeriumi ja mockup'i elemendi viiteid veel ei ole.
+**Seis 01.10.2026: L23 on pooleli (piiratud teostus).** Kontrollitud testandmebaasis, projekt 101.
+- **Mis on olemas:**
+  - kriteeriumil on viide mockup'i elemendile või märge „ei puuduta vaadet“ koos allikaga (AI või kasutaja); AI viitab elemendile teksti järgi ja server seob ainult ühese vaste korral;
+  - kontrollimist vajavad hoiatused („Kontrolli: …“, mitte kindel otsus): pole vastet, põhjendamata interaktiivne element, nuppu nimetav kriteerium mitte-nupul, aegunud viide, võimalik vale AI seos;
+  - AI seos ega AI hinnang „ei puuduta vaadet“ ei kustuta hoiatust – seda teeb ainult kasutaja enda seos („Seo ise“ või „Kinnitan selle seose“);
+  - mockup'is on kriteeriumide märgised (K1, K2 …);
+  - ülevaatuse kinnitus on kasutaja kinnitus konkreetsele seisule (kriteeriumid, viited ja nende allikas, mockup'i versioon), mitte automaatne tõend täieliku kooskõla kohta; see aegub, kui seis muutub.
+- **Arendaja nägi brauseris:**
+  - projekti 101 vana vastuolu: kinnitusteadet nõudval kriteeriumil „pole vastet“, nupp „Salvesta“ ja väljad „Eesnimi“, „Perekonnanimi“ „põhjendamata“;
+  - kliendi täpsustuse eelvaates AI tekstiviited (pärast parandust õigete elementidega) ja nähtav „Eemaldub“ silt;
+  - „Seo ise“ ja AI seose kinnitamine („Kinnitan selle seose“), mille järel seose allikas on „sina“;
+  - ülevaatuse aegumine pärast mockup'i muutumist (täpsustus) ja pärast seose kinnitamist;
+  - hoiatuste arvu värskendumine täpsustuse kaardil pärast seose muutmist (ilma lehte värskendamata).
+- **Ainult automaattestiga kaetud (brauseris proovimata):** aegunud sõrmejäljega ülevaatuse keeld (`stale_review`); vigase sidumise tagasilükkamine (olematu element, teise projekti kriteerium, tundmatu liik). Samuti hoiatused „võimalik vale AI seos“ ja „nuppu nimetav kriteerium mitte-nupul“ – katsetes neid olukordi brauseris ette ei tulnud.
+- **K3 („… kuvatakse kinnitusteade 'Taotlus on esitatud'“):** hoiatus „pole vastet“ kadus **arendaja käsitsi lisatud seose tõttu**, mitte automaatse semantilise kontrolli tulemusena. Rakendus ei mõista, et tekst „Taotlus on esitatud“ on kinnitusteade; sõnapõhine kontroll otsis sõna „kinnitusteade“.
+- **Katses leitud ja parandatud vead:** AI numbrilised viited olid nihkes (mudel loendas 1-st) – asendatud tekstiviidetega; „Eemaldub“ silt jäi nupu alla peitu; täpsustuse kaart näitas vana hoiatuste arvu; AI seost sai kinnitada ainult kahe valikuga.
+- **Teadaolevad piirangud:**
+  - kood ei hinda seose sisulist õigsust ega mõista tähendust (sünonüümid, ümbersõnastused, „kinnitusteade“ vs „Taotlus on esitatud“);
+  - võimaliku vale AI seose hoiatus põhineb sõnatüvedel: see ei taba valet seost, kui kriteerium nimetab seotud elementi muus tähenduses;
+  - elemendi sisu (nt „hind eurodes“ vs „30“), paigutust ja nähtavuse tingimusi („pärast vajutamist“) ei kontrollita;
+  - kasutaja enda seos kõrvaldab hoiatuse ka siis, kui seos on vale – see on inimese otsus;
+  - mockup'i elemendi esiletõst kriteeriumile osutades (valikuline lisavõimalus) ei ole tehtud.
 
 ### L24 · Uue vaate loomine promptist (M)
 *Projektijuhina soovin kirjeldada uue vaate ühe lausega ja saada korraga mockup'i, loo ja kriteeriumid, et klient näeks ideed kohe.*

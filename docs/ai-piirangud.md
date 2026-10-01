@@ -48,6 +48,9 @@ Erinevalt ülaltoodud proovidest on need tulemused saadud rakenduse enda kaudu, 
 | L08 | Prioriteedisoovitus | 1 | 9,6 s | 107 | Üks lugu koos põhjendusega; põhjendus loogiliselt nõrk (vt piirang 13) |
 | L09, L10 | Kriteeriumid ja mockup | 1 | 12,8 s | 437 | 6 kriteeriumi ja mockup; kriteeriumid pinnapealsed (vt piirang 14) |
 | L11 | Kliendi täpsustus | 1 | 12,7 s | 441 | Sünniaja väli eemaldati; väidetud kinnitusteadet mockup'is ei olnud (vt piirang 15) |
+| L23 | Kliendi täpsustus numbriliste viidetega | 2 (kordus) | 15,2 s + 12,0 s | 467 + 392 | Mõlemad vastused ei läbinud serveri reegleid; midagi ei salvestatud (tõenäoline põhjus: viited nihkes, vt piirang 16) |
+| L23 | Kliendi täpsustus numbriliste viidetega | 1 | 39,1 s | 393 | Viited nihkes (vt piirang 16); kinnitusteadet mockup'is ei olnud |
+| L23 | Kliendi täpsustus tekstiviidetega | 1 | 9,2 s | 442 | Kõik kolm seost õiged; kinnitusteate element lisati |
 
 ## Teadaolevad AI piirangud
 
@@ -73,7 +76,9 @@ Erinevalt ülaltoodud proovidest on need tulemused saadud rakenduse enda kaudu, 
 12. **„et“-kõrvallause hoiatus kontrollib ainult tegevuse välja.** Kui kasu väljas on eraldi „et“-kõrvallause, hoiatust ei tule. Näiteks algne „…, et saaksin olla kindel, **et** minu taotlus on saadetud“ andis pealkirja kahe „et“ sõnaga.
 13. **Nõrk või ebaloogiline põhjendus** (rakenduses, L08). Prioriteedisoovitus põhjendas loo valikut nii: „Ilma võimaluseta esitada taotlust ei saa kasutada kinnitust ega näha tunniplaani“ – tunniplaani vaatamine taotlust ei eelda. Soovitus on ainult ettepanek; otsuse teeb inimene („Valin ise teise“).
 14. **Pinnapealsed kriteeriumid** (rakenduses, L09). AI kriteeriumid olid kujul „Kasutaja näeb sisestusvälja 'Eesnimi'“ – formaalselt kontrollitavad, kuid ei kirjelda, mida loo täitmine peab tagama.
-15. **AI väide ei vasta tegelikule muudatusele** (rakenduses, L11). Täpsustuse vastuses kirjutas AI, et lisas kinnitusteate, kuid uues mockup'is seda elementi ei olnud. Eelvaade arvutatakse koodis, seega oli puudumine näha; kooskõlakontroll (L23) seda veel automaatselt ei leia.
+15. **AI väide ei vasta tegelikule muudatusele** (rakenduses, L11). Täpsustuse vastuses kirjutas AI, et lisas kinnitusteate, kuid uues mockup'is seda elementi ei olnud. Eelvaade arvutatakse koodis, seega oli puudumine näha. L23 kooskõlavihje annab sellisel juhul hoiatuse „pole vastet“, kui kriteeriumi sõna mockup'is ei esine.
+16. **Numbrilised viited olid nihkes** (rakenduses, L23). Kui AI pidi viitama mockup'i elemendile järjekorranumbriga (0 = esimene), loendas see 1-st: üks viide osutas olematule elemendile ja teine valele (e-posti välja kriteerium nupule). Rakendus kasutab nüüd tekstiviiteid ja seob ainult ühese vaste korral.
+17. **AI hinnang „ei puuduta vaadet“ võib olla vale** (rakenduses, L23). Kinnitusteadet nõudva kriteeriumi kohta hindas AI, et see ei puuduta vaadet, ja jättis teate mockup'ist välja. AI hinnang hoiatust ei kustuta; selle otsustab kasutaja.
 
 ## Rakenduse teadaolevad piirangud (mitte AI)
 
