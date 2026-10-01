@@ -20,6 +20,38 @@ export function appendStories(db, projectId, stories, proposalId) {
   stories.forEach((s, i) => insert.run(projectId, last + i + 1, s.role, s.rolePhrase, s.want, s.soThat, s.size, s.origin, s.touchesView ? 1 : 0, proposalId));
 }
 
+// Tõstab loo ühe koha võrra üles või alla, vahetades positsiooni naabriga (L07).
+// Muudab ainult kahe loo positsiooni; järjekord ei ole loo sisu, seega updated_at jääb samaks.
+// Tagastab { ok: true } või { status, code, error }.
+export function moveStory(db, projectId, storyId, direction) {
+  if (direction !== 'up' && direction !== 'down') {
+    return { status: 400, code: 'invalid_direction', error: 'Suund peab olema "up" või "down".' };
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const story = db.prepare('SELECT id, position FROM stories WHERE id = ? AND project_id = ?').get(storyId, projectId);
+    if (!story) {
+      db.exec('ROLLBACK');
+      return { status: 404, code: 'not_found', error: 'Lugu ei leitud.' };
+    }
+    const neighbour = direction === 'up'
+      ? db.prepare('SELECT id, position FROM stories WHERE project_id = ? AND position < ? ORDER BY position DESC LIMIT 1').get(projectId, story.position)
+      : db.prepare('SELECT id, position FROM stories WHERE project_id = ? AND position > ? ORDER BY position ASC LIMIT 1').get(projectId, story.position);
+    if (!neighbour) {
+      db.exec('ROLLBACK');
+      return { status: 409, code: 'at_edge', error: direction === 'up' ? 'Lugu on juba esimene.' : 'Lugu on juba viimane.' };
+    }
+    const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
+    setPosition.run(neighbour.position, story.id);
+    setPosition.run(story.position, neighbour.id);
+    db.exec('COMMIT');
+    return { ok: true };
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
 // Kontrollib lisamise päringut ettepaneku ja kinnitatud rollide vastu. Tagastab { stories } või { error }.
 // Päritolu määrab server: AI originaaliga identne lugu on "ai", muudetud lugu "ai_edited".
 export function validateApply(db, projectId, raw, proposedStories) {

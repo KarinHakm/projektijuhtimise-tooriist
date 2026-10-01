@@ -7,12 +7,12 @@ import { buildProjectContext } from '../ai/context.js';
 import { buildStoriesMessages, buildStoriesSchema, checkStories } from '../ai/tasks/stories.js';
 import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listRoles } from '../roles.js';
-import { appendStories, listStories, validateApply } from '../stories.js';
+import { appendStories, listStories, moveStory, validateApply } from '../stories.js';
 
 const KIND = 'stories';
 
-// Lugude marsruudid (L06). AI ettepanek salvestatakse olekuga "pending" ega muuda backlog'i;
-// stories tabel muutub ainult /apply kaudu, täpselt üks kord ettepaneku kohta.
+// Lugude marsruudid (L06, L07). AI ettepanek salvestatakse olekuga "pending" ega muuda backlog'i;
+// lood lisanduvad ainult /apply kaudu, täpselt üks kord ettepaneku kohta. /:storyId/move muudab ainult järjekorda.
 export function storiesRouter({ db, ai }) {
   const router = Router({ mergeParams: true });
   const running = new Set();
@@ -129,6 +129,15 @@ export function storiesRouter({ db, ai }) {
       if (err instanceof ProposalError) return res.status(err.status).json({ error: err.message, code: err.code });
       throw err;
     }
+    res.json(snapshot(req.projectId));
+  });
+
+  // Tõstab backlog'i loo ühe koha võrra (L07). Teise projekti lugu ei leita (404).
+  router.post('/:storyId/move', (req, res) => {
+    const storyId = Number(req.params.storyId);
+    if (!Number.isInteger(storyId) || storyId <= 0) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    const result = moveStory(db, req.projectId, storyId, req.body?.direction);
+    if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
   });
 
