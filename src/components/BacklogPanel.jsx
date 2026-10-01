@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getStories, moveStory } from '../api.js';
+import { addStoryQuestion, getStories, moveStory, resolveStoryQuestion, setStoryStatus } from '../api.js';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
 import BacklogList from './BacklogList.jsx';
 
 const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef }) {
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -15,7 +15,7 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
       </p>
       <p className="backlog__status" role="status" aria-live="polite">{status}</p>
       {error && <p className="error" role="alert">{error}</p>}
-      <BacklogList stories={stories} busy={busy} highlightId={highlightId} focusStoryId={focusStoryId} onMove={onMove} buttonRef={buttonRef} />
+      <BacklogList stories={stories} busy={busy} highlightId={highlightId} focusStoryId={focusStoryId} onMove={onMove} buttonRef={buttonRef} readiness={readiness} />
     </>
   );
 }
@@ -45,6 +45,36 @@ export default function BacklogPanel({ projectId, version }) {
   }, [projectId]);
 
   useEffect(() => { refresh(); }, [refresh, version]);
+  // Kriteeriumide, mockup'i jm muutus mõjutab valmisolekut: loend laaditakse uuesti iga muutva päringu järel (api.js sündmus).
+  useEffect(() => {
+    window.addEventListener('pjt:changed', refresh);
+    return () => window.removeEventListener('pjt:changed', refresh);
+  }, [refresh]);
+
+  // L19/L20: staatus ja avatud küsimused. Viga näidatakse selle loo lahtris.
+  const [readinessError, setReadinessError] = useState({ id: null, message: '' });
+  async function runReadiness(storyId, call) {
+    setBusy(true);
+    setReadinessError({ id: null, message: '' });
+    try {
+      const data = await call();
+      setStories(data.stories);
+      return true;
+    } catch (e) {
+      setReadinessError({ id: storyId, message: e.message });
+      await refresh();
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  const readiness = {
+    errorFor: readinessError.id,
+    error: readinessError.message,
+    onStatus: (id, value) => runReadiness(id, () => setStoryStatus(projectId, id, value)),
+    onAddQuestion: (id, text) => runReadiness(id, () => addStoryQuestion(projectId, id, text)),
+    onResolve: (id, questionId) => runReadiness(id, () => resolveStoryQuestion(projectId, id, questionId)),
+  };
 
   useEffect(() => {
     if (!highlight) return undefined;
@@ -98,6 +128,7 @@ export default function BacklogPanel({ projectId, version }) {
       highlightId={highlight?.id ?? null}
       onMove={move}
       buttonRef={buttonRef}
+      readiness={readiness}
     />
   );
 }

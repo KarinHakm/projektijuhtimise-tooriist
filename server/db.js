@@ -94,6 +94,15 @@ const MIGRATIONS = [
    ALTER TABLE criteria ADD COLUMN ref_version INTEGER;
    ALTER TABLE criteria ADD COLUMN ref_source TEXT CHECK (ref_source IN ('ai', 'user'));
    ALTER TABLE stories ADD COLUMN consistency_review TEXT`,
+  // Loo avatud küsimused (L20). Vastatud küsimus jääb alles (resolved_at), aga ei takista valmisolekut.
+  `CREATE TABLE story_questions (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     story_id    INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+     text        TEXT    NOT NULL CHECK (length(trim(text)) BETWEEN 1 AND 300),
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     resolved_at TEXT
+   );
+   CREATE INDEX story_questions_story ON story_questions(story_id, id)`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

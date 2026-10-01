@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06 ja L09. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -40,8 +40,8 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
 | L17 | MVP joon | S | Kohustuslik | – | Plaanitud |
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Pooleli |
-| L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Plaanitud |
-| L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Plaanitud |
+| L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
+| L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Pooleli |
 | L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Plaanitud |
 | L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Pooleli |
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
@@ -521,6 +521,13 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Keeldumisel näitab rakendus iga täitmata tingimust eraldi.
 - Server keeldub DoR-ile mittevastavat lugu valmis märkimast ka otse API kaudu.
 
+**Seis 01.10.2026 (L19 osaliselt):**
+- **Tehtud:** backlog'i loo all „Valmisolek ja küsimused“: staatuse valik, DoR-i kontrollnimekiri ✓/✗ põhjustega (`shared/dor.js`, sama loogika serveris ja brauseris); „Valmis arenduseks“ on valikus keelatud ja server keeldub (409 koos puuduste loendiga), kui DoR pole täidetud.
+- **Hilisem muudatus:** valmisolek arvutatakse iga lugemise ajal. Kui „Valmis arenduseks“ loo DoR hiljem rikutakse (nt kriteerium muutub mittekontrollitavaks), näidatakse „valmisolek aegunud“ ja lugu ei loeta valmis olevaks (`readiness.ready = false`). Staatust automaatselt ei muudeta – kasutaja parandab puuduse või valib uue staatuse. Valitud nii, et ükski muutmise koht (kriteeriumid, seosed, täpsustus, mockup, küsimused) ei saaks kontrolli vahele jätta.
+- **Arendaja nägi brauseris (`npm run demo`):** avatud küsimusega loo „Valmis arenduseks“ on valikus hall („DoR pole täidetud“); pärast „Vastatud“ jääb staatus „Vajab täpsustamist“ ja DoR on täidetud; käsitsi valitud „Valmis arenduseks“ salvestub ja on F5 järel alles.
+- **Ainult automaattestiga kaetud:** iga DoR tingimus eraldi, serveri 409 keeldumine otse API kaudu, aegumine pärast kriteeriumi muutmist („valmisolek aegunud“), vigased päringud.
+- **Pooleli:** „puudutab vaadet“ väärtust ei saa muuta (kõik lood on praegu vaadet puudutavad).
+
 ### L20 · Täpsustamist vajav lugu ja avatud küsimused (S)
 *Projektijuhina soovin märkida ebaselge loo täpsustamist vajavaks ja lisada sellele küsimuse, et kliendile esitatavad küsimused ei ununeks.*
 - Loole saab määrata staatuse „Vajab täpsustamist“.
@@ -528,6 +535,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Avatud küsimuse saab märkida lahendatuks.
 - Avatud küsimusega lugu ei saa staatust „Valmis arenduseks“.
 - Avatud küsimused on AI päringu kontekstis.
+
+**Seis 01.10.2026 (L20 osaliselt):** „Vajab täpsustamist“ saab määrata käsitsi ka ilma küsimuseta; küsimuse lisamine määrab selle staatuse automaatselt; küsimuse saab märkida vastatuks (jääb läbikriipsutatult alles). Vastatuks märkimine staatust ei muuda – „Valmis arenduseks“ määrab kasutaja ise. Andmebaasi migratsioon v9 (tabel `story_questions`). Brauseris nähtud: küsimuse lisamine → „Vajab täpsustamist“, „Vastatud“ → küsimus jääb läbikriipsutatult alles, staatus ei muutu. **Pooleli:** avatud küsimused ei ole veel AI päringu kontekstis; „Vajab täpsustamist“ käsitsi määramine ilma küsimuseta on ainult automaattestiga kaetud.
 
 ### L21 · Viimase muudatuse tagasivõtmine (M)
 *Projektijuhina soovin viimase muudatuse tagasi võtta, et eksimus kliendi ees ei oleks lõplik.*

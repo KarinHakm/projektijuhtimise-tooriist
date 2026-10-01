@@ -9,6 +9,10 @@ import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectP
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
 import { appendStories, listStories, moveStory, validateApply } from '../stories.js';
+import { withReadiness } from '../readiness.js';
+import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
+
+const QUESTION_MAX = 300;
 
 const KIND = 'stories';
 
@@ -29,7 +33,7 @@ export function storiesRouter({ db, ai }) {
   const snapshot = (projectId) => {
     const proposal = findPendingProposal(db, projectId, KIND);
     return {
-      stories: listStories(db, projectId),
+      stories: withReadiness(db, listStories(db, projectId)), // L19/L20: avatud küsimused ja valmisolek
       focusStoryId: getFocusStoryId(db, projectId), // L08: backlog'is märge "Alustame sellest"
       proposal: proposal ? publicProposal(proposal) : null,
       roles: listRoles(db, projectId).map((r) => r.name),
@@ -143,6 +147,57 @@ export function storiesRouter({ db, ai }) {
     if (!Number.isInteger(storyId) || storyId <= 0) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     const result = moveStory(db, req.projectId, storyId, req.body?.direction);
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
+    res.json(snapshot(req.projectId));
+  });
+
+  // L19/L20: staatus, valmisolek ja avatud küsimused. Käsitsi tegevused, töötavad ka ilma AI-ta.
+  const storyIn = (projectId, raw) => {
+    const id = Number(raw);
+    if (!Number.isInteger(id) || id <= 0) return null;
+    return withReadiness(db, listStories(db, projectId).filter((s) => s.id === id))[0] ?? null;
+  };
+  const touch = "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+
+  // Staatuse muutmine. „Valmis arenduseks“ ainult siis, kui DoR on täidetud; muidu 409 koos puuduste loendiga.
+  router.post('/:storyId/status', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    const status = req.body?.status;
+    if (!STORY_STATUSES.includes(status)) return res.status(400).json({ error: 'Tundmatu staatus.', code: 'invalid_status' });
+    if (status === READY && !story.readiness.ok) {
+      const missing = dorMissing(story.readiness);
+      return res.status(409).json({ error: `Lugu ei vasta valmisoleku definitsioonile: ${missing.join('; ')}.`, code: 'not_ready', missing });
+    }
+    db.prepare(`UPDATE stories SET status = ?, ${touch} WHERE id = ? AND project_id = ?`).run(status, story.id, req.projectId);
+    res.json(snapshot(req.projectId));
+  });
+
+  // Avatud küsimuse lisamine: lugu saab staatuse „Vajab täpsustamist“ (ka siis, kui see oli valmis).
+  router.post('/:storyId/questions', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    const text = typeof req.body?.text === 'string' ? req.body.text.replace(/\s+/g, ' ').trim() : '';
+    if (!text) return res.status(400).json({ error: 'Kirjuta küsimus.', field: 'text' });
+    if (text.length > QUESTION_MAX) return res.status(400).json({ error: `Küsimus võib olla kuni ${QUESTION_MAX} märki.`, field: 'text' });
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.prepare('INSERT INTO story_questions (story_id, text) VALUES (?, ?)').run(story.id, text);
+      db.prepare(`UPDATE stories SET status = 'vajab_tapsustamist', ${touch} WHERE id = ?`).run(story.id);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+    res.json(snapshot(req.projectId));
+  });
+
+  // Küsimus vastatuks. Staatust ei muudeta: „Valmis arenduseks“ määrab kasutaja ise.
+  router.post('/:storyId/questions/:questionId/resolve', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    const question = story?.questions.find((q) => q.id === Number(req.params.questionId));
+    if (!question) return res.status(404).json({ error: 'Küsimust ei leitud.', code: 'not_found' });
+    if (question.resolvedAt) return res.status(409).json({ error: 'Küsimus on juba vastatud.', code: 'already_resolved' });
+    db.prepare("UPDATE story_questions SET resolved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND resolved_at IS NULL").run(question.id);
     res.json(snapshot(req.projectId));
   });
 

@@ -375,3 +375,20 @@ button.stage__button:hover { border-color: var(--accent); }
 .card:focus { outline: none; }
 .card--highlight { animation: card-highlight 1.6s ease-out; }
 @keyframes card-highlight { from { box-shadow: 0 0 0 4px #9bb8ea; } to { box-shadow: 0 0 0 4px transparent; } }
+
+/* L19/L20: valmisolek ja avatud küsimused backlog'i loo all */
+.link-button { margin: 0.25rem 0 0; padding: 0; background: none; color: var(--accent); font-size: 0.85rem; text-decoration: underline; }
+.story-ready { margin: 0.5rem 0 0.25rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 0.9rem; }
+.story-ready label { margin-top: 0.25rem; }
+.story-ready select { font: inherit; padding: 0.3rem; max-width: 100%; }
+.story-ready__heading { margin: 0.75rem 0 0.25rem; font-weight: 600; }
+.story-ready__expired { margin: 0.5rem 0 0; }
+.dor-list, .story-questions { margin: 0; padding-left: 1.1rem; }
+.dor-list { list-style: none; padding-left: 0; }
+.dor-list__ok { color: #1d6b35; }
+.dor-list__missing { color: #8a5a00; }
+.story-questions li { margin: 0.25rem 0; }
+.story-questions__resolved { text-decoration: line-through; color: var(--muted); }
+.story-questions .icon-button { margin: 0 0 0 0.25rem; }
+.story-questions__add button { margin-top: 0.5rem; }
+.backlog__expired { color: #8a5a00; font-weight: 600; }

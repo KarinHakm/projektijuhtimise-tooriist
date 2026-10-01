@@ -19,12 +19,12 @@ Näide: spordiklubi tellib veebi. Projektijuht kasutab tööriista kahel kohtumi
 
 1. Projektijuht avab projekti avalehelt. Kaardil on näha viimati läbitud etapp ja järgmine samm. Vestlus, lood, kriteeriumid ja mockup'id on alles ka pärast serveri taaskäivitust.
 2. Ta järjestab lood ↑/↓ nuppudega ümber ja valib vajadusel uue alustamise loo.
-3. Järgmise loo jaoks küsib ta kriteeriumid ja mockup'i ning kordab täpsustuse sammu.
+3. Ebaselge loo juures lisab ta avatud küsimuse (näiteks „Klient täpsustab maksevõimalused“). Lugu saab staatuse „Vajab täpsustamist“. Staatust „Valmis arenduseks“ saab anda alles siis, kui valmisoleku definitsiooni (DoR) kõik tingimused on täidetud, ja selle otsuse teeb projektijuht ise.
+4. Järgmise loo jaoks küsib ta kriteeriumid ja mockup'i ning kordab täpsustuse sammu.
 
 **Veel puudub** (vt [backlog.md](backlog.md)):
 - lugude käsitsi lisamine, muutmine ja kustutamine;
 - MVP joon;
-- staatused koos valmisoleku definitsiooniga (DoR) ja avatud küsimused;
 - tagasivõtmine;
 - groomimine: jagamine, ühendamine ja AI ülevaatus.
 

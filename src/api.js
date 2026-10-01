@@ -102,3 +102,11 @@ export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });
 
 export const getStage = (projectId) => request(`/projects/${encodeURIComponent(projectId)}/stage`);
+
+// L19/L20: loo staatus ja avatud küsimused.
+export const setStoryStatus = (projectId, storyId, status) =>
+  postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/status`, { status });
+export const addStoryQuestion = (projectId, storyId, text) =>
+  postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/questions`, { text });
+export const resolveStoryQuestion = (projectId, storyId, questionId) =>
+  postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/questions/${encodeURIComponent(questionId)}/resolve`, {});
