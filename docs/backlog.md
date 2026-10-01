@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22, L23 ja L25 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22, L23, L25 ja L26 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -47,7 +47,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Plaanitud |
 | L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Pooleli |
-| L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Plaanitud |
+| L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Pooleli |
 | L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Plaanitud |
 | L28 | AI jagamisettepanek eelvaatega | M | Kohustuslik | 6 | Plaanitud |
 | L29 | AI ühendamisettepanek eelvaatega | M | Kohustuslik | 6 | Plaanitud |
@@ -630,6 +630,13 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Ühendatud lugu saab enne kinnitamist muuta.
 - Kattuvatest lugudest ühe saab eemaldada ja teise alles jätta.
 - Ühendamise saab tagasi võtta.
+
+**Seis 01.10.2026 (L26 osaliselt):**
+- **Tehtud (ilma AI-ta):** backlog'is „⇄ Ühenda“ → teise loo valik; säilib vaikimisi eespool olev lugu („Säilita hoopis …“ vahetab). Ühendatud loo sõnastust ja suurust saab enne kinnitamist muuta. Eelvaade näitab uut pealkirja ja kohta ning kõiki muudatusi andmetes.
+- **Reeglid (sinu otsused 01.10.2026):** säilitatava loo ID ja staatus jäävad; ühendatud lugu läheb kahest eespool olevale kohale, eemaldatava rida kustutatakse alles pärast andmete ülekandmist. Alustamise lugu läheb ühendatud loole. MVP: kui vähemalt üks oli joone kohal, on ühendatud lugu joone kohal (mõlema korral joone kohal üks lugu vähem). **Kriteeriumid:** kõik on vaikimisi valitud, ka sama tekstiga kirjed; duplikaadid on märgitud ja iga kirje juures on mockup'i seos; kasutaja võib duplikaadi teadlikult märkimata jätta – eelvaade nimetab selle kirje ja kaduva seose; server rakendab täpselt kinnitatud valiku. Küsimused liiguvad ühendatud loole (avatud küsimuse korral „Vajab täpsustamist“). Ainult ühe loo mockup'i versioonid liiguvad muutmata kujul; teise loo elemendiseosed eemaldatakse nähtavalt. Mõlema loo kriteeriumide/mockup'i/täpsustuse ja eemaldatava loo prioriteedi ootel ettepanekud lükatakse tagasi (eelvaates kirjas).
+- **Teadaolev piirang:** kui **mõlemal** lool on mockup'i versioonid, ühendamist ei tehta (vorm ja server keelduvad selge teatega), sest mõlema ajaloo turvaline ühendamine puudub. Teisi lugusid saab ühendada.
+- **Automaattestid:** eelvaate andmed (duplikaadid, seosed), säilitatav ID ja koht, täpne kriteeriumide valik, küsimused ja mockup, teiste lugude muutumatus, alustamise lugu, MVP, mockup'i keeld, ootel ettepanekud, vigased päringud. **Arendaja nägi brauseris (demobaas):** loo 5 ühendamine alustamise looga 4 – säilitatav lugu ja eelvaade, märkimata kriteeriumi nimetamine eelvaates, tulemus (lugu 4 jäi alustamise looks, 4 kriteeriumi, mockup v3, backlog'is 4 lugu), F5 järel sama seis. Mõlema mockup'iga lugude keeld on ainult automaattestiga kaetud (demos on mockup ühel lool). **Parandatud:** eelvaade ütles „järgnevad lood nihkuvad“ ka siis, kui eemaldatav (või jagatav) lugu oli viimane.
+- **Pooleli:** kattuvaks märkimine eraldi tegevusena; „kriteeriumide loendis ei ole täpseid kordusi“ sõltub kasutaja valikust (duplikaadid on vaikimisi alles ja märgitud); tagasivõtmine (L21).
 
 ### L27 · AI ülevaatus ja leiud (L)
 *Projektijuhina soovin käivitada AI ülevaatuse, et backlog'i probleemid leitaks enne arendust.*

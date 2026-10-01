@@ -9,8 +9,8 @@ import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectP
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
 import {
-  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, moveStory, splitInfo, splitStory, updateManualStory, validateApply,
-  validateManualStory, validateSplit,
+  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, mergeInfo, mergeStories, moveStory, splitInfo, splitStory,
+  updateManualStory, validateApply, validateManualStory, validateMerge, validateSplit,
 } from '../stories.js';
 import { withReadiness } from '../readiness.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
@@ -208,6 +208,28 @@ export function storiesRouter({ db, ai }) {
     const result = splitStory(db, req.projectId, storyId, split);
     if (!result) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     res.json({ ...snapshot(req.projectId), split: result });
+  });
+
+  // L26: kahe loo käsitsi ühendamine. :storyId = säilitatav lugu, ?with / withId = eemaldatav lugu.
+  router.get('/:storyId/merge-info', (req, res) => {
+    const info = mergeInfo(db, req.projectId, Number(req.params.storyId), Number(req.query.with));
+    if (!info) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json(info);
+  });
+
+  router.post('/:storyId/merge', (req, res) => {
+    const keepId = Number(req.params.storyId);
+    const removeId = req.body?.withId;
+    const info = Number.isInteger(removeId) ? mergeInfo(db, req.projectId, keepId, removeId) : null;
+    if (!info) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    if (info.blocked) {
+      return res.status(409).json({ error: 'Nende lugude ühendamine pole praegu võimalik, sest mõlemal lool on mockup\'i versioonid ja mõlema ajaloo turvaline ühendamine puudub.', code: 'both_mockups' });
+    }
+    const merge = validateMerge(req.body, info);
+    if (merge.error) return res.status(400).json({ error: merge.error, field: merge.field, code: 'invalid_merge' });
+    const result = mergeStories(db, req.projectId, keepId, removeId, merge);
+    if (!result) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json({ ...snapshot(req.projectId), merge: result });
   });
 
   // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).

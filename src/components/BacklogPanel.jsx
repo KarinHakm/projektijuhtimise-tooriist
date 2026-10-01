@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addStoryQuestion, createStory, deleteStory, getDeleteImpact, getSplitInfo, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus,
-  splitStoryInTwo, updateStory,
+  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory,
 } from '../api.js';
 import StoryForm from './StoryForm.jsx';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
@@ -170,6 +170,19 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
     onConfirmSplit: (id, body) => runManage(() => splitStoryInTwo(projectId, id, body), (d) => {
       const at = d.stories.findIndex((x) => x.id === d.split.secondId) + 1;
       return `Lugu jagati kaheks: osa 2 on kohal ${at}.${d.split.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.split.rejectedProposals}.` : ''}`;
+    }),
+    onMerge: (id) => { setManageError(null); setMode({ type: 'merge', id, info: null }); },
+    onMergePick: async (id, keepId, removeId) => {
+      setManageError(null);
+      try {
+        setMode({ type: 'merge', id, info: await getMergeInfo(projectId, keepId, removeId) });
+      } catch (e) {
+        setManageError({ message: e.message });
+      }
+    },
+    onConfirmMerge: (keepId, body) => runManage(() => mergeStoriesInto(projectId, keepId, body), (d) => {
+      const at = d.stories.findIndex((x) => x.id === d.merge.keepId) + 1;
+      return `Lood ühendati: ühendatud lugu on kohal ${at}.${d.merge.removedCriteria ? ` Eemaldatud kriteeriume: ${d.merge.removedCriteria}.` : ''}${d.merge.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.merge.rejectedProposals}.` : ''}`;
     }),
     onConfirmDelete: (id) => runManage(() => deleteStory(projectId, id),
       (d) => (d.deleted.isFocus ? 'Lugu kustutati. See oli alustamise lugu – vali prioriteedi juures uus.' : 'Lugu kustutati.')),

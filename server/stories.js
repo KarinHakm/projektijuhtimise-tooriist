@@ -1,6 +1,8 @@
 // Backlog'i lood (L06): loend, AI ettepanekust lisamine ja lisamise sisendi kontroll.
 import { composeTitle, validateStoryText } from '../shared/story-format.js';
 import { listRoles, roleKey } from './roles.js';
+import { cleanCriterion } from '../shared/criteria-check.js';
+import { componentLabel } from '../shared/consistency.js';
 
 export const SIZES = ['S', 'M', 'L'];
 
@@ -254,6 +256,132 @@ export function splitStory(db, projectId, storyId, split) {
     db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
     db.exec('COMMIT');
     return { secondId, rejectedProposals: rejected.length, movedCriteria: split.criteriaToSecond.length, movedQuestions: split.questionsToSecond.length };
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+// --- L26: kahe loo käsitsi ühendamine (ilma AI-ta) ---
+// Säilitatav lugu (keep) jääb alles (ID, staatus); eemaldatava (remove) andmed viiakse üle ja selle rida kustutatakse.
+// Ühendatud lugu jääb kahest eespool olevale kohale. Kui mõlemal lool on mockup'i versioone, ühendamist ei tehta.
+
+const MERGE_REJECTED_KINDS = ['criteria', 'mockup', 'refinement'];
+
+function linkLabel(db, storyId, c) {
+  if (c.ref_kind === 'no_view') return 'ei puuduta vaadet';
+  if (c.ref_kind !== 'element') return null;
+  const row = db.prepare('SELECT spec FROM mockups WHERE story_id = ? AND version = ?').get(storyId, c.ref_version);
+  const component = row ? JSON.parse(row.spec).components?.[c.ref_index] : null;
+  return component ? `${componentLabel(component, c.ref_index)} (mockup v${c.ref_version})` : `aegunud seos (mockup v${c.ref_version})`;
+}
+
+const mergePending = (db, projectId, keepId, removeId) => db
+  .prepare("SELECT id, kind, payload FROM ai_proposals WHERE project_id = ? AND status = 'pending'")
+  .all(projectId)
+  .filter((p) => {
+    const storyId = JSON.parse(p.payload).storyId;
+    if (MERGE_REJECTED_KINDS.includes(p.kind)) return storyId === keepId || storyId === removeId;
+    return p.kind === 'priority' && storyId === removeId;
+  });
+
+// Ühendamise eelvaate andmed (ainult lugemine). null, kui lugu pole projektis või lood on samad.
+export function mergeInfo(db, projectId, keepId, removeId) {
+  if (keepId === removeId) return null;
+  const ids = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).map((r) => r.id);
+  const keepIndex = ids.indexOf(keepId);
+  const removeIndex = ids.indexOf(removeId);
+  if (keepIndex < 0 || removeIndex < 0) return null;
+  const project = db.prepare('SELECT focus_story_id AS focus, mvp_count AS mvp FROM projects WHERE id = ?').get(projectId);
+  const mockups = (id) => db.prepare('SELECT COUNT(*) AS n FROM mockups WHERE story_id = ?').get(id).n;
+  const mockupCounts = { keep: mockups(keepId), remove: mockups(removeId) };
+  const blocked = mockupCounts.keep > 0 && mockupCounts.remove > 0;
+  // Mockup jääb sellelt loolt, kellel see on (blocked korral mõlemal); teise loo elemendiseosed eemaldatakse.
+  const mockupFrom = mockupCounts.keep > 0 ? 'keep' : mockupCounts.remove > 0 ? 'remove' : null;
+  const criteria = ['keep', 'remove'].flatMap((from) => {
+    const sid = from === 'keep' ? keepId : removeId;
+    return db.prepare('SELECT id, text, ref_kind, ref_index, ref_version FROM criteria WHERE story_id = ? ORDER BY position').all(sid).map((c) => ({
+      id: c.id,
+      from,
+      text: c.text,
+      linkLabel: linkLabel(db, sid, c),
+      linkSurvives: c.ref_kind === 'no_view' || (c.ref_kind === 'element' && mockupFrom === from),
+    }));
+  });
+  const norm = (t) => cleanCriterion(t).toLocaleLowerCase('et');
+  for (const c of criteria) c.duplicateWith = criteria.filter((o) => o.id !== c.id && norm(o.text) === norm(c.text)).map((o) => o.id);
+  const questions = ['keep', 'remove'].flatMap((from) => db.prepare('SELECT id, text, resolved_at AS resolvedAt FROM story_questions WHERE story_id = ? ORDER BY id')
+    .all(from === 'keep' ? keepId : removeId).map((q) => ({ ...q, from })));
+  const pending = mergePending(db, projectId, keepId, removeId);
+  const above = (i) => project.mvp !== null && i < project.mvp;
+  return {
+    keepId,
+    removeId,
+    blocked,
+    mockups: { ...mockupCounts, from: mockupFrom },
+    criteria,
+    questions,
+    pendingProposals: pending.length,
+    focus: project.focus === keepId ? 'keep' : project.focus === removeId ? 'remove' : null,
+    resultPosition: Math.min(keepIndex, removeIndex) + 1,
+    mvp: { count: project.mvp, keepAbove: above(keepIndex), removeAbove: above(removeIndex) },
+  };
+}
+
+// Kontrollib ühendamise päringu. keepCriteria = täpselt need kriteeriumid, mis kasutaja säilitas.
+export function validateMerge(raw, info) {
+  const story = validateManualStory(raw?.story);
+  if (story.error) return { error: story.error, field: `story.${story.field}` };
+  const allowed = new Set(info.criteria.map((c) => c.id));
+  const keepCriteria = raw?.keepCriteria;
+  if (!Array.isArray(keepCriteria) || keepCriteria.some((id) => !allowed.has(id)) || new Set(keepCriteria).size !== keepCriteria.length) {
+    return { error: 'Kriteeriumide valik on vigane.', field: 'criteria' };
+  }
+  return { story: story.value, keepCriteria };
+}
+
+export function mergeStories(db, projectId, keepId, removeId, merge) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const info = mergeInfo(db, projectId, keepId, removeId);
+    if (!info || info.blocked) {
+      db.exec('ROLLBACK');
+      return info ? { blocked: true } : null;
+    }
+    const pending = mergePending(db, projectId, keepId, removeId);
+    for (const p of pending) {
+      db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status = 'pending'").run(p.id);
+    }
+    if (info.focus === 'remove') db.prepare('UPDATE projects SET focus_story_id = ? WHERE id = ?').run(keepId, projectId);
+    updateManualStory(db, projectId, keepId, merge.story);
+
+    // Kriteeriumid: täpselt kasutaja valik. Märkimata kriteeriumid eemaldatakse (eelvaates nimetatud).
+    const kept = new Set(merge.keepCriteria);
+    const removed = info.criteria.filter((c) => !kept.has(c.id));
+    for (const c of removed) db.prepare('DELETE FROM criteria WHERE id = ?').run(c.id);
+    const clearRef = db.prepare("UPDATE criteria SET ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL WHERE id = ? AND ref_kind = 'element'");
+    const ordered = info.criteria.filter((c) => kept.has(c.id));
+    ordered.forEach((c, i) => {
+      db.prepare('UPDATE criteria SET story_id = ?, position = ? WHERE id = ?').run(keepId, i + 1, c.id);
+      if (!c.linkSurvives) clearRef.run(c.id);
+    });
+    db.prepare('UPDATE story_questions SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
+    if (info.mockups.from === 'remove') db.prepare('UPDATE mockups SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
+    if (db.prepare('SELECT 1 FROM story_questions WHERE story_id = ? AND resolved_at IS NULL').get(keepId)) {
+      db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(keepId);
+    }
+
+    // Koht: ühendatud lugu kahest eespool olevale kohale; eemaldatav rida kustutatakse; järjekord tihendatakse.
+    const order = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).map((r) => r.id).filter((id) => id !== removeId);
+    order.splice(order.indexOf(keepId), 1);
+    order.splice(info.resultPosition - 1, 0, keepId);
+    db.prepare('DELETE FROM stories WHERE id = ? AND project_id = ?').run(removeId, projectId);
+    const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
+    order.forEach((id, i) => setPosition.run(i + 1, id));
+    if (info.mvp.keepAbove && info.mvp.removeAbove) db.prepare('UPDATE projects SET mvp_count = mvp_count - 1 WHERE id = ?').run(projectId);
+    db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
+    db.exec('COMMIT');
+    return { keepId, removedCriteria: removed.length, rejectedProposals: pending.length, movedQuestions: info.questions.filter((q) => q.from === 'remove').length };
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;

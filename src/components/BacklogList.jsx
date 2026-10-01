@@ -4,6 +4,7 @@ import StoryReadiness from './StoryReadiness.jsx';
 import StoryForm from './StoryForm.jsx';
 import DeleteStoryConfirm from './DeleteStoryConfirm.jsx';
 import SplitStoryForm from './SplitStoryForm.jsx';
+import MergeStoryForm from './MergeStoryForm.jsx';
 import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
@@ -70,6 +71,9 @@ export default function BacklogList({
                   {manage.onSplit && (
                     <button type="button" className="link-button" disabled={busy} onClick={() => manage.onSplit(s.id)} aria-label={`Jaga lugu ${number} kaheks: ${s.title}`}>✂ Jaga</button>
                   )}
+                  {manage.onMerge && stories.length > 1 && (
+                    <button type="button" className="link-button" disabled={busy} onClick={() => manage.onMerge(s.id)} aria-label={`Ühenda lugu ${number} teise looga: ${s.title}`}>⇄ Ühenda</button>
+                  )}
                   <button type="button" className="link-button story-manage__delete" disabled={busy} onClick={() => manage.onDelete(s.id)} aria-label={`Kustuta lugu ${number}: ${s.title}`}>Kustuta</button>
                 </span>
               )}
@@ -80,6 +84,11 @@ export default function BacklogList({
               {manage?.mode?.type === 'split' && manage.mode.id === s.id && (
                 <SplitStoryForm story={s} info={manage.mode.info} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
                   onSubmit={(body) => manage.onConfirmSplit(s.id, body)} onCancel={manage.onCancel} />
+              )}
+              {manage?.mode?.type === 'merge' && manage.mode.id === s.id && (
+                <MergeStoryForm story={s} stories={stories} info={manage.mode.info} roles={manage.roles} busy={busy} error={manage.error}
+                  onPick={(keepId, removeId) => manage.onMergePick(s.id, keepId, removeId)}
+                  onSubmit={(body) => manage.onConfirmMerge(manage.mode.info.keepId, body)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'delete' && manage.mode.id === s.id && (
                 <DeleteStoryConfirm story={s} impact={manage.mode.impact} busy={busy} error={manage.error?.message ?? ''}

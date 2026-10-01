@@ -123,3 +123,6 @@ export const deleteStory = (projectId, storyId) => request(`${storiesPath(projec
 // L25: loo käsitsi jagamine kaheks.
 export const getSplitInfo = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/split-info`);
 export const splitStoryInTwo = (projectId, storyId, body) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/split`, body);
+// L26: kahe loo käsitsi ühendamine (keepId säilib, removeId andmed viiakse üle).
+export const getMergeInfo = (projectId, keepId, removeId) => request(`${storiesPath(projectId)}/${encodeURIComponent(keepId)}/merge-info?with=${encodeURIComponent(removeId)}`);
+export const mergeStoriesInto = (projectId, keepId, body) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(keepId)}/merge`, body);

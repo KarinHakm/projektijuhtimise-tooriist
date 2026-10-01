@@ -6,6 +6,7 @@ import StoryFields from './StoryFields.jsx';
 // looga juhtub. Algne lugu jääb osaks 1 (mockup'i versioonid, alustamise valik); osa 2 lisatakse kohe selle järele.
 // info = serveri split-info; error = { message, field }.
 export default function SplitStoryForm({ story, info, roles = [], stories = [], busy = false, error = null, onSubmit, onCancel }) {
+  const isLast = stories.length > 0 && stories[stories.length - 1].id === story.id;
   const base = { role: story.role, rolePhrase: story.rolePhrase, size: story.size, touchesView: story.touchesView };
   const [first, setFirst] = useState({ ...base, want: story.want, soThat: story.soThat });
   const [second, setSecond] = useState({ ...base, want: '', soThat: '' });
@@ -55,7 +56,10 @@ export default function SplitStoryForm({ story, info, roles = [], stories = [], 
         </ol>
         <p className="split-preview__title">Mis algse looga juhtub</p>
         <ul>
-          <li>Algne lugu jääb osaks 1 (sama lugu, uus sõnastus). Osa 2 lisatakse kohe selle järele; järgnevad lood nihkuvad ühe koha võrra, nende sisu ei muutu.</li>
+          <li>
+            Algne lugu jääb osaks 1 (sama lugu, uus sõnastus). Osa 2 lisatakse kohe selle järele
+            {isLast ? '; teiste lugude järjekord ega sisu ei muutu.' : '; järgnevad lood nihkuvad ühe koha võrra, nende sisu ei muutu.'}
+          </li>
           <li>Kriteeriumid: osale 1 jääb {info.criteria.length - criteriaToSecond.length}, osale 2 läheb {criteriaToSecond.length}.
             {movedLinked > 0 && ` Osale 2 viidud ${movedLinked} kriteeriumi seos mockup'iga eemaldatakse (osal 2 mockup'i pole).`}</li>
           {info.mockupVersions > 0 && <li>Mockup'i versioonid ({info.mockupVersions}) jäävad osale 1. Osal 2 mockup'i pole.</li>}

@@ -38,7 +38,9 @@ test('kriteeriumide ja küsimuste jaotus: igaühe juures Osa 1 / Osa 2 (vaikimis
 test('eelvaade: mõlema osa pealkiri ja mis algse looga juhtub (mockup, ettepanekud, alustamise lugu, MVP, midagi ei kustutata)', () => {
   const html = render();
   assert.match(html, /<li><strong>Osa 1:<\/strong> Külastajana soovin registreeruda ja maksta, et saaksin liituda\.<\/li><li><strong>Osa 2:<\/strong> \(täida väljad\)<\/li>/);
-  assert.match(html, /Algne lugu jääb osaks 1 \(sama lugu, uus sõnastus\)\. Osa 2 lisatakse kohe selle järele/);
+  assert.match(html, /Algne lugu jääb osaks 1 \(sama lugu, uus sõnastus\)\. Osa 2 lisatakse kohe selle järele; järgnevad lood nihkuvad/);
+  const last = render({ stories: [{ ...STORY, id: 1 }, STORY] });
+  assert.match(last, /Osa 2 lisatakse kohe selle järele; teiste lugude järjekord ega sisu ei muutu\./);
   assert.match(html, /Kriteeriumid: osale 1 jääb 2, osale 2 läheb 0\./);
   assert.match(html, /Mockup'i versioonid \(2\) jäävad osale 1\. Osal 2 mockup'i pole\./);
   assert.match(html, /Küsimused: osale 1 jääb 1, osale 2 läheb 0\./);
