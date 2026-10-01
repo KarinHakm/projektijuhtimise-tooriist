@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22 ja L23 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
+> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22, L23 ja L25 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
 > Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
 
 ## Arhitektuur (kavandatud, esialgne)
@@ -46,7 +46,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Pooleli |
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Plaanitud |
-| L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Plaanitud |
+| L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Pooleli |
 | L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Plaanitud |
 | L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Plaanitud |
 | L28 | AI jagamisettepanek eelvaatega | M | Kohustuslik | 6 | Plaanitud |
@@ -615,6 +615,12 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Iga algse loo kriteeriumi saab määrata täpselt ühele uuele loole.
 - Uued lood tulevad backlog'is algse loo asemele.
 - Jagamise saab tagasi võtta.
+
+**Seis 01.10.2026 (L25 osaliselt):**
+- **Tehtud (ilma AI-ta):** backlog'is „✂ Jaga“ jagab loo **kaheks**. Vormis on mõlema osa sõnastus ja suurus; iga kriteerium ja küsimus määratakse osale 1 või 2. Enne kinnitust näitab eelvaade mõlema osa pealkirja ja seda, mis algse looga juhtub.
+- **Reeglid (sinu otsused 01.10.2026):** algne lugu jääb osaks 1 (sama id) – mockup'i versioonid, alustamise valik ja prioriteedisoovitus jäävad selle juurde; osa 2 lisatakse kohe osa 1 järele (päritolu „Käsitsi lisatud“; avatud küsimusega osa 2 saab „Vajab täpsustamist“). Osale 2 viidud kriteeriumi mockup'i seos eemaldatakse. Algse loo ootel kriteeriumide, mockup'i ja täpsustuse ettepanekud lükatakse tagasi (eelvaates kirjas). MVP joone kohal olnud loo osa 2 läheb samuti joone kohale. Midagi ei kustutata; teiste lugude sisu ei muutu, järgnevad lood nihkuvad ühe koha võrra.
+- **Automaattestid:** jagamise eelvaate andmed, järjekord, teiste lugude muutumatus, kriteeriumide/küsimuste jaotus ja seosed, mockup ja alustamise lugu, ootel ettepanekud, MVP joon, vigased päringud. **Arendaja nägi brauseris (demobaas):** tühja osa 2 keeld (midagi ei salvestatud), eelvaade, alustamise loo jagamine (osa 2 kohal 5, K4 osale 2, mockup ja alustamise valik jäid osale 1, ülevaatus aegus), F5 järel sama seis. **Leitud ja parandatud:** kitsas veerus aeti osa 1 ja osa 2 väljad segi – osad on nüüd eraldi kastides („1 · Algne lugu“ hall, „2 · Uus lugu“ sinine).
+- **Pooleli:** jagamine rohkem kui kaheks; algne lugu jääb osaks 1 (kriteerium „uued lood tulevad algse asemele“ on täidetud selles mõttes, et osa 1 + osa 2 on algse kohal); jagamise tagasivõtmine (L21).
 
 ### L26 · Kattuvate lugude märkimine ja ühendamine käsitsi (M)
 *Projektijuhina soovin märkida kattuvad lood ning need ühendada või ühe eemaldada, et backlog'is ei oleks kordusi.*

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  addStoryQuestion, createStory, deleteStory, getDeleteImpact, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus, updateStory,
+  addStoryQuestion, createStory, deleteStory, getDeleteImpact, getSplitInfo, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus,
+  splitStoryInTwo, updateStory,
 } from '../api.js';
 import StoryForm from './StoryForm.jsx';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
@@ -157,6 +158,19 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
         await refresh();
       }
     },
+    onSplit: async (id) => {
+      setManageError(null);
+      try {
+        setMode({ type: 'split', id, info: await getSplitInfo(projectId, id) });
+      } catch (e) {
+        setError(e.message);
+        await refresh();
+      }
+    },
+    onConfirmSplit: (id, body) => runManage(() => splitStoryInTwo(projectId, id, body), (d) => {
+      const at = d.stories.findIndex((x) => x.id === d.split.secondId) + 1;
+      return `Lugu jagati kaheks: osa 2 on kohal ${at}.${d.split.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.split.rejectedProposals}.` : ''}`;
+    }),
     onConfirmDelete: (id) => runManage(() => deleteStory(projectId, id),
       (d) => (d.deleted.isFocus ? 'Lugu kustutati. See oli alustamise lugu – vali prioriteedi juures uus.' : 'Lugu kustutati.')),
   };

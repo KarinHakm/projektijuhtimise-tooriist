@@ -3,6 +3,7 @@ import { canMove } from '../backlog/order.js';
 import StoryReadiness from './StoryReadiness.jsx';
 import StoryForm from './StoryForm.jsx';
 import DeleteStoryConfirm from './DeleteStoryConfirm.jsx';
+import SplitStoryForm from './SplitStoryForm.jsx';
 import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
@@ -66,12 +67,19 @@ export default function BacklogList({
               {manage && manage.mode?.id !== s.id && (
                 <span className="story-manage">
                   <button type="button" className="link-button" disabled={busy} onClick={() => manage.onEdit(s.id)} aria-label={`Muuda lugu ${number}: ${s.title}`}>✎ Muuda</button>
+                  {manage.onSplit && (
+                    <button type="button" className="link-button" disabled={busy} onClick={() => manage.onSplit(s.id)} aria-label={`Jaga lugu ${number} kaheks: ${s.title}`}>✂ Jaga</button>
+                  )}
                   <button type="button" className="link-button story-manage__delete" disabled={busy} onClick={() => manage.onDelete(s.id)} aria-label={`Kustuta lugu ${number}: ${s.title}`}>Kustuta</button>
                 </span>
               )}
               {manage?.mode?.type === 'edit' && manage.mode.id === s.id && (
                 <StoryForm idBase={`muuda-${s.id}`} initial={s} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
                   submitLabel="Salvesta muudatus" onSubmit={(value) => manage.onSave(s.id, value)} onCancel={manage.onCancel} />
+              )}
+              {manage?.mode?.type === 'split' && manage.mode.id === s.id && (
+                <SplitStoryForm story={s} info={manage.mode.info} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
+                  onSubmit={(body) => manage.onConfirmSplit(s.id, body)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'delete' && manage.mode.id === s.id && (
                 <DeleteStoryConfirm story={s} impact={manage.mode.impact} busy={busy} error={manage.error?.message ?? ''}

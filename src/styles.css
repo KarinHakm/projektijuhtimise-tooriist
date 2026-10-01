@@ -426,3 +426,21 @@ button.stage__button:hover { border-color: var(--accent); }
 .delete-confirm { border-color: var(--error); background: #fdf3f2; }
 .delete-confirm ul { margin: 0.25rem 0; padding-left: 1.2rem; }
 button.danger { background: var(--error); }
+
+/* L25: loo jagamine kaheks */
+.split-form__title { margin: 0 0 0.25rem; font-weight: 700; }
+.split-form__parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
+.split-form__part { margin: 0.25rem 0 0; font-weight: 600; }
+.split-assign { margin: 0.75rem 0 0; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
+.split-assign legend { font-weight: 600; padding: 0 0.25rem; }
+.split-assign__row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.2rem 0; }
+.split-assign__text { flex: 1 1 14rem; }
+.split-assign label { display: inline-flex; align-items: center; gap: 0.25rem; margin: 0; font-weight: 400; }
+.split-assign input { width: auto; }
+.split-preview { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px dashed var(--accent); border-radius: 6px; background: var(--card); }
+.split-preview__title { margin: 0.25rem 0; font-weight: 600; }
+.split-preview ol, .split-preview ul { margin: 0.25rem 0; padding-left: 1.2rem; }
+.split-part { padding: 0.4rem 0.6rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
+.split-part--second { border: 2px solid var(--accent); background: var(--accent-soft); }
+.split-part__badge { display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; margin-right: 0.3rem; border-radius: 50%; background: var(--muted); color: #fff; font-size: 0.8rem; }
+.split-part--second .split-part__badge { background: var(--accent); }

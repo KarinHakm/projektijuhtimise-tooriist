@@ -9,7 +9,8 @@ import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectP
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
 import {
-  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, moveStory, updateManualStory, validateApply, validateManualStory,
+  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, moveStory, splitInfo, splitStory, updateManualStory, validateApply,
+  validateManualStory, validateSplit,
 } from '../stories.js';
 import { withReadiness } from '../readiness.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
@@ -189,6 +190,24 @@ export function storiesRouter({ db, ai }) {
     const impact = deleteManualStory(db, req.projectId, Number(req.params.storyId));
     if (!impact) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     res.json({ ...snapshot(req.projectId), deleted: impact });
+  });
+
+  // L25: loo käsitsi jagamine kaheks. split-info on eelvaate jaoks (ainult lugemine).
+  router.get('/:storyId/split-info', (req, res) => {
+    const info = splitInfo(db, req.projectId, Number(req.params.storyId));
+    if (!info) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json(info);
+  });
+
+  router.post('/:storyId/split', (req, res) => {
+    const storyId = Number(req.params.storyId);
+    const info = splitInfo(db, req.projectId, storyId);
+    if (!info) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    const split = validateSplit(req.body, info);
+    if (split.error) return res.status(400).json({ error: split.error, field: split.field, code: 'invalid_split' });
+    const result = splitStory(db, req.projectId, storyId, split);
+    if (!result) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    res.json({ ...snapshot(req.projectId), split: result });
   });
 
   // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).

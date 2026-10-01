@@ -120,3 +120,6 @@ export const createStory = (projectId, story) => postJson(storiesPath(projectId)
 export const updateStory = (projectId, storyId, story) => sendJson('PUT')(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}`, story);
 export const getDeleteImpact = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/delete-impact`);
 export const deleteStory = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}`, { method: 'DELETE' });
+// L25: loo käsitsi jagamine kaheks.
+export const getSplitInfo = (projectId, storyId) => request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/split-info`);
+export const splitStoryInTwo = (projectId, storyId, body) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/split`, body);
