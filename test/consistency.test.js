@@ -85,6 +85,9 @@ test('ülevaatuse sõrmejälg muutub, kui muutub kriteeriumi tekst, viide või m
   assert.notEqual(reviewFingerprint([{ text: 'Muu.' }, ...CRITERIA.slice(1)], MOCKUP), base);
   assert.notEqual(reviewFingerprint([{ ...CRITERIA[0], ref: { kind: 'no_view', source: 'user' } }, ...CRITERIA.slice(1)], MOCKUP), base);
   assert.notEqual(reviewFingerprint(CRITERIA, { ...MOCKUP, version: 3 }), base);
+  // sama seos, aga kinnitaja muutus (AI → kasutaja): sõrmejälg muutub, varasem ülevaatus aegub
+  const aiRef = { kind: 'element', index: 4, version: 2, source: 'ai' };
+  assert.notEqual(reviewFingerprint([{ ...CRITERIA[0], ref: aiRef }], MOCKUP), reviewFingerprint([{ ...CRITERIA[0], ref: { ...aiRef, source: 'user' } }], MOCKUP));
 });
 
 test('võimalik probleem: AI seos elemendiga, mida kriteerium ei nimeta (K2 → nupp); õige AI seos ja kasutaja seos hoiatust ei saa', () => {

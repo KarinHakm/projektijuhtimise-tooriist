@@ -104,6 +104,28 @@ test('kasutaja sidumine muudab ainult selle kriteeriumi viidet; teised lood ja k
   assert.deepEqual(after.criteria.find((c) => c.id === k3).text, before.criteria.find((c) => c.id === k3).text);
 });
 
+test('"Kinnitan selle seose": AI seos muutub kasutaja kinnitatuks, varasem ülevaatus aegub ja muud read ei muutu', async () => {
+  const [k1] = criterionIds();
+  db.prepare("UPDATE criteria SET ref_kind = 'element', ref_index = 1, ref_version = 1, ref_source = 'ai' WHERE id = ?").run(k1);
+  const s1 = await state();
+  assert.deepEqual(s1.consistency.criteria[0].link.source, 'ai');
+  assert.equal((await post('criteria/review', { storyId: target, fingerprint: s1.consistency.fingerprint })).status, 200);
+  const before = dump();
+  // nupp saadab sama seose, mis AI pakkus
+  const res = await post('criteria/link', { criterionId: k1, kind: 'element', index: 1 });
+  assert.equal(res.status, 200);
+  const s2 = await res.json();
+  assert.deepEqual(s2.consistency.criteria[0].link, { kind: 'element', index: 1, label: '2. sisestusväli: E-posti aadress', source: 'user' });
+  assert.equal(s2.consistency.review.valid, false); // kinnitus aegus nagu käsitsi muutmisel
+  const after = dump();
+  assert.deepEqual(after.mockups, before.mockups);
+  assert.deepEqual(after.criteria.filter((c) => c.id !== k1), before.criteria.filter((c) => c.id !== k1));
+  const changed = after.criteria.find((c) => c.id === k1);
+  assert.deepEqual([changed.text, changed.ref_kind, changed.ref_index, changed.ref_version, changed.ref_source], [CRITERIA[0].text, 'element', 1, 1, 'user']);
+  // loo rida muutus ainult ülevaatuse välja võrra; updated_at sama
+  assert.deepEqual(after.stories.map(({ consistency_review, ...s }) => s), before.stories.map(({ consistency_review, ...s }) => s));
+});
+
 test('vigane sidumine: olematu element, teise projekti kriteerium või tundmatu liik ei muuda midagi', async () => {
   const before = dump();
   const [k1] = criterionIds();

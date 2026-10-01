@@ -38,6 +38,21 @@ test('seos, kontrollimist vajav hoiatus ja viga on eristatavad', () => {
   assert.match(html, /<p class="error" role="alert">Valitud elementi ei ole kehtivas mockup’is\.<\/p>/);
 });
 
+test('AI seose juures on nupp "Kinnitan selle seose"; seoseta kriteeriumi juures seda pole', () => {
+  const html = render();
+  const items = [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => m[1]);
+  assert.match(items[0], /Seotud: 3\. nupp: Esita taotlus <span class="tag">AI<\/span><\/p><button type="button" class="secondary link-confirm">Kinnitan selle seose<\/button>/);
+  assert.doesNotMatch(items[1], /Kinnitan selle seose/);
+});
+
+test('kasutaja kinnitatud seosel nuppu pole ja allikas on "sina"', () => {
+  const userCriteria = CRITERIA.map((c, i) => (i === 0 ? { ...c, ref: { ...c.ref, source: 'user' } } : c));
+  const d = { ...data(null), criteria: userCriteria, consistency: { ...analyzeConsistency(userCriteria, MOCKUP), fingerprint: 'x', review: null } };
+  const html = render({ data: d });
+  assert.match(html, /Seotud: 3\. nupp: Esita taotlus <span class="tag">sina<\/span>/);
+  assert.doesNotMatch(html, /Kinnitan selle seose/);
+});
+
 test('mockup’is on seotud kriteeriumi märgis ja põhjendamata elemendi hoiatus', () => {
   const html = render();
   assert.match(html, /Esita taotlus<\/span><span class="mock-notes"><span class="mock-badge">K1<\/span>/);

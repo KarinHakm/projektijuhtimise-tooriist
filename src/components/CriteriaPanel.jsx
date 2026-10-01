@@ -89,6 +89,11 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
                     <span className="criterion__number">K{i + 1}.</span> {c.text} <span className="tag">{CRITERIA_ORIGIN_LABELS[c.origin] ?? c.origin}</span>
                     {c.warnings.map((w) => <p key={w} className="warning">⚠ {w}</p>)}
                     <LinkLine link={check?.link ?? null} />
+                    {check?.link?.source === 'ai' && (
+                      <button type="button" className="secondary link-confirm" disabled={disabled} onClick={() => onLink(c.id, value)}>
+                        Kinnitan selle seose
+                      </button>
+                    )}
                     {check && <CheckWarnings warnings={check.warnings} />}
                     {mockup && (
                       <label className="link-select">
@@ -171,7 +176,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
 }
 
 // Kriteeriumid ja mockup alustamise loole (L09, L10). focusVersion muutub, kui alustamise lugu muutub.
-export default function CriteriaPanel({ projectId, focusVersion }) {
+export default function CriteriaPanel({ projectId, focusVersion, onConsistencyChanged }) {
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [items, setItems] = useState([]);
@@ -258,9 +263,9 @@ export default function CriteriaPanel({ projectId, focusVersion }) {
         onLink={(criterionId, value) => {
           setLinkError('');
           const [kind, index] = value.startsWith('element-') ? ['element', Number(value.slice(8))] : [value, undefined];
-          run('link', () => linkCriterion(projectId, criterionId, kind, index), (e) => setLinkError(e.message));
+          run('link', () => linkCriterion(projectId, criterionId, kind, index), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
         }}
-        onReview={() => { setLinkError(''); run('review', () => reviewConsistency(projectId, data.story.id, data.consistency.fingerprint), (e) => setLinkError(e.message)); }}
+        onReview={() => { setLinkError(''); run('review', () => reviewConsistency(projectId, data.story.id, data.consistency.fingerprint), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.()); }}
       />
       {!waiting && aiError && <AiError error={aiError} onRetry={() => { setAiError(null); run('propose', () => proposeCriteria(projectId), (e) => setAiError(e)); }} retrying={busy === 'propose'} />}
     </>

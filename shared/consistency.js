@@ -85,10 +85,11 @@ export function analyzeConsistency(criteria, mockup) {
   return { criteria: criteriaResult, components: componentsResult, warningCount };
 }
 
-// Ülevaatuse kinnituse "sõrmejälg": muutub, kui kriteeriumid, viited või mockup'i versioon muutuvad.
+// Ülevaatuse kinnituse "sõrmejälg": muutub, kui kriteeriumid, viited (ka nende allikas AI/kasutaja) või
+// mockup'i versioon muutuvad. Nii aegub ülevaatus ka siis, kui kasutaja kinnitab AI pakutud seose.
 export function reviewFingerprint(criteria, mockup) {
   return JSON.stringify({
     v: mockup?.version ?? null,
-    c: criteria.map((c) => [c.text, c.ref?.kind ?? null, c.ref?.index ?? null, c.ref?.version ?? null]),
+    c: criteria.map((c) => [c.text, c.ref?.kind ?? null, c.ref?.index ?? null, c.ref?.version ?? null, c.ref?.source ?? null]),
   });
 }

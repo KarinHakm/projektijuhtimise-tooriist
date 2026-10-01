@@ -16,6 +16,7 @@ export default function ProjectView() {
   const [phase, setPhase] = useState(null);
   const [rolesVersion, setRolesVersion] = useState(0);
   const [backlogVersion, setBacklogVersion] = useState(0);
+  const [consistencyVersion, setConsistencyVersion] = useState(0); // L23: seose või ülevaatuse muutus
 
   useEffect(() => {
     setProject(null);
@@ -63,11 +64,11 @@ export default function ProjectView() {
               </section>
               <section className="card">
                 <h2>Kriteeriumid ja mockup</h2>
-                <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} />
+                <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} onConsistencyChanged={() => setConsistencyVersion((v) => v + 1)} />
               </section>
               <section className="card">
                 <h2>Kliendi täpsustus</h2>
-                <RefinementPanel projectId={project.id} version={backlogVersion} onApplied={() => setBacklogVersion((v) => v + 1)} />
+                <RefinementPanel projectId={project.id} version={`${backlogVersion}-${consistencyVersion}`} onApplied={() => setBacklogVersion((v) => v + 1)} />
               </section>
             </div>
             <section className="card" aria-labelledby="backlog-heading">
