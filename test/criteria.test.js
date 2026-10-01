@@ -26,10 +26,10 @@ const MOCKUP = {
 const AI_DATA = {
   message: 'Pakun kriteeriumid ja mockup’i.',
   criteria: [
-    { text: 'Paketi juures on näha selle hind eurodes.', ref: 1 },
-    { text: 'Paketi hinna juures on märge, kas hind sisaldab käibemaksu.', ref: 2 },
-    { text: 'Iga paketi juures on nupp "Vali pakett".', ref: 3 },
-    { text: 'Paketid on kuvatud hinna järgi kasvavas järjekorras.', ref: -1 },
+    { text: 'Paketi juures on näha selle hind eurodes.', ref: 'Paketid' },
+    { text: 'Paketi hinna juures on märge, kas hind sisaldab käibemaksu.', ref: '<script>alert(1)</script> sh km' },
+    { text: 'Iga paketi juures on nupp "Vali pakett".', ref: 'Vali pakett' },
+    { text: 'Paketid on kuvatud hinna järgi kasvavas järjekorras.', ref: '' },
   ],
   mockup: MOCKUP,
 };

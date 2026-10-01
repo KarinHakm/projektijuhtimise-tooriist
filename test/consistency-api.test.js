@@ -137,7 +137,7 @@ test('kliendi täpsustuse rakendamine (uus mockup’i versioon) muudab ülevaatu
   ai.push(aiOk({
     message: 'Eemaldasin nupu Salvesta ja lisasin kinnitusteate.',
     story: { want: 'esitada liikmeks astumise taotluse', soThat: 'saaksin liituda' },
-    criteria: [{ from: 0, text: CRITERIA[0].text, ref: 1 }, { from: 1, text: CRITERIA[1].text, ref: 2 }, { from: 2, text: CRITERIA[2].text, ref: 3 }],
+    criteria: [{ from: 0, text: CRITERIA[0].text, ref: 'E-posti aadress' }, { from: 1, text: CRITERIA[1].text, ref: 'Esita taotlus' }, { from: 2, text: CRITERIA[2].text, ref: 'Kinnitusteade: taotlus on esitatud' }],
     mockup: v2,
     otherStories: [],
   }));
@@ -158,10 +158,10 @@ test('kliendi täpsustuse rakendamine (uus mockup’i versioon) muudab ülevaatu
   assert.deepEqual((await again.json()).consistency.review.mockupVersion, 2);
 });
 
-test('AI viide olematule mockup’i komponendile ei lükka vastust tagasi: kriteerium jääb ilma seoseta ja hoiatus on nähtav', async () => {
+test('AI viide olematule elemendile ei lükka vastust tagasi: kriteerium jääb ilma seoseta ja hoiatus on nähtav', async () => {
   db.prepare('DELETE FROM criteria WHERE story_id = ?').run(target);
   db.prepare('DELETE FROM mockups WHERE story_id = ?').run(target);
-  ai.push(aiOk({ message: 'x', criteria: [{ text: 'Kuvatakse tekst Abc.', ref: 7 }, { text: 'Kuvatakse tekst Bcd.', ref: 1 }, { text: 'Kuvatakse tekst Cde.', ref: -1 }], mockup: { title: 'X', components: [{ type: 'text', text: 'Abc', items: [] }, { type: 'text', text: 'Bcd', items: [] }] } }));
+  ai.push(aiOk({ message: 'x', criteria: [{ text: 'Kuvatakse tekst Abc.', ref: 'Olematu' }, { text: 'Kuvatakse tekst Bcd.', ref: 'Bcd' }, { text: 'Kuvatakse tekst Cde.', ref: '' }], mockup: { title: 'X', components: [{ type: 'text', text: 'Abc', items: [] }, { type: 'text', text: 'Bcd', items: [] }] } }));
   const res = await post('criteria/propose', {});
   assert.equal(res.status, 200);
   assert.equal(ai.calls.length, 1); // kordust ei tehtud
@@ -177,7 +177,7 @@ test('AI viide olematule mockup’i komponendile ei lükka vastust tagasi: krite
 test('AI viited salvestuvad koos kriteeriumidega ja saavad versiooni mockup’i kinnitamisel', async () => {
   db.prepare('DELETE FROM criteria WHERE story_id = ?').run(target);
   db.prepare('DELETE FROM mockups WHERE story_id = ?').run(target);
-  ai.push(aiOk({ message: 'x', criteria: [{ text: "Kasutaja näeb nuppu 'Esita taotlus'.", ref: 1 }, { text: 'Taotluse andmed salvestatakse.', ref: -1 }, { text: "Kuvatakse pealkiri 'Taotlus'.", ref: 0 }], mockup: { title: 'Taotlus', components: [{ type: 'heading', text: 'Taotlus', items: [] }, { type: 'button', text: 'Esita taotlus', items: [] }] } }));
+  ai.push(aiOk({ message: 'x', criteria: [{ text: "Kasutaja näeb nuppu 'Esita taotlus'.", ref: 'Esita taotlus' }, { text: 'Taotluse andmed salvestatakse.', ref: '' }, { text: "Kuvatakse pealkiri 'Taotlus'.", ref: 'Taotlus' }], mockup: { title: 'Taotlus', components: [{ type: 'heading', text: 'Taotlus', items: [] }, { type: 'button', text: 'Esita taotlus', items: [] }] } }));
   const proposed = await (await post('criteria/propose', {})).json();
   await post('criteria/apply', { proposalId: proposed.criteriaProposal.id, criteria: [{ index: 0, text: "Kasutaja näeb nuppu 'Esita taotlus'." }, { index: 1, text: 'Taotluse andmed salvestatakse.' }] });
   let refs = db.prepare('SELECT ref_kind, ref_index, ref_version, ref_source FROM criteria WHERE story_id = ? ORDER BY position').all(target).map((r) => ({ ...r }));

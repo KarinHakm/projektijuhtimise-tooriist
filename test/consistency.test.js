@@ -86,3 +86,14 @@ test('ülevaatuse sõrmejälg muutub, kui muutub kriteeriumi tekst, viide või m
   assert.notEqual(reviewFingerprint([{ ...CRITERIA[0], ref: { kind: 'no_view', source: 'user' } }, ...CRITERIA.slice(1)], MOCKUP), base);
   assert.notEqual(reviewFingerprint(CRITERIA, { ...MOCKUP, version: 3 }), base);
 });
+
+test('võimalik probleem: AI seos elemendiga, mida kriteerium ei nimeta (K2 → nupp); õige AI seos ja kasutaja seos hoiatust ei saa', () => {
+  const v3 = { version: 3, components: [MOCKUP.components[0], MOCKUP.components[3], MOCKUP.components[4]] }; // pealkiri, E-posti aadress, Esita taotlus
+  const ai = (index) => ({ kind: 'element', index, version: 3, source: 'ai' });
+  const r = analyzeConsistency([{ ...CRITERIA[0], ref: ai(2) }, { ...CRITERIA[1], ref: ai(2) }], v3);
+  assert.deepEqual(codes(r.criteria[0].warnings), []);
+  assert.deepEqual(codes(r.criteria[1].warnings), ['ai_link_unnamed']);
+  assert.match(r.criteria[1].warnings[0].message, /^Võimalik probleem: AI seos – kriteerium ei nimeta seotud elementi „Esita taotlus“/);
+  const user = analyzeConsistency([{ ...CRITERIA[1], ref: { ...ai(2), source: 'user' } }], v3);
+  assert.ok(!codes(user.criteria[0].warnings).includes('ai_link_unnamed'));
+});

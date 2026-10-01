@@ -206,7 +206,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .mockup__body { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; }
 .mock-heading { margin: 0; font-size: 1.1rem; font-weight: 700; }
 .mock-text { margin: 0; }
-.mock-button { align-self: flex-start; padding: 0.3rem 0.8rem; border: 2px solid var(--text); border-radius: 6px; font-weight: 600; }
+.mock-button { display: inline-block; align-self: flex-start; padding: 0.3rem 0.8rem; border: 2px solid var(--text); border-radius: 6px; font-weight: 600; }
 .mock-input { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
 .mock-input__box { height: 1.8rem; border: 1px solid var(--muted); border-radius: 4px; }
 .mock-list ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
@@ -231,7 +231,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .mock-mark { position: relative; padding: 0.25rem; border-radius: 4px; }
 .mock-mark--added { outline: 2px solid #1d6b35; background: #e8f5ec; }
 .mock-mark--removed { outline: 2px solid var(--error); background: #fdecea; opacity: 0.8; }
-.mock-mark__label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+.mock-mark__label { display: block; margin-bottom: 0.2rem; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
 .other-stories { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
 .other-stories ul { list-style: none; padding: 0; margin: 0; }
 .other-stories li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }

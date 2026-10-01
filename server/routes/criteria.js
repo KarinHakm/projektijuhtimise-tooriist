@@ -4,7 +4,7 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import {
-  buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, sanitizeRef,
+  buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, resolveRef,
 } from '../ai/tasks/criteria.js';
 import { aiRef, appendCriteria, consistencyFor, latestMockup, listCriteria, saveMockup, validateCriteriaSave } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
@@ -99,7 +99,7 @@ export function criteriaRouter({ db, ai }) {
     const criteriaProposal = createProposal(db, {
       projectId,
       kind: CRITERIA,
-      payload: { storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => sanitizeRef(c.ref, data.mockup)) },
+      payload: { storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => resolveRef(c.ref, data.mockup)) },
     });
     if (!latestMockup(db, story.id) && !pendingFor(projectId, MOCKUP, story.id)) {
       // Kriteeriumide viited (L23) käivad selle mockup'i komponentide kohta.

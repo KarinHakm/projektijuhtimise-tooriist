@@ -7,7 +7,7 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildRefineMessages, buildRefineSchema, checkRefine, CLARIFICATION_MAX } from '../ai/tasks/refine.js';
-import { checkMockup, sanitizeRef } from '../ai/tasks/criteria.js';
+import { checkMockup, resolveRef } from '../ai/tasks/criteria.js';
 import { aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, saveMockup } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
@@ -146,7 +146,7 @@ export function refinementRouter({ db, ai }) {
         after: {
           want: story2.want,
           soThat: story2.soThat,
-          criteria: data.criteria.map((c) => ({ from: c.from, text: cleanCriterion(c.text), ref: sanitizeRef(c.ref, data.mockup) })),
+          criteria: data.criteria.map((c) => ({ from: c.from, text: cleanCriterion(c.text), ref: resolveRef(c.ref, data.mockup) })),
           mockup: mockupSpec(data.mockup),
         },
         otherStories: data.otherStories,

@@ -38,9 +38,9 @@ const refineData = (overrides = {}) => ({
   message: 'Lisasin käibemaksu märke.',
   story: { want: 'näha liikmepakette ja hindu koos käibemaksuga', soThat: 'saaksin valida paketi' },
   criteria: [
-    { from: 0, text: 'Paketi juures on näha hind eurodes.', ref: 1 },
-    { from: 1, text: 'Paketi hinna juures on märge „sh km“.', ref: 1 },
-    { from: -1, text: 'Hinnakirja all on märge, et hinnad sisaldavad käibemaksu.', ref: 2 },
+    { from: 0, text: 'Paketi juures on näha hind eurodes.', ref: 'Hinnad' },
+    { from: 1, text: 'Paketi hinna juures on märge „sh km“.', ref: 'Hinnad' },
+    { from: -1, text: 'Hinnakirja all on märge, et hinnad sisaldavad käibemaksu.', ref: 'Hinnad sisaldavad käibemaksu (sh km)' },
   ],
   mockup: MOCKUP_V2,
   otherStories: [{ storyId: other, suggestion: 'Registreerumise kinnituses võiks samuti olla märge „sh km“.' }],
@@ -222,7 +222,7 @@ test('AI vigane mockup või soovitus vale loo kohta: kordus, siis 502 ja midagi 
 });
 
 test('täpsustus teisele loole on eraldi voog: alustamise lugu (prioriteet) ei muutu', async () => {
-  const p = await propose(refineData({ story: { want: 'registreeruda liikmeks veebis', soThat: 'saaksin osaleda' }, criteria: [{ from: 0, text: 'Registreerumisvormis on väli „E-post“.', ref: 0 }], mockup: { title: 'Registreerumine', components: [{ type: 'input', text: 'E-post', items: [] }, { type: 'button', text: 'Registreeru', items: [] }] }, otherStories: [] }), other);
+  const p = await propose(refineData({ story: { want: 'registreeruda liikmeks veebis', soThat: 'saaksin osaleda' }, criteria: [{ from: 0, text: 'Registreerumisvormis on väli „E-post“.', ref: 'E-post' }], mockup: { title: 'Registreerumine', components: [{ type: 'input', text: 'E-post', items: [] }, { type: 'button', text: 'Registreeru', items: [] }] }, otherStories: [] }), other);
   assert.equal(db.prepare('SELECT focus_story_id AS f FROM projects WHERE id = ?').get(projectId).f, target);
   const res = await post(projectId, '/apply', { proposalId: p.id, storyId: other });
   assert.equal(res.status, 200);
@@ -236,9 +236,9 @@ test('teise projekti lugu ei saa täpsustada; tühi täpsustus annab 400', async
   assert.equal(ai.calls.length, 0);
 });
 
-test('täpsustuses vigane AI viide (väljaspool mockup’i) ei lükka vastust tagasi: eelvaates seos puudub ja hoiatus jääb', async () => {
+test('täpsustuses vigane AI viide (elementi pole) ei lükka vastust tagasi: eelvaates seos puudub ja hoiatus jääb', async () => {
   const data = refineData();
-  data.criteria = data.criteria.map((c, i) => (i === 2 ? { ...c, ref: 3 } : c)); // MOCKUP_V2-s on 3 komponenti (0–2)
+  data.criteria = data.criteria.map((c, i) => (i === 2 ? { ...c, ref: 'Olematu element' } : c));
   const p = await propose(data);
   assert.equal(ai.calls.length, 1);
   assert.equal(p.after.criteria[2].ref, null);

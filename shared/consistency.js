@@ -61,6 +61,14 @@ export function analyzeConsistency(criteria, mockup) {
       const namesLinked = contentStems(c.text).some((s) => componentStems[link.index].some((m) => stemsMatch(s, m)));
       if (!namesLinked) warnings.push({ code: 'button_type', message: 'Kriteerium nimetab nuppu, kuid on seotud elemendiga, mis ei ole nupp.' });
     }
+    // Võimalik probleem: AI seos elemendiga, mida kriteerium ei nimeta (nt "E-posti aadress" → nupp "Esita taotlus").
+    // Kasutaja enda seosele seda ei rakendata – see on inimese otsus.
+    if (link?.kind === 'element' && ref.source !== 'user') {
+      const namesLinked = contentStems(c.text).some((s) => componentStems[link.index].some((m) => stemsMatch(s, m)));
+      if (!namesLinked && !warnings.some((w) => w.code === 'button_type')) {
+        warnings.push({ code: 'ai_link_unnamed', message: `Võimalik probleem: AI seos – kriteerium ei nimeta seotud elementi „${components[link.index].text}“. Kontrolli, kas seos on õige.` });
+      }
+    }
     return { number: ci + 1, link, warnings };
   });
 

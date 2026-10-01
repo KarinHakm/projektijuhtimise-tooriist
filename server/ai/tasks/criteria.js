@@ -43,7 +43,7 @@ export const CRITERIA_SCHEMA = {
         type: 'object',
         additionalProperties: false,
         required: ['text', 'ref'],
-        properties: { text: { type: 'string', minLength: 5, maxLength: CRITERION_MAX }, ref: { type: 'integer', minimum: -1, maximum: 19 } },
+        properties: { text: { type: 'string', minLength: 5, maxLength: CRITERION_MAX }, ref: { type: 'string', maxLength: 120 } },
       },
     },
     mockup: MOCKUP_SCHEMA,
@@ -66,8 +66,8 @@ const MOCKUP_RULES = `Mockup:
   input (sisestusväli, "text" on välja silt), list (loend, read väljas "items"), image (pildi koht, "text" kirjeldab pilti), card (kaart).
 - "items" on tühi loend kõigil tüüpidel peale list.
 - Iga vaadet puudutav kriteerium peab mockup'is nähtav olema.
-Viited: iga kriteeriumi "ref" on mockup'i komponendi järjekorranumber (0 = esimene), mida kriteerium puudutab,
-või -1, kui kriteerium ei puuduta vaadet.`;
+Viited: iga kriteeriumi "ref" on selle mockup'i komponendi TÄPNE tekst (komponendi väli "text"), mida kriteerium puudutab,
+või tühi tekst "", kui kriteerium ei puuduta vaadet.`;
 
 const projectData = (context, story) => `Projekt: ${context.project.name}
 
@@ -125,9 +125,19 @@ export function checkMockup(mockup) {
   return problems;
 }
 
-// AI viide peab olema -1 (ei puuduta vaadet) või olemasoleva komponendi indeks. Vigane viide EI lükka kogu
-// vastust tagasi: kriteerium jääb ilma seoseta (null), kasutaja näeb "Seos puudub" ja kontrollimist vajavat hoiatust.
-export const sanitizeRef = (ref, mockup) => (Number.isInteger(ref) && ref >= -1 && ref < mockup.components.length ? ref : null);
+// AI viide on komponendi tekst. Server seob selle ainult ÜHESE vaste korral (tühikud ja suurtähed ei loe):
+//   tühi tekst      → -1 (AI hinnang "ei puuduta vaadet" – mitte kontrollitud fakt; hoiatust see ei kustuta)
+//   üks vaste       → selle komponendi indeks
+//   vastet pole või mitu sama tekstiga komponenti → null (seos puudub, arvamisi ei tehta)
+// Vigane viide EI lükka kogu vastust tagasi; kasutaja näeb "Seos puudub" ja kontrollimist vajavat hoiatust.
+const normText = (t) => String(t ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('et');
+export function resolveRef(ref, mockup) {
+  if (typeof ref !== 'string') return null;
+  const key = normText(ref);
+  if (!key) return -1;
+  const matches = mockup.components.map((c, i) => (normText(c.text) === key ? i : -1)).filter((i) => i >= 0);
+  return matches.length === 1 ? matches[0] : null;
+}
 
 export function checkCriteria(data) {
   const keys = data.criteria.map((c) => cleanCriterion(c.text).toLocaleLowerCase('et'));

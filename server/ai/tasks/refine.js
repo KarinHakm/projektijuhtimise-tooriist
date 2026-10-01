@@ -31,7 +31,7 @@ export function buildRefineSchema(criteriaCount, otherStoryIds) {
           type: 'object',
           additionalProperties: false,
           required: ['from', 'text', 'ref'],
-          properties: { from, text: { type: 'string', minLength: 5, maxLength: CRITERION_MAX }, ref: { type: 'integer', minimum: -1, maximum: 19 } },
+          properties: { from, text: { type: 'string', minLength: 5, maxLength: CRITERION_MAX }, ref: { type: 'string', maxLength: 120 } },
         },
       },
       mockup: MOCKUP_SCHEMA,
@@ -84,7 +84,7 @@ Koosta muudatusettepanek ainult muudetavale loole.
 - "mockup": loo TÄIELIK uus mockup samade reeglitega nagu varem (tüübid heading, text, button, input, list, image, card; "items" on tühi peale list).
   Iga vaadet puudutav kriteerium peab mockup'is nähtav olema; kui täpsustus eemaldab elemendi, eemalda see ka mockup'ist.
   Mockup'is ei tohi olla interaktiivseid elemente (nupp, sisestusväli, loend), mida ükski kriteerium ei nõua.
-- Iga kriteeriumi "ref" on UUE mockup'i komponendi järjekorranumber (0 = esimene), mida kriteerium puudutab, või -1, kui kriteerium ei puuduta vaadet.
+- Iga kriteeriumi "ref" on UUE mockup'i selle komponendi TÄPNE tekst (komponendi väli "text"), mida kriteerium puudutab, või tühi tekst "", kui kriteerium ei puuduta vaadet.
 - "otherStories": kui täpsustus mõjutab ka mõnda teist lugu, kirjuta selle kohta lühike soovitus. Teisi lugusid ise ära muuda.
 - "message" on üks lühike lause kasutajale.`,
     },
