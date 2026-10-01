@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coverageWarnings, diffCriteria, diffMockup } from '../shared/refine-diff.js';
+import { diffCriteria, diffMockup } from '../shared/refine-diff.js';
 
 // Täpsustuse eelvaate arvutus (L11) koodis, mitte AI kirjelduse põhjal.
 const BEFORE = [{ text: 'A on olemas.' }, { text: 'B on olemas.' }, { text: 'C on olemas.' }];
@@ -28,11 +28,4 @@ test('mockup: lisandunud ja eemaldatud komponendid märgitakse; puuduv vana mock
   const b = { title: 'X', components: [{ type: 'heading', text: 'P', items: [] }, { type: 'text', text: 'Kinnitusteade', items: [] }] };
   assert.deepEqual(diffMockup(a, b), { added: [false, true], removed: [false, true] });
   assert.deepEqual(diffMockup(null, b), { added: [true, true], removed: [] });
-});
-
-test('kooskõla vihje: jutumärkides nimetus, mida mockup’is pole, annab hoiatuse; leiduv ei anna', () => {
-  const mockup = { title: 'Taotlus', components: [{ type: 'button', text: 'Esita taotlus', items: [] }, { type: 'input', text: 'E-posti aadress', items: [] }] };
-  const w = coverageWarnings([{ text: "Kasutaja näeb nuppu 'Esita taotlus'." }, { text: 'Hinna juures on märge „sh km“.' }, { text: 'Kuvatakse kinnitusteade.' }], mockup);
-  assert.deepEqual(w.map((x) => x.term), ['sh km']);
-  assert.deepEqual(coverageWarnings([{ text: '„X“' }], null), []);
 });

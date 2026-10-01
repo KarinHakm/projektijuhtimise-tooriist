@@ -26,10 +26,10 @@ const MOCKUP = {
 const AI_DATA = {
   message: 'Pakun kriteeriumid ja mockup’i.',
   criteria: [
-    'Paketi juures on näha selle hind eurodes.',
-    'Paketi hinna juures on märge, kas hind sisaldab käibemaksu.',
-    'Iga paketi juures on nupp "Vali pakett".',
-    'Paketid on kuvatud hinna järgi kasvavas järjekorras.',
+    { text: 'Paketi juures on näha selle hind eurodes.', ref: 1 },
+    { text: 'Paketi hinna juures on märge, kas hind sisaldab käibemaksu.', ref: 2 },
+    { text: 'Iga paketi juures on nupp "Vali pakett".', ref: 3 },
+    { text: 'Paketid on kuvatud hinna järgi kasvavas järjekorras.', ref: -1 },
   ],
   mockup: MOCKUP,
 };
@@ -122,25 +122,25 @@ test('salvestatakse ainult saadetud kriteeriumid; päritolu määrab server (ai,
   const res = await post(projectId, '/apply', {
     proposalId: state.criteriaProposal.id,
     criteria: [
-      { index: 0, text: AI_DATA.criteria[0] },
+      { index: 0, text: AI_DATA.criteria[0].text },
       { index: 1, text: 'Paketi hinna juures on märge „sh km“.' },
       { text: 'Pakettide all on kontaktinfo.' },
     ],
   });
   assert.equal(res.status, 200);
   assert.deepEqual(saved(), [
-    { text: AI_DATA.criteria[0], origin: 'ai' },
+    { text: AI_DATA.criteria[0].text, origin: 'ai' },
     { text: 'Paketi hinna juures on märge „sh km“.', origin: 'ai_edited' },
     { text: 'Pakettide all on kontaktinfo.', origin: 'manual' },
   ]);
   // Eemaldatud kriteeriume (indeksid 2 ja 3) brauser ei saatnud, seega neid ei ole.
-  assert.ok(!saved().some((c) => c.text === AI_DATA.criteria[2] || c.text === AI_DATA.criteria[3]));
+  assert.ok(!saved().some((c) => c.text === AI_DATA.criteria[2].text || c.text === AI_DATA.criteria[3].text));
   assert.deepEqual(statuses('criteria'), ['applied']);
 });
 
 test('kriteeriumide salvestamine ei kinnita mockup’i', async () => {
   const state = await propose();
-  await post(projectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0] }] });
+  await post(projectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0].text }] });
   const after = await (await fetch(url(projectId))).json();
   assert.deepEqual(mockups(), []);
   assert.deepEqual(statuses('mockup'), ['pending']);
@@ -207,7 +207,7 @@ test('ilma alustamise loota annab ettepanek 409 ja AI-d ei kutsuta', async () =>
 
 test('teise projekti ettepanekut ei saa selles projektis salvestada', async () => {
   const state = await propose();
-  const res = await post(otherProjectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0] }] });
+  const res = await post(otherProjectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0].text }] });
   assert.equal(res.status, 404);
   assert.deepEqual(saved(), []);
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM criteria WHERE story_id = ?').get(otherStoryId).n, 0);
@@ -215,7 +215,7 @@ test('teise projekti ettepanekut ei saa selles projektis salvestada', async () =
 
 test('kui lool on juba kriteeriumid, uut ettepanekut ei tehta (409) – neid muudab kliendi täpsustus', async () => {
   const state = await propose();
-  await post(projectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0] }] });
+  await post(projectId, '/apply', { proposalId: state.criteriaProposal.id, criteria: [{ index: 0, text: AI_DATA.criteria[0].text }] });
   const res = await post(projectId, '/propose');
   assert.equal(res.status, 409);
   assert.equal((await res.json()).code, 'already_has_criteria');

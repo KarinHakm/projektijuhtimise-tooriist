@@ -4,9 +4,9 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import {
-  buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA,
+  buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, sanitizeRef,
 } from '../ai/tasks/criteria.js';
-import { appendCriteria, latestMockup, listCriteria, saveMockup, validateCriteriaSave } from '../criteria.js';
+import { aiRef, appendCriteria, consistencyFor, latestMockup, listCriteria, saveMockup, validateCriteriaSave } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
@@ -40,8 +40,9 @@ export function criteriaRouter({ db, ai }) {
       criteria: listCriteria(db, story.id),
       mockup: latestMockup(db, story.id),
       criteriaProposal: cp
-        ? { id: cp.id, message: cp.payload.message, criteria: cp.payload.criteria.map((text, index) => ({ index, text, warnings: checkCriterion(text).map((w) => w.message) })) }
+        ? { id: cp.id, message: cp.payload.message, criteria: cp.payload.criteria.map((text, index) => ({ index, text, ref: cp.payload.refs?.[index] ?? null, warnings: checkCriterion(text).map((w) => w.message) })) }
         : null,
+      consistency: consistencyFor(db, story.id),
       mockupProposal: mp ? { id: mp.id, message: mp.payload.message, mockup: mp.payload.mockup } : null,
       aiRunning: running.has(projectId),
     };
@@ -95,9 +96,14 @@ export function criteriaRouter({ db, ai }) {
     }
     rejectStale(projectId, CRITERIA, story.id);
     rejectStale(projectId, MOCKUP, story.id);
-    createProposal(db, { projectId, kind: CRITERIA, payload: { storyId: story.id, message: data.message, criteria: data.criteria } });
+    const criteriaProposal = createProposal(db, {
+      projectId,
+      kind: CRITERIA,
+      payload: { storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => sanitizeRef(c.ref, data.mockup)) },
+    });
     if (!latestMockup(db, story.id) && !pendingFor(projectId, MOCKUP, story.id)) {
-      createProposal(db, { projectId, kind: MOCKUP, payload: { storyId: story.id, message: data.message, mockup: data.mockup } });
+      // Kriteeriumide viited (L23) käivad selle mockup'i komponentide kohta.
+      createProposal(db, { projectId, kind: MOCKUP, payload: { storyId: story.id, message: data.message, mockup: data.mockup, criteriaProposalId: criteriaProposal.id } });
     }
     res.json(snapshot(projectId));
   });
@@ -115,7 +121,17 @@ export function criteriaRouter({ db, ai }) {
       applyProposal(db, proposal.id, (tx) => {
         const exists = tx.prepare('SELECT 1 FROM stories WHERE id = ? AND project_id = ?').get(proposal.payload.storyId, projectId);
         if (!exists) throw new ProposalError('not_found');
-        appendCriteria(tx, proposal.payload.storyId, selection.criteria);
+        // AI viited: kui seotud mockup on juba kinnitatud, saab viide selle versiooni; kui ootel, määratakse
+        // versioon mockup'i kinnitamisel; kui mockup'ist loobuti, elemendiviidet ei salvestata.
+        const linked = tx.prepare("SELECT status FROM ai_proposals WHERE kind = 'mockup' AND json_extract(payload, '$.criteriaProposalId') = ?").get(proposal.id);
+        const version = linked?.status === 'applied' ? latestMockup(tx, proposal.payload.storyId)?.version ?? null : null;
+        const refs = proposal.payload.refs ?? [];
+        const rows = selection.criteria.map((c) => {
+          const ref = c.index !== undefined ? aiRef(refs[c.index], version) : null;
+          const usable = ref && (ref.kind === 'no_view' || linked?.status !== 'rejected');
+          return { ...c, ref: usable ? ref : null };
+        });
+        appendCriteria(tx, proposal.payload.storyId, rows);
       }, { projectId, kind: CRITERIA });
     } catch (err) {
       return fail(res, err);
@@ -134,7 +150,16 @@ export function criteriaRouter({ db, ai }) {
       applyProposal(db, proposal.id, (tx) => {
         const exists = tx.prepare('SELECT 1 FROM stories WHERE id = ? AND project_id = ?').get(proposal.payload.storyId, projectId);
         if (!exists) throw new ProposalError('not_found');
-        saveMockup(tx, proposal.payload.storyId, proposal.payload.mockup);
+        const version = saveMockup(tx, proposal.payload.storyId, proposal.payload.mockup);
+        if (proposal.payload.criteriaProposalId) {
+          // Selle mockup'iga koos pakutud AI viited saavad nüüd versiooni.
+          tx.prepare("UPDATE criteria SET ref_version = ? WHERE story_id = ? AND ref_kind = 'element' AND ref_version IS NULL AND ref_source = 'ai'")
+            .run(version, proposal.payload.storyId);
+        } else {
+          // "Paku uus" mockup: varasemad AI viited ei käi selle kohta – seos puudub, hoiatus jääb nähtavaks.
+          tx.prepare("UPDATE criteria SET ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL WHERE story_id = ? AND ref_kind = 'element' AND ref_version IS NULL")
+            .run(proposal.payload.storyId);
+        }
       }, { projectId, kind: MOCKUP });
     } catch (err) {
       return fail(res, err);
@@ -181,6 +206,44 @@ export function criteriaRouter({ db, ai }) {
       try { rejectProposal(db, old.id, { projectId, kind: MOCKUP }); } catch (err) { if (!(err instanceof ProposalError)) throw err; }
     }
     createProposal(db, { projectId, kind: MOCKUP, payload: { storyId: story.id, message: data.message, mockup: data.mockup } });
+    res.json(snapshot(projectId));
+  });
+
+  // Kasutaja seob kriteeriumi mockup'i elemendiga või märgib "ei puuduta vaadet" (L23). Muudab ainult selle kriteeriumi viidet.
+  router.post('/link', (req, res) => {
+    const projectId = req.projectId;
+    const { criterionId, kind, index } = req.body ?? {};
+    const row = Number.isInteger(criterionId) && db
+      .prepare('SELECT c.id, c.story_id AS storyId FROM criteria c JOIN stories s ON s.id = c.story_id WHERE c.id = ? AND s.project_id = ?')
+      .get(criterionId, projectId);
+    if (!row) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
+    const mockup = latestMockup(db, row.storyId);
+    let values;
+    if (kind === 'element') {
+      if (!mockup || !Number.isInteger(index) || index < 0 || index >= mockup.components.length) {
+        return res.status(400).json({ error: 'Valitud elementi ei ole kehtivas mockup\'is.', code: 'invalid_link' });
+      }
+      values = ['element', index, mockup.version, 'user'];
+    } else if (kind === 'no_view') values = ['no_view', null, null, 'user'];
+    else if (kind === 'none') values = [null, null, null, null];
+    else return res.status(400).json({ error: 'Vigane seos.', code: 'invalid_link' });
+    db.prepare('UPDATE criteria SET ref_kind = ?, ref_index = ?, ref_version = ?, ref_source = ? WHERE id = ?').run(...values, row.id);
+    res.json(snapshot(projectId));
+  });
+
+  // "Vaatasin üle": kasutaja kinnitab, et vaatas selle seisu ise üle. See ei ole automaatne tõend kooskõla kohta
+  // ja aegub, kui kriteeriumid, viited või mockup muutuvad (sõrmejälg ei klapi enam).
+  router.post('/review', (req, res) => {
+    const projectId = req.projectId;
+    const story = focusStory(projectId);
+    if (!story || req.body?.storyId !== story.id) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    const current = consistencyFor(db, story.id);
+    if (req.body?.fingerprint !== current.fingerprint) {
+      return res.status(409).json({ error: 'Kriteeriumid või mockup muutusid vahepeal. Vaata uus seis üle.', code: 'stale_review' });
+    }
+    const mockup = latestMockup(db, story.id);
+    db.prepare('UPDATE stories SET consistency_review = ? WHERE id = ?')
+      .run(JSON.stringify({ fingerprint: current.fingerprint, mockupVersion: mockup?.version ?? null, at: new Date().toISOString() }), story.id);
     res.json(snapshot(projectId));
   });
 

@@ -26,14 +26,27 @@ function Component({ c }) {
 }
 
 // marks (valikuline, L11 eelvaade): iga komponendi kohta true, kui see on lisandunud/eemaldatud; mark = 'added' | 'removed'.
-export default function MockupView({ mockup, marks = null, mark = null }) {
+// notes (valikuline, L23): iga komponendi kohta { linkedBy: [kriteeriumi numbrid], warnings: [{ message }] }.
+function Notes({ note }) {
+  if (!note || (note.linkedBy.length === 0 && note.warnings.length === 0)) return null;
+  return (
+    <span className="mock-notes">
+      {note.linkedBy.length > 0 && <span className="mock-badge">{note.linkedBy.map((n) => `K${n}`).join(', ')}</span>}
+      {note.warnings.map((w) => <span key={w.message} className="mock-flag">⚠ Kontrolli: {w.message}</span>)}
+    </span>
+  );
+}
+
+export default function MockupView({ mockup, marks = null, mark = null, notes = null }) {
   return (
     <figure className="mockup" aria-label={`Mockup: ${mockup.title}`}>
       <figcaption className="mockup__title">{mockup.title}</figcaption>
       <div className="mockup__body">
-        {mockup.components.map((c, i) => (marks?.[i]
-          ? <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span><Component c={c} /></div>
-          : <Component key={i} c={c} />))}
+        {mockup.components.map((c, i) => {
+          const body = <><Component c={c} /><Notes note={notes?.[i]} /></>;
+          if (marks?.[i]) return <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span>{body}</div>;
+          return notes ? <div key={i} className="mock-item">{body}</div> : <Component key={i} c={c} />;
+        })}
       </div>
     </figure>
   );

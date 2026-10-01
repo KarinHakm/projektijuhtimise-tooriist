@@ -25,7 +25,10 @@ export async function runAiTask(client, { task, messages, schema, check, maxToke
     outputTokens += result.outputTokens ?? 0;
 
     const checked = checkResponse(result, schema, check);
-    log({ task, attempt, result: checked.reason ? `invalid:${checked.reason}` : 'ok', durationMs: Date.now() - attemptStarted, outputTokens: result.outputTokens });
+    log({
+      task, attempt, result: checked.reason ? `invalid:${checked.reason}` : 'ok', durationMs: Date.now() - attemptStarted, outputTokens: result.outputTokens,
+      ...(checked.rules ? { rules: checked.rules } : {}),
+    });
     if (!checked.reason) {
       return { data: checked.data, meta: { durationMs: Date.now() - started, outputTokens, attempts: attempt } };
     }
@@ -46,14 +49,20 @@ function checkResponse(result, schema, check) {
     return { reason: 'not_json' };
   }
   if (!validateAgainst(schema, data).valid) return { reason: 'schema' };
-  if (check && check(data).length > 0) return { reason: 'rules' };
+  const problems = check ? check(data) : [];
+  if (problems.length > 0) return { reason: 'rules', rules: ruleCodes(problems) };
   return { data };
 }
 
-// Logib ainult ohutud mõõdikud: ülesande nimi, katse number, tulemuse kood, kestus ja tokenite arv.
-// Päringu sisu, AI vastust ega teenuse veateksti ei logita.
-export function logAiMetrics({ task, attempt, result, durationMs, outputTokens }) {
+// Reeglite probleemid on meie enda fikseeritud sildid (nt "loo vorming", "lugu 2: vorming"), mitte AI vastuse sisu.
+// Logisse läheb neist kuni 5 erinevat, numbrid asendatakse märgiga #.
+export const ruleCodes = (problems) => [...new Set(problems.map((p) => String(p).replace(/\d+/g, '#')))].slice(0, 5);
+
+// Logib ainult ohutud mõõdikud: ülesande nimi, katse number, tulemuse kood, kestus, tokenite arv
+// ja reeglite rikkumise korral reeglite koodid. Päringu sisu, AI vastust ega teenuse veateksti ei logita.
+export function logAiMetrics({ task, attempt, result, durationMs, outputTokens, rules }) {
   const safe = { task, attempt, result, durationMs };
   if (Number.isFinite(outputTokens)) safe.outputTokens = outputTokens;
+  if (Array.isArray(rules)) safe.rules = rules;
   console.info(`[ai] ${JSON.stringify(safe)}`);
 }

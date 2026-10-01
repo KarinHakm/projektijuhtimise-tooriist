@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { cleanCriterion, CRITERION_MAX } from '../../shared/criteria-check.js';
-import { coverageWarnings, diffCriteria, diffMockup } from '../../shared/refine-diff.js';
+import { analyzeConsistency } from '../../shared/consistency.js';
+import { diffCriteria, diffMockup } from '../../shared/refine-diff.js';
 import { validateStoryText } from '../../shared/story-format.js';
 import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildRefineMessages, buildRefineSchema, checkRefine, CLARIFICATION_MAX } from '../ai/tasks/refine.js';
-import { checkMockup } from '../ai/tasks/criteria.js';
-import { CRITERIA_MAX_COUNT, latestMockup, listCriteria, saveMockup } from '../criteria.js';
+import { checkMockup, sanitizeRef } from '../ai/tasks/criteria.js';
+import { aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, saveMockup } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
@@ -35,7 +36,8 @@ export function refinementRouter({ db, ai }) {
   const currentState = (story) => ({
     want: story.want,
     soThat: story.soThat,
-    criteria: listCriteria(db, story.id).map((c) => ({ text: c.text, origin: c.origin })),
+    // Viited on osa seisust: kui kasutaja seob kriteeriumi pärast ettepanekut ümber, on ettepanek aegunud.
+    criteria: listCriteria(db, story.id).map((c) => ({ text: c.text, origin: c.origin, ref: c.ref })),
     mockup: latestMockup(db, story.id),
   });
   const sameState = (a, b) => JSON.stringify({ ...a, mockup: a.mockup?.version ?? null }) === JSON.stringify({ ...b, mockup: b.mockup?.version ?? null });
@@ -59,7 +61,11 @@ export function refinementRouter({ db, ai }) {
         storyChanged: before.want !== after.want || before.soThat !== after.soThat,
         criteria: diffCriteria(before.criteria, after.criteria),
         mockup: diffMockup(before.mockup, after.mockup),
-        coverage: coverageWarnings(after.criteria, after.mockup),
+        // Kooskõla vihjed uue seisu kohta (AI viited on nähtavad; hoiatusi need ei kustuta).
+        consistency: analyzeConsistency(
+          after.criteria.map((c) => ({ text: c.text, ref: aiRef(c.ref, 'uus') })),
+          after.mockup ? { version: 'uus', components: after.mockup.components } : null,
+        ),
       },
       // Ainult tekst: mitte ükski väli ei ole andmemuudatus teise loo jaoks.
       otherStories: p.payload.otherStories.map((o) => ({ storyId: o.storyId, title: titles.get(o.storyId) ?? null, suggestion: o.suggestion })),
@@ -76,7 +82,7 @@ export function refinementRouter({ db, ai }) {
       story: { id: story.id, title: story.title, rolePhrase: story.rolePhrase },
       criteria: state.criteria,
       mockup: state.mockup,
-      coverage: coverageWarnings(state.criteria, state.mockup),
+      consistency: consistencyFor(db, story.id),
       proposal: proposal ? publicProposal(projectId, proposal) : null,
       stories: stories.map((s) => ({ id: s.id, title: s.title })),
       aiRunning: running.has(projectId),
@@ -140,7 +146,7 @@ export function refinementRouter({ db, ai }) {
         after: {
           want: story2.want,
           soThat: story2.soThat,
-          criteria: data.criteria.map((c) => ({ from: c.from, text: cleanCriterion(c.text) })),
+          criteria: data.criteria.map((c) => ({ from: c.from, text: cleanCriterion(c.text), ref: sanitizeRef(c.ref, data.mockup) })),
           mockup: mockupSpec(data.mockup),
         },
         otherStories: data.otherStories,
@@ -172,7 +178,7 @@ export function refinementRouter({ db, ai }) {
     const { before, after } = proposal.payload;
     const criteriaIn = changes.criteria ?? after.criteria;
     if (!Array.isArray(criteriaIn)) return reject(400, 'invalid_changes', 'Kriteeriumid on vigased.');
-    if (criteriaIn.some((c) => c && typeof c === 'object' && Object.keys(c).some((k) => !['from', 'text'].includes(k)))) {
+    if (criteriaIn.some((c) => c && typeof c === 'object' && Object.keys(c).some((k) => !['from', 'text', 'ref'].includes(k)))) {
       return reject(400, 'other_story', 'Päring sisaldab muid andmeid peale valitud loo muudatuse; muudatust ei salvestatud.');
     }
 
@@ -198,7 +204,8 @@ export function refinementRouter({ db, ai }) {
       if (from >= 0 && cleanCriterion(before.criteria[from].text) === t) origin = before.criteria[from].origin;
       else if (from >= 0) origin = 'ai_edited';
       else origin = aiTexts.has(t) ? 'ai' : 'ai_edited';
-      criteria.push({ text: t, origin });
+      const ref = Number.isInteger(c?.ref) && c.ref >= -1 && c.ref < after.mockup.components.length ? c.ref : null;
+      criteria.push({ text: t, origin, ref });
     }
     if (checkMockup(after.mockup).length) return reject(400, 'invalid_changes', 'Mockup on vigane; muudatust ei salvestatud.');
 
@@ -210,10 +217,12 @@ export function refinementRouter({ db, ai }) {
           .prepare("UPDATE stories SET want = ?, so_that = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND project_id = ?")
           .run(text.value.want, text.value.soThat, target, projectId);
         if (n !== 1) throw new RefineError(404, 'not_found', 'Lugu ei leitud.');
+        const version = JSON.stringify(mockupSpec(before.mockup)) !== JSON.stringify(after.mockup)
+          ? saveMockup(tx, target, after.mockup)
+          : before.mockup.version;
         tx.prepare('DELETE FROM criteria WHERE story_id = ?').run(target);
-        const insert = tx.prepare('INSERT INTO criteria (story_id, position, text, origin) VALUES (?, ?, ?, ?)');
-        criteria.forEach((c, i) => insert.run(target, i + 1, c.text, c.origin));
-        if (JSON.stringify(mockupSpec(before.mockup)) !== JSON.stringify(after.mockup)) saveMockup(tx, target, after.mockup);
+        // AI viited uue mockup'i kohta; viidete kontroll tehakse rakendamisel uuesti (vihjed arvutatakse lugemisel).
+        appendCriteria(tx, target, criteria.map((c) => ({ text: c.text, origin: c.origin, ref: aiRef(c.ref, version) })));
       }, { projectId, kind: KIND });
     } catch (err) {
       if (err instanceof ProposalError || err instanceof RefineError) return reject(err.status, err.code, err.message);

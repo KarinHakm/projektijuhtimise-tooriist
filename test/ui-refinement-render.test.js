@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { importJsx } from './helpers/jsx.js';
-import { coverageWarnings, diffCriteria, diffMockup } from '../shared/refine-diff.js';
+import { diffCriteria, diffMockup } from '../shared/refine-diff.js';
+import { analyzeConsistency } from '../shared/consistency.js';
 
 // Kliendi täpsustuse vaade (L11, L12) renderdatakse võltsandmetega HTML-iks. Klõpsamist ei testita.
 let RefinementView;
@@ -17,10 +18,10 @@ const BEFORE = { want: 'näha hindu', soThat: 'saaksin valida', criteria: [{ tex
 const AFTER = { want: 'näha hindu koos käibemaksuga', soThat: 'saaksin valida', criteria: [{ from: 0, text: 'Hind on eurodes.' }, { from: -1, text: 'Hinna juures on märge „sh km“.' }], mockup: M2 };
 const PROPOSAL = {
   id: 'r1', message: 'Lisasin käibemaksu.', clarification: 'Hinnas peab olema näha käibemaks.', before: BEFORE, after: AFTER,
-  preview: { storyChanged: true, criteria: diffCriteria(BEFORE.criteria, AFTER.criteria), mockup: diffMockup(M1, M2), coverage: coverageWarnings(AFTER.criteria, M2) },
+  preview: { storyChanged: true, criteria: diffCriteria(BEFORE.criteria, AFTER.criteria), mockup: diffMockup(M1, M2), consistency: analyzeConsistency(AFTER.criteria.map((c) => ({ text: c.text, ref: null })), { version: 'uus', components: M2.components }) },
   otherStories: [{ storyId: 9, title: 'Külastajana soovin registreeruda, et saaksin osaleda.', suggestion: 'Kinnituses võiks olla märge „sh km“.' }],
 };
-const DATA = { story: { id: 1, title: 'Külastajana soovin näha hindu, et saaksin valida.', rolePhrase: 'Külastajana' }, criteria: [], mockup: M1, coverage: [], proposal: PROPOSAL, stories: [] };
+const DATA = { story: { id: 1, title: 'Külastajana soovin näha hindu, et saaksin valida.', rolePhrase: 'Külastajana' }, criteria: [], mockup: M1, consistency: null, proposal: PROPOSAL, stories: [] };
 const noop = () => {};
 const render = (props = {}) => renderToStaticMarkup(createElement(RefinementView, {
   data: DATA, focusStoryId: 1, onText: noop, onPropose: noop, onApply: noop, onEdit: noop, onCancelEdit: noop, onReject: noop, onOpenStory: noop, onBackToFocus: noop, ...props,
@@ -37,8 +38,8 @@ test('eelvaade: loo sõnastus enne ja pärast kõrvuti; kriteeriumid eri värvig
   const html = render();
   assert.match(html, /Enne<\/p><p>Külastajana soovin näha hindu, et saaksin valida\.<\/p>/);
   assert.match(html, /Pärast<\/p><p class="diff--modified">Külastajana soovin näha hindu koos käibemaksuga, et saaksin valida\.<\/p>/);
-  assert.match(html, /<li class="diff--unchanged"><span class="diff__label">Muutmata<\/span> Hind on eurodes\./);
-  assert.match(html, /<li class="diff--added"><span class="diff__label">Lisandub<\/span> Hinna juures on märge „sh km“\./);
+  assert.match(html, /<li class="diff--unchanged"><span class="diff__label">Muutmata<\/span> K1\. Hind on eurodes\./);
+  assert.match(html, /<li class="diff--added"><span class="diff__label">Lisandub<\/span> K2\. Hinna juures on märge „sh km“\./);
   assert.match(html, /<li class="diff--removed"><span class="diff__label">Eemaldub<\/span> Kuvatakse sünniaeg\./);
 });
 

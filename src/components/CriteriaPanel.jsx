@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { acceptMockup, applyCriteria, getCriteria, proposeCriteria, proposeMockup, rejectMockup } from '../api.js';
+import { acceptMockup, applyCriteria, getCriteria, linkCriterion, proposeCriteria, proposeMockup, rejectMockup, reviewConsistency } from '../api.js';
+import { componentLabel } from '../../shared/consistency.js';
+import { CheckWarnings, LinkLine, ReviewBox } from './Consistency.jsx';
 import {
   accept, addManual, buildSave, CRITERIA_ORIGIN_LABELS, edit, fromProposal, remove, visible, warningsFor,
 } from '../criteria/selection.js';
@@ -61,7 +63,7 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', newText = '', addError = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup }) {
+export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview }) {
   const { story, criteria, mockup, criteriaProposal, mockupProposal } = data;
   const disabled = Boolean(busy);
   if (!story) return <p className="muted">Vali enne prioriteedi juures lugu, millest alustada.</p>;
@@ -79,14 +81,31 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           <h3 id="criteria-title">Vastuvõtukriteeriumid</h3>
           {criteria.length > 0 && (
             <ol className="criteria-saved">
-              {criteria.map((c) => (
-                <li key={c.id}>
-                  {c.text} <span className="tag">{CRITERIA_ORIGIN_LABELS[c.origin] ?? c.origin}</span>
-                  {c.warnings.map((w) => <p key={w} className="warning">⚠ {w}</p>)}
-                </li>
-              ))}
+              {criteria.map((c, i) => {
+                const check = data.consistency?.criteria[i];
+                const value = c.ref?.kind === 'element' ? `element-${c.ref.index}` : c.ref?.kind === 'no_view' ? 'no_view' : 'none';
+                return (
+                  <li key={c.id}>
+                    <span className="criterion__number">K{i + 1}.</span> {c.text} <span className="tag">{CRITERIA_ORIGIN_LABELS[c.origin] ?? c.origin}</span>
+                    {c.warnings.map((w) => <p key={w} className="warning">⚠ {w}</p>)}
+                    <LinkLine link={check?.link ?? null} />
+                    {check && <CheckWarnings warnings={check.warnings} />}
+                    {mockup && (
+                      <label className="link-select">
+                        <span>Seo ise:</span>
+                        <select value={value} disabled={disabled} onChange={(e) => onLink(c.id, e.target.value)}>
+                          <option value="none">— seos puudub —</option>
+                          <option value="no_view">ei puuduta vaadet</option>
+                          {mockup.components.map((comp, ci) => <option key={ci} value={`element-${ci}`}>{componentLabel(comp, ci)}</option>)}
+                        </select>
+                      </label>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           )}
+          {linkError && <p className="error" role="alert">{linkError}</p>}
           {criteriaProposal && (
             <div className="criteria-proposal">
               <p className="muted">AI ettepanek – ei ole veel loo juures. Salvestatakse ainult ✓ kinnitatud ja ✎ muudetud kriteeriumid.</p>
@@ -124,7 +143,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           {mockup && (
             <>
               <p className="muted">Kinnitatud, versioon {mockup.version}</p>
-              <MockupView mockup={mockup} />
+              <MockupView mockup={mockup} notes={data.consistency?.components ?? null} />
             </>
           )}
           {mockupProposal && (
@@ -144,6 +163,9 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           {mockupError && <p className="error" role="alert">{mockupError}</p>}
         </section>
       </div>
+      {(criteria.length > 0 || mockup) && data.consistency && (
+        <ReviewBox consistency={data.consistency} mockupVersion={mockup?.version ?? null} busy={disabled} onReview={onReview} />
+      )}
     </div>
   );
 }
@@ -159,6 +181,7 @@ export default function CriteriaPanel({ projectId, focusVersion }) {
   const [mockupError, setMockupError] = useState('');
   const [newText, setNewText] = useState('');
   const [addError, setAddError] = useState('');
+  const [linkError, setLinkError] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -208,6 +231,7 @@ export default function CriteriaPanel({ projectId, focusVersion }) {
         busy={waiting ? 'ai' : busy}
         error={error}
         mockupError={mockupError}
+        linkError={linkError}
         newText={newText}
         addError={addError}
         onNewText={(t) => { setNewText(t); setAddError(''); }}
@@ -231,6 +255,12 @@ export default function CriteriaPanel({ projectId, focusVersion }) {
         onAcceptMockup={() => { setMockupError(''); run('mockup-accept', () => acceptMockup(projectId, data.mockupProposal.id), (e) => setMockupError(e.message)); }}
         onRejectMockup={() => { setMockupError(''); run('mockup-reject', () => rejectMockup(projectId, data.mockupProposal.id), (e) => setMockupError(e.message)); }}
         onProposeMockup={() => { setMockupError(''); run('mockup-propose', () => proposeMockup(projectId), (e) => setMockupError(e.message)); }}
+        onLink={(criterionId, value) => {
+          setLinkError('');
+          const [kind, index] = value.startsWith('element-') ? ['element', Number(value.slice(8))] : [value, undefined];
+          run('link', () => linkCriterion(projectId, criterionId, kind, index), (e) => setLinkError(e.message));
+        }}
+        onReview={() => { setLinkError(''); run('review', () => reviewConsistency(projectId, data.story.id, data.consistency.fingerprint), (e) => setLinkError(e.message)); }}
       />
       {!waiting && aiError && <AiError error={aiError} onRetry={() => { setAiError(null); run('propose', () => proposeCriteria(projectId), (e) => setAiError(e)); }} retrying={busy === 'propose'} />}
     </>

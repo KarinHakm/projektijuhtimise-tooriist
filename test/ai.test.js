@@ -107,6 +107,16 @@ test('ülesande reeglite rikkumine põhjustab korduse', async () => {
   assert.deepEqual(logs.map((l) => l.result), ['invalid:rules', 'invalid:rules']);
 });
 
+test('reeglite rikkumise logis on reeglite koodid (numbrid asendatud), mitte AI vastuse sisu', async () => {
+  const fetchImpl = fakeFetch(ok(JSON.stringify(GOOD)));
+  const logs = [];
+  const client = createAiClient({ token: FAKE_TOKEN, model: 'm', fetchImpl });
+  const check = () => ['lugu 2: vorming', 'lugu 5: vorming', 'loo vorming', 'a', 'b', 'c'];
+  await assert.rejects(runAiTask(client, { task: 'proov', messages: MESSAGES, schema: SCHEMA, check, log: (m) => logs.push(m) }));
+  assert.deepEqual(logs[0].rules, ['lugu #: vorming', 'loo vorming', 'a', 'b', 'c']);
+  assert.ok(!JSON.stringify(logs).includes(JSON.stringify(GOOD)));
+});
+
 test('429 annab rate_limited koos ooteajaga ja kordust ei tehta', async () => {
   const fetchImpl = fakeFetch(new Response('piir täis', { status: 429, headers: { 'retry-after': '30' } }));
   await assert.rejects(setup(fetchImpl).run(), (e) => e.code === 'rate_limited' && e.retryAfterSeconds === 30);

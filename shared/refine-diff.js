@@ -1,4 +1,5 @@
 // Kliendi täpsustuse eelvaade (L11) arvutatakse koodis: enne → pärast, mitte AI kirjelduse põhjal.
+// Kooskõla vihjed on failis shared/consistency.js (L23).
 // Ühine serverile ja brauserile.
 
 const norm = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
@@ -36,20 +37,4 @@ export function diffMockup(before, after) {
   const beforeList = before?.components ?? [];
   const afterList = after?.components ?? [];
   return { added: mark(afterList, count(beforeList)), removed: mark(beforeList, count(afterList)) };
-}
-
-// Lihtne kooskõla vihje (osa L23-st): kriteeriumis jutumärkides nimetatud tekst peab mockup'is leiduma.
-// Täielikku kooskõla see EI kontrolli (nt jutumärkideta nimetatud elemente ega mockup'i liigseid elemente).
-const QUOTED = /['"„“”]([^'"„“”]{2,60})['"„“”]/g;
-export function coverageWarnings(criteria, mockup) {
-  if (!mockup) return [];
-  const haystack = [mockup.title, ...mockup.components.flatMap((c) => [c.text, ...(c.items ?? [])])].map((t) => norm(t).toLocaleLowerCase('et')).join(' | ');
-  const warnings = [];
-  for (const c of criteria) {
-    for (const m of norm(c.text).matchAll(QUOTED)) {
-      const term = norm(m[1]);
-      if (!haystack.includes(term.toLocaleLowerCase('et'))) warnings.push({ criterion: c.text, term, message: `Kriteeriumis nimetatud „${term}“ ei ole mockup'is.` });
-    }
-  }
-  return warnings;
 }

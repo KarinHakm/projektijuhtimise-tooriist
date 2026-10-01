@@ -4,6 +4,7 @@ import { applyRefinement, getRefinement, proposeRefinement, rejectRefinement } f
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import MockupView from './MockupView.jsx';
+import { CheckWarnings, LinkLine } from './Consistency.jsx';
 
 const POLL_MS = 3000;
 const STATUS_LABELS = { added: 'Lisandub', modified: 'Muutub', unchanged: 'Muutmata' };
@@ -61,11 +62,8 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
           <textarea id="kliendi-tapsustus" rows={3} value={text} onChange={(e) => onText(e.target.value)} disabled={disabled}
             placeholder="Nt: Paketi hinnas peab olema näha, kas see sisaldab käibemaksu." />
           <button type="button" onClick={onPropose} disabled={disabled || !text.trim()}>Koosta muudatusettepanek</button>
-          {data.coverage?.length > 0 && (
-            <div className="coverage">
-              <p className="muted">Kooskõla vihjed (osaline kontroll – võrreldakse ainult jutumärkides nimetusi):</p>
-              {data.coverage.map((w) => <p key={w.message + w.criterion} className="warning">⚠ {w.message}</p>)}
-            </div>
+          {data.consistency?.warningCount > 0 && (
+            <p className="consistency-warning">⚠ Kontrolli: praeguses seisus on {data.consistency.warningCount} kooskõla hoiatust (vt „Kriteeriumid ja mockup“).</p>
           )}
         </>
       )}
@@ -90,8 +88,14 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
               <ul className="diff-list">
                 {proposal.preview.criteria.items.map((c, i) => (
                   <li key={i} className={`diff--${c.status}`}>
-                    <span className="diff__label">{STATUS_LABELS[c.status]}</span> {c.text}
+                    <span className="diff__label">{STATUS_LABELS[c.status]}</span> K{i + 1}. {c.text}
                     {c.oldText && <span className="diff__old">Enne: {c.oldText}</span>}
+                    {proposal.preview.consistency && (
+                      <>
+                        <LinkLine link={proposal.preview.consistency.criteria[i].link} />
+                        <CheckWarnings warnings={proposal.preview.consistency.criteria[i].warnings} />
+                      </>
+                    )}
                   </li>
                 ))}
                 {proposal.preview.criteria.removed.map((t, i) => (
@@ -107,14 +111,14 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
                 </div>
                 <div>
                   <p className="before-after__label">Pärast</p>
-                  <MockupView mockup={proposal.after.mockup} marks={proposal.preview.mockup.added} mark="added" />
+                  <MockupView mockup={proposal.after.mockup} marks={proposal.preview.mockup.added} mark="added" notes={proposal.preview.consistency?.components ?? null} />
                 </div>
               </div>
-              {proposal.preview.coverage.length > 0 && (
-                <div className="coverage">
-                  <p className="muted">Kooskõla vihjed (osaline kontroll – võrreldakse ainult jutumärkides nimetusi):</p>
-                  {proposal.preview.coverage.map((w) => <p key={w.message + w.criterion} className="warning">⚠ {w.message}</p>)}
-                </div>
+              {proposal.preview.consistency && (
+                <p className="muted">
+                  Kooskõla pärast muudatust: kontrollimist vajavaid hoiatusi {proposal.preview.consistency.warningCount}. Seosed pakkus AI – kontrolli need üle;
+                  rakendamise järel saad seoseid muuta ja uue versiooni üle vaadata.
+                </p>
               )}
 
               <section className="other-stories" aria-labelledby="other-stories-title">

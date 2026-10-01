@@ -88,6 +88,12 @@ const MIGRATIONS = [
      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
      UNIQUE (story_id, version)
    )`,
+  // Kooskõla (L23): kriteeriumi viide mockup'i elemendile ja kasutaja ülevaatuse kinnitus konkreetsele seisule.
+  `ALTER TABLE criteria ADD COLUMN ref_kind TEXT CHECK (ref_kind IN ('element', 'no_view'));
+   ALTER TABLE criteria ADD COLUMN ref_index INTEGER;
+   ALTER TABLE criteria ADD COLUMN ref_version INTEGER;
+   ALTER TABLE criteria ADD COLUMN ref_source TEXT CHECK (ref_source IN ('ai', 'user'));
+   ALTER TABLE stories ADD COLUMN consistency_review TEXT`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
