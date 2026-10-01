@@ -69,6 +69,25 @@ const MIGRATIONS = [
    CREATE INDEX stories_project ON stories(project_id, position)`,
   // Lugu, millest alustatakse (L08). Määratakse ainult kasutaja kinnitusel (AI soovitus või oma valik).
   `ALTER TABLE projects ADD COLUMN focus_story_id INTEGER REFERENCES stories(id) ON DELETE SET NULL`,
+  // Loo vastuvõtukriteeriumid (L09) ja kinnitatud mockup'id versioonidena (L10). Siia jõuab ainult kasutaja kinnitatu.
+  `CREATE TABLE criteria (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     story_id    INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+     position    INTEGER NOT NULL,
+     text        TEXT    NOT NULL CHECK (length(trim(text)) BETWEEN 1 AND 200),
+     origin      TEXT    NOT NULL CHECK (origin IN ('ai', 'ai_edited', 'manual')),
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );
+   CREATE INDEX criteria_story ON criteria(story_id, position);
+   CREATE TABLE mockups (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     story_id    INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+     version     INTEGER NOT NULL,
+     spec        TEXT    NOT NULL,
+     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     UNIQUE (story_id, version)
+   )`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

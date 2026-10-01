@@ -70,6 +70,16 @@ export const proposePriority = (projectId) => postJson(`${priorityPath(projectId
 export const acceptPriority = (projectId, proposalId) => postJson(`${priorityPath(projectId)}/accept`, { proposalId });
 export const choosePriority = (projectId, storyId) => postJson(`${priorityPath(projectId)}/choose`, { storyId });
 
+const criteriaPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/criteria`;
+
+// Kriteeriumid ja mockup alustamise loole (L09, L10).
+export const getCriteria = (projectId) => request(criteriaPath(projectId));
+export const proposeCriteria = (projectId) => postJson(`${criteriaPath(projectId)}/propose`);
+export const applyCriteria = (projectId, proposalId, criteria) => postJson(`${criteriaPath(projectId)}/apply`, { proposalId, criteria });
+export const acceptMockup = (projectId, proposalId) => postJson(`${criteriaPath(projectId)}/mockup/accept`, { proposalId });
+export const rejectMockup = (projectId, proposalId) => postJson(`${criteriaPath(projectId)}/mockup/reject`, { proposalId });
+export const proposeMockup = (projectId) => postJson(`${criteriaPath(projectId)}/mockup/propose`);
+
 // direction = 'up' | 'down'; vastuses on uus järjekord (L07).
 export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });

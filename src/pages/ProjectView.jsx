@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getProject } from '../api.js';
 import BacklogPanel from '../components/BacklogPanel.jsx';
 import Conversation from '../components/Conversation.jsx';
+import CriteriaPanel from '../components/CriteriaPanel.jsx';
 import PriorityPanel from '../components/PriorityPanel.jsx';
 import RolesPanel from '../components/RolesPanel.jsx';
 import StoriesPanel from '../components/StoriesPanel.jsx';
@@ -58,6 +59,10 @@ export default function ProjectView() {
                   backlogVersion={backlogVersion}
                   onFocusChanged={() => setBacklogVersion((v) => v + 1)}
                 />
+              </section>
+              <section className="card">
+                <h2>Kriteeriumid ja mockup</h2>
+                <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} />
               </section>
             </div>
             <section className="card" aria-labelledby="backlog-heading">

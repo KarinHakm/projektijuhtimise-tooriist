@@ -186,6 +186,33 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .priority-choose { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin: 0 0 0.75rem; }
 .priority-choose__option { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: normal; margin: 0.35rem 0; }
 .priority-choose__option input { width: auto; margin-top: 0.25rem; }
+.criteria-mockup h3 { font-size: 1rem; margin: 0.5rem 0; }
+.criteria-mockup__columns { display: grid; gap: 1rem; }
+@media (min-width: 700px) { .criteria-mockup__columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.criteria-list, .criteria-saved { padding-left: 0; list-style: none; margin: 0.5rem 0; }
+.criteria-saved li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.criterion { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.25rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.criterion__number { font-weight: 600; color: var(--muted); }
+.criterion__text { margin: 0; }
+.criterion__state { font-size: 0.85rem; }
+.criterion--accepted .criterion__state, .criterion--edited .criterion__state { color: #1d6b35; }
+.criterion .actions { flex-wrap: wrap; }
+.criterion .actions button { margin-top: 0.35rem; }
+.icon-button[aria-pressed='true'] { color: #fff; background: #1d6b35; border-color: #1d6b35; }
+.criteria-add { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.criteria-add button { margin-top: 0; white-space: nowrap; }
+.mockup { margin: 0.5rem 0; border: 2px solid var(--text); border-radius: 8px; overflow: hidden; background: var(--card); }
+.mockup__title { padding: 0.35rem 0.75rem; font-size: 0.85rem; color: #fff; background: var(--text); }
+.mockup__body { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; }
+.mock-heading { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.mock-text { margin: 0; }
+.mock-button { align-self: flex-start; padding: 0.3rem 0.8rem; border: 2px solid var(--text); border-radius: 6px; font-weight: 600; }
+.mock-input { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
+.mock-input__box { height: 1.8rem; border: 1px solid var(--muted); border-radius: 4px; }
+.mock-list ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+.mock-image { padding: 1rem; text-align: center; color: var(--muted); border: 1px dashed var(--muted); background: var(--bg); }
+.mock-card { padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+.mockup-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; }
 .stories-proposal {
   border: 1px dashed var(--accent);
   border-radius: 8px;

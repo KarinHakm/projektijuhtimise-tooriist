@@ -47,7 +47,7 @@ test('uuesti avamine ei käivita skeemi loomist teist korda', () => {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name);
   db.close();
   assert.equal(version, SCHEMA_VERSION);
-  assert.deepEqual(tables, ['ai_proposals', 'conversation_messages', 'project_roles', 'projects', 'stories']);
+  assert.deepEqual(tables, ['ai_proposals', 'conversation_messages', 'criteria', 'mockups', 'project_roles', 'projects', 'stories']);
 });
 
 test('andmebaas ei luba tühja nime ega ainult tühikutest nime', () => {
