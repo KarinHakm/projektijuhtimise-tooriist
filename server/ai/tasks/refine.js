@@ -4,7 +4,7 @@
 import { CRITERION_MAX, cleanCriterion } from '../../../shared/criteria-check.js';
 import { validateStoryText } from '../../../shared/story-format.js';
 import { checkMockup, MOCKUP_SCHEMA } from './criteria.js';
-import { renderConversation } from './clarify.js';
+import { renderConversation, renderProjectState } from './clarify.js';
 
 export const CLARIFICATION_MAX = 500;
 
@@ -65,6 +65,8 @@ export function buildRefineMessages(context, target, otherStories, clarification
 
 <andmed>
 ${renderConversation(context.conversation)}
+
+${renderProjectState(context)}
 
 Muudetav lugu: ${target.title}
 Loo praegused kriteeriumid (nurksulgudes indeks):

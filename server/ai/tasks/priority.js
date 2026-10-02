@@ -1,5 +1,5 @@
 // AI ülesanne: soovitus, millisest backlog'i loost alustada (L08).
-import { renderConversation } from './clarify.js';
+import { renderConversation, renderProjectState } from './clarify.js';
 
 // Skeemis on lubatud ainult selle projekti backlog'i lugude tunnused.
 export function buildPrioritySchema(storyIds) {
@@ -29,6 +29,8 @@ export function buildPriorityMessages(context, stories) {
 
 <andmed>
 ${renderConversation(context.conversation)}
+
+${renderProjectState(context)}
 
 Backlog'i lood praeguses järjekorras:
 ${list}

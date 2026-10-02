@@ -8,6 +8,9 @@ export const DOR_MIN_CRITERIA = 3;
 
 export const STORY_STATUSES = ['idee', 'vajab_tapsustamist', 'labivaadatud', 'valmis_arenduseks'];
 export const READY = 'valmis_arenduseks';
+export const STORY_STATUS_LABELS = {
+  idee: 'Idee', vajab_tapsustamist: 'Vajab täpsustamist', labivaadatud: 'Läbivaadatud', valmis_arenduseks: 'Valmis arenduseks',
+};
 
 // story = { rolePhrase, want, soThat, touchesView }, criteria = [{ text }], hasMockup, openQuestions (arv)
 export function evaluateDor({ story, criteria, hasMockup, openQuestions }) {

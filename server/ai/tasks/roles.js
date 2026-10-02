@@ -1,6 +1,6 @@
 // AI ülesanne: kasutajarollide ettepanek (L05) vestluse põhjal.
 import { roleKey, ROLE_NAME_MAX } from '../../roles.js';
-import { renderConversation } from './clarify.js';
+import { renderConversation, renderProjectState } from './clarify.js';
 
 export const ROLES_SCHEMA = {
   type: 'object',
@@ -40,6 +40,8 @@ export function buildRolesMessages(context) {
 
 <andmed>
 ${renderConversation(context.conversation)}
+
+${renderProjectState(context)}
 </andmed>
 
 Paku selle projekti rakendusele 2–6 kasutajarolli.

@@ -355,7 +355,7 @@ test('AI kontekstis on backlog’i lood, mitte pooleli ettepaneku lood', async (
   const proposal = await propose();
   assert.deepEqual(buildProjectContext(db, projectId).stories, []);
   await post(projectId, '/apply', { proposalId: proposal.id, stories: asApply(proposal, [1]) });
-  assert.deepEqual(buildProjectContext(db, projectId).stories, [
+  assert.deepEqual(buildProjectContext(db, projectId).stories.map(({ role, title }) => ({ role, title })), [
     { role: 'Potentsiaalne liige', title: 'Potentsiaalse liikmena soovin näha liikmepakette ja nende hindu, et saaksin valida endale sobiva paketi.' },
   ]);
 });

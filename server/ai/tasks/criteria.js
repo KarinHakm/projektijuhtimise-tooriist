@@ -1,7 +1,7 @@
 // AI ülesanded: valitud loo vastuvõtukriteeriumid ja mockup (L09, L10).
 // Mockup on komponentide loend JSON-ina; rakendus kuvab selle ise (HTML-i AI-lt ei võeta).
 import { CRITERION_MAX, cleanCriterion } from '../../../shared/criteria-check.js';
-import { renderConversation } from './clarify.js';
+import { renderConversation, renderProjectState } from './clarify.js';
 
 export const COMPONENT_TYPES = ['heading', 'text', 'button', 'input', 'list', 'image', 'card'];
 
@@ -73,6 +73,8 @@ const projectData = (context, story) => `Projekt: ${context.project.name}
 
 <andmed>
 ${renderConversation(context.conversation)}
+
+${renderProjectState(context)}
 
 Valitud kasutajalugu: ${story.title}
 </andmed>`;

@@ -6,6 +6,9 @@ import { join } from 'node:path';
 import { openDb } from '../server/db.js';
 import { createProposal, getProposal, applyProposal, rejectProposal, ProposalError } from '../server/proposals.js';
 import { buildProjectContext } from '../server/ai/context.js';
+import { renderProjectState } from '../server/ai/tasks/clarify.js';
+import { replaceRoles } from '../server/roles.js';
+import { setFocusStory } from '../server/priority.js';
 
 // Iga test saab oma ajutise andmebaasi; arendaja data/app.db faili ei puututa.
 let dir, db, projectId;
@@ -103,14 +106,53 @@ test('projekti kustutamisel kustuvad ka selle ettepanekud', () => {
 
 test('AI kontekst loetakse andmebaasi hetkeseisust', () => {
   assert.deepEqual(buildProjectContext(db, projectId), {
-    project: { name: 'Spordiklubi', description: 'algne', stage: 'idee' },
+    project: { name: 'Spordiklubi', description: 'algne', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee' } },
     conversation: [],
     roles: [],
     stories: [],
   });
   // Käsitsi muudatus peab kohe järgmisesse konteksti jõudma (vahemälu pole).
   db.prepare("UPDATE projects SET name = 'Spordiklubi veeb', description = 'käsitsi muudetud' WHERE id = ?").run(projectId);
-  assert.deepEqual(buildProjectContext(db, projectId).project, { name: 'Spordiklubi veeb', description: 'käsitsi muudetud', stage: 'idee' });
+  assert.deepEqual(buildProjectContext(db, projectId).project, { name: 'Spordiklubi veeb', description: 'käsitsi muudetud', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee' } });
+});
+
+function addStory(status = 'idee') {
+  return db.prepare(`INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, status, origin, touches_view)
+                     VALUES (?, 1, 'Külastaja', 'Külastajana', 'näha tunniplaani', 'saaksin trenni valida', 'M', ?, 'manual', 1) RETURNING id`).get(projectId, status).id;
+}
+
+test('AI kontekstis on etapp, lugude kriteeriumid, staatus, mockup ja avatud küsimused', () => {
+  replaceRoles(db, projectId, [{ name: 'Külastaja', source: 'manual' }]);
+  const storyId = addStory('vajab_tapsustamist');
+  setFocusStory(db, projectId, storyId);
+  db.prepare("INSERT INTO criteria (story_id, position, text, origin) VALUES (?, 1, 'Tunniplaanis on iga trenni algusaeg.', 'manual')").run(storyId);
+  db.prepare('INSERT INTO mockups (story_id, version, spec) VALUES (?, 1, ?)')
+    .run(storyId, JSON.stringify({ title: 'Tunniplaan', components: [{ type: 'heading', text: 'Tunniplaan', items: [] }] }));
+  db.prepare("INSERT INTO story_questions (story_id, text) VALUES (?, 'Kas näidata ka treenerit?')").run(storyId);
+
+  const context = buildProjectContext(db, projectId);
+  assert.equal(context.project.stage.lastDone, 'Kriteeriumid ja mockup');
+  assert.deepEqual(context.stories, [{
+    id: storyId, role: 'Külastaja', title: 'Külastajana soovin näha tunniplaani, et saaksin trenni valida.', size: 'M',
+    status: 'vajab_tapsustamist', ready: false, focus: true, criteria: ['Tunniplaanis on iga trenni algusaeg.'], hasMockup: true,
+    openQuestions: ['Kas näidata ka treenerit?'],
+  }]);
+  const text = renderProjectState(context);
+  assert.match(text, /viimati tehtud Kriteeriumid ja mockup/);
+  assert.match(text, /staatus Vajab täpsustamist; alustamise lugu; mockup olemas/);
+  assert.match(text, /Kriteeriumid: Tunniplaanis on iga trenni algusaeg\./);
+  assert.match(text, /Avatud küsimused: Kas näidata ka treenerit\?/);
+});
+
+test('AI kontekstis on aegunud valmisolek märgitud ja vastatud küsimusi ei ole', () => {
+  const storyId = addStory('valmis_arenduseks'); // kriteeriume pole, seega DoR ei ole täidetud
+  db.prepare("INSERT INTO story_questions (story_id, text, resolved_at) VALUES (?, 'Vastatud küsimus', 'now')").run(storyId);
+  const context = buildProjectContext(db, projectId);
+  assert.equal(context.stories[0].ready, false);
+  assert.deepEqual(context.stories[0].openQuestions, []);
+  const text = renderProjectState(context);
+  assert.match(text, /staatus Valmis arenduseks, valmisolek aegunud/);
+  assert.doesNotMatch(text, /Avatud küsimused/);
 });
 
 test('olematu projekti kontekst on null', () => {

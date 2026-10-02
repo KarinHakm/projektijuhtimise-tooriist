@@ -58,6 +58,4 @@ export function buildApply(items, mode) {
 }
 
 export const ORIGIN_LABELS = { ai: 'AI ettepanek', ai_edited: 'AI ettepanek, muudetud', manual: 'Käsitsi lisatud' };
-export const STATUS_LABELS = {
-  idee: 'Idee', vajab_tapsustamist: 'Vajab täpsustamist', labivaadatud: 'Läbivaadatud', valmis_arenduseks: 'Valmis arenduseks',
-};
+export { STORY_STATUS_LABELS as STATUS_LABELS } from '../../shared/dor.js';

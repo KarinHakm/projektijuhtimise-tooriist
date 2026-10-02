@@ -1,6 +1,7 @@
 // AI ülesanne: täpsustavad küsimused või kokkuvõte (L04).
 // Esimeses voorus (ainult idee) peab AI esitama 1–3 küsimust; hiljem kas lisaküsimused
 // (kokku kuni MAX_QUESTIONS) või kokkuvõte.
+import { READY, STORY_STATUS_LABELS } from '../../../shared/dor.js';
 
 export const MAX_QUESTIONS = 3;
 
@@ -65,6 +66,22 @@ export function renderConversation(conversation) {
   return lines.join('\n');
 }
 
+// Projekti hetkeseis (etapp ja backlog'i lood koos kriteeriumide, staatuse ja avatud küsimustega).
+// Lisatakse <andmed> ploki sisse, sest lugude ja kriteeriumide tekstid on kasutaja sisestatud.
+export function renderProjectState(context) {
+  const { lastDone, next, nextStep } = context.project.stage;
+  const lines = [`Projekti etapp: viimati tehtud ${lastDone ?? '(veel mitte midagi)'}; järgmine ${next ?? '(puudub)'}${nextStep ? `, soovitatud samm: ${nextStep}` : ''}.`];
+  if (!context.stories.length) return lines.join('\n');
+  lines.push("Backlog'i lood:");
+  for (const s of context.stories) {
+    const status = `${STORY_STATUS_LABELS[s.status] ?? s.status}${s.status === READY && !s.ready ? ', valmisolek aegunud' : ''}`;
+    lines.push(`- id ${s.id}: ${s.title} (suurus ${s.size}; staatus ${status}${s.focus ? '; alustamise lugu' : ''}; mockup ${s.hasMockup ? 'olemas' : 'puudub'})`);
+    lines.push(`  Kriteeriumid: ${s.criteria.length ? s.criteria.join(' | ') : '(pole)'}`);
+    if (s.openQuestions.length) lines.push(`  Avatud küsimused: ${s.openQuestions.join(' | ')}`);
+  }
+  return lines.join('\n');
+}
+
 export function buildClarifyMessages(context, { asked }) {
   const firstRound = asked === 0;
   const remaining = MAX_QUESTIONS - asked;
@@ -84,6 +101,8 @@ Kui midagi olulist on veel ebaselge, võid esitada kuni ${remaining} lisaküsimu
 
 <andmed>
 ${renderConversation(context.conversation)}
+
+${renderProjectState(context)}
 </andmed>
 
 ${task}
