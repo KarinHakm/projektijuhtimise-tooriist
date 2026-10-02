@@ -515,3 +515,7 @@ button.danger { background: var(--error); }
 .overlap-form select { max-width: 100%; }
 /* L26: backlog'i tegevusnuppude tekst ei murdu (rida murdub nuppude vahelt) */
 .story-manage .link-button { white-space: nowrap; }
+/* L21: viimase toetatud muudatuse tagasivõtmine */
+.undo-bar { margin: 0.25rem 0 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+.undo-bar__label { margin-left: 0.5rem; font-size: 0.9rem; }
+.undo-bar__reason { margin: 0.25rem 0 0; font-size: 0.85rem; }

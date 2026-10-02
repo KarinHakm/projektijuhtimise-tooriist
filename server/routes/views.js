@@ -11,6 +11,7 @@ import { aiRef, appendCriteria, CRITERIA_MAX_COUNT, listCriteria, saveMockup } f
 import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listRoles } from '../roles.js';
 import { appendStories, listStories, validateManualStory } from '../stories.js';
+import { undoable } from '../undo.js';
 
 const KIND = 'new_view';
 
@@ -60,6 +61,15 @@ export function viewsRouter({ db, ai }) {
   });
 
   router.get('/', (req, res) => res.json(snapshot(req.projectId)));
+
+  // L21: „Lisa“ on toetatud muudatus (tagasivõetav). AI propose ei ole.
+  const applyLabel = (req) => {
+    if (req.body?.target?.kind === 'story') {
+      const i = listStories(db, req.projectId).findIndex((st) => st.id === Number(req.body.target.storyId));
+      return `Lisasid loole ${i < 0 ? '?' : i + 1} uue vaate`;
+    }
+    return 'Lisasid uue vaate põhjal uue loo';
+  };
 
   router.post('/propose', async (req, res) => {
     const projectId = req.projectId;
@@ -129,7 +139,7 @@ export function viewsRouter({ db, ai }) {
     });
   };
 
-  router.post('/apply', (req, res) => {
+  router.post('/apply', undoable(db, applyLabel, (req, res) => {
     const projectId = req.projectId;
     const proposal = getProposal(db, String(req.body?.proposalId ?? ''));
     if (!proposal || proposal.projectId !== projectId || proposal.kind !== KIND) {
@@ -177,7 +187,7 @@ export function viewsRouter({ db, ai }) {
       throw err;
     }
     res.json({ ...snapshot(projectId), result });
-  });
+  }));
 
   router.post('/reject', (req, res) => {
     try {

@@ -8,6 +8,8 @@ import { listStories } from '../stories.js';
 import { applyFinding, codeFindings, findingIsCurrent, KIND, mergeAiReview, ReviewError, selfCheckReview, undoFinding } from '../review.js';
 import { mergeInfo, splitInfo } from '../stories.js';
 import { listCriteria } from '../criteria.js';
+import { txBegin, txCommit, txRollback } from '../db.js';
+import { undoable } from '../undo.js';
 
 // Backlog'i ülevaatus (L27). /run koostab leiud ega muuda backlog'i; /findings/:id/apply muudab ainult selle
 // leiu loo; /findings/:id/ignore märgib leiu ignoreerituks (backlog muutumata).
@@ -84,14 +86,14 @@ export function reviewRouter({ db, ai }) {
       running.delete(projectId);
     }
 
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     try {
       db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE project_id = ? AND kind = ? AND status = 'pending'")
         .run(projectId, KIND);
       createProposal(db, { projectId, kind: KIND, payload: { ai: aiDone, aiNote, message, findings } });
-      db.exec('COMMIT');
+      txCommit(db, sp);
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       throw err;
     }
     res.json(snapshot(projectId));
@@ -99,7 +101,7 @@ export function reviewRouter({ db, ai }) {
 
   const decide = (req, res, status, action, from = 'open') => {
     const projectId = req.projectId;
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     try {
       const p = findPendingProposal(db, projectId, KIND);
       const f = p?.payload.findings.find((x) => x.id === req.params.findingId);
@@ -108,20 +110,34 @@ export function reviewRouter({ db, ai }) {
       const result = action(f);
       f.status = status;
       savePayload(p.id, p.payload);
-      db.exec('COMMIT');
+      txCommit(db, sp);
       res.json({ ...snapshot(projectId), result });
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       if (!(err instanceof ReviewError)) throw err;
       res.status(err.status).json({ error: err.message, code: err.code, field: err.field });
     }
   };
 
   // body.value (valikuline) = „Muuda“ järel kasutaja muudetud väärtus; ilma selleta rakendatakse AI ettepanek.
-  router.post('/findings/:findingId/apply', (req, res) => decide(req, res, 'applied', (f) => applyFinding(db, req.projectId, f, req.body?.value)));
+  // L21: leiust tehtud jagamine (L28) ja ühendamine (L29) on toetatud muudatused; teised leiutüübid mitte.
+  const applyLabel = (req) => {
+    const f = findPendingProposal(db, req.projectId, KIND)?.payload.findings.find((x) => x.id === req.params.findingId);
+    if (f?.status !== 'open') return null;
+    const no = (id) => { const i = listStories(db, req.projectId).findIndex((st) => st.id === id); return i < 0 ? '?' : i + 1; };
+    if (f.type === 'too_large') return `Jagasid loo ${no(f.storyIds[0])} kaheks (ülevaatuse leid)`;
+    if (f.type === 'overlap') return `Ühendasid lood ${no(f.storyIds[0])} ja ${no(f.storyIds[1])} (ülevaatuse leid)`;
+    return null;
+  };
+  router.post('/findings/:findingId/apply', undoable(db, applyLabel, (req, res) => decide(req, res, 'applied', (f) => applyFinding(db, req.projectId, f, req.body?.value))));
   router.post('/findings/:findingId/ignore', (req, res) => decide(req, res, 'ignored', () => 'Leid ignoreeriti. Backlog jäi muutmata.'));
   // L28/L29: ülevaatuse kaudu tehtud jagamise või ühendamise tagasivõtmine (ainult muutmata seisu korral).
-  router.post('/findings/:findingId/undo', (req, res) => decide(req, res, 'undone', (f) => undoFinding(db, req.projectId, f), 'applied'));
+  // L21: leiu enda tagasivõtmise järel ei saa sama muudatust enam üldise „Võta tagasi“ kaudu uuesti peale panna.
+  router.post('/findings/:findingId/undo', (req, res) => decide(req, res, 'undone', (f) => {
+    const result = undoFinding(db, req.projectId, f);
+    db.prepare('DELETE FROM undo_journal WHERE project_id = ?').run(req.projectId);
+    return result;
+  }, 'applied'));
 
   return router;
 }

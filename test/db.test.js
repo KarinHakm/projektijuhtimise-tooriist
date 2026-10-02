@@ -48,7 +48,7 @@ test('uuesti avamine ei k채ivita skeemi loomist teist korda', () => {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name);
   db.close();
   assert.equal(version, SCHEMA_VERSION);
-  assert.deepEqual(tables, ['ai_proposals', 'conversation_messages', 'criteria', 'mockups', 'project_roles', 'projects', 'stories', 'story_overlaps', 'story_questions']);
+  assert.deepEqual(tables, ['ai_proposals', 'conversation_messages', 'criteria', 'mockups', 'project_roles', 'projects', 'stories', 'story_overlaps', 'story_questions', 'undo_journal']);
 });
 
 test('andmebaas ei luba t체hja nime ega ainult t체hikutest nime', () => {
@@ -76,8 +76,8 @@ test('versioonil 5 andmebaas viiakse viimasele versioonile; projekt ja lood j채�
   const project = { ...db.prepare('SELECT name, skipped_stages, active_stage, mvp_count FROM projects WHERE id = ?').get(pid) };
   const stories = db.prepare('SELECT want, status FROM stories').all().map((r) => ({ ...r }));
   db.close();
-  assert.equal(SCHEMA_VERSION, 13);
-  assert.equal(version, 13);
+  assert.equal(SCHEMA_VERSION, 14);
+  assert.equal(version, 14);
   assert.deepEqual(project, { name: 'Vana projekt', skipped_stages: '[]', active_stage: null, mvp_count: null });
   assert.deepEqual(stories, [{ want: 'n채ha hindu', status: 'idee' }]);
 });

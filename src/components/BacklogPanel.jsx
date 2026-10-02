@@ -4,6 +4,7 @@ import {
   getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding, addCriterion, updateCriterion, deleteCriterion, markOverlap, unmarkOverlap,
 } from '../api.js';
 import ReviewPanel from './ReviewPanel.jsx';
+import UndoBar from './UndoBar.jsx';
 import StoryForm from './StoryForm.jsx';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
 import BacklogList from './BacklogList.jsx';
@@ -11,8 +12,8 @@ import BacklogList from './BacklogList.jsx';
 const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-// review = L27 ülevaatuse paneel (element) või null.
-export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null, review = null }) {
+// review = L27 ülevaatuse paneel (element) või null; undo = L21 tagasivõtmise riba (element) või null.
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null, review = null, undo = null }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -22,6 +23,7 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
       </p>
       <p className="backlog__status" role="status" aria-live="polite">{status}</p>
       {error && <p className="error" role="alert">{error}</p>}
+      {undo}
       {review}
       {/* L15: käsitsi lisamine; uus lugu läheb backlog'i lõppu (MVP joone alla). */}
       {manage && manage.mode?.type !== 'add' && (
@@ -316,6 +318,7 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       onMvp={changeMvp}
       manage={manage}
       review={review}
+      undo={<UndoBar projectId={projectId} onUndone={() => { setStatus(''); setError(''); refresh(); onBacklogChanged?.(); }} />}
     />
   );
 }

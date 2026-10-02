@@ -154,3 +154,6 @@ export const rejectNewView = (projectId, proposalId) => postJson(`${viewsPath(pr
 export const markOverlap = (projectId, storyId, withId) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/overlaps`, { withId });
 export const unmarkOverlap = (projectId, storyId, otherId) =>
   request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/overlaps/${encodeURIComponent(otherId)}`, { method: 'DELETE' });
+// L21: viimase toetatud muudatuse tagasivõtmine (at = brauseri nähtud kirje aeg).
+export const getUndo = (projectId) => request(`/projects/${encodeURIComponent(projectId)}/undo`);
+export const undoLast = (projectId, at) => postJson(`/projects/${encodeURIComponent(projectId)}/undo`, { at });

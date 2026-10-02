@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { txBegin, txCommit, txRollback } from './db.js';
 
 // AI ettepanekute salvestus ja ühekordne rakendamine.
 // Ettepanek salvestatakse olekuga 'pending'; backlog muutub alles siis, kui inimene selle rakendab.
@@ -56,7 +57,7 @@ export function rejectProposal(db, id, expect) {
 }
 
 function decide(db, id, status, apply, expect = {}) {
-  db.exec('BEGIN IMMEDIATE');
+  const sp = txBegin(db);
   try {
     const proposal = getProposal(db, id);
     if (!proposal) throw new ProposalError('not_found');
@@ -71,10 +72,10 @@ function decide(db, id, status, apply, expect = {}) {
       .run(status, id);
     if (changes !== 1) throw new ProposalError('already_decided');
 
-    db.exec('COMMIT');
+    txCommit(db, sp);
     return { proposal: getProposal(db, id), result };
   } catch (err) {
-    db.exec('ROLLBACK');
+    txRollback(db, sp);
     throw err;
   }
 }

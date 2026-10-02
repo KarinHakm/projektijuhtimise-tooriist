@@ -125,6 +125,14 @@ export const MIGRATIONS = [
      UNIQUE (story_a, story_b)
    );
    CREATE INDEX story_overlaps_project ON story_overlaps(project_id)`,
+  // Üldine tagasivõtmine (L21): projekti viimane toetatud muudatus – enne-seisu hetktõmmis ja pärast-seisu räsi.
+  `CREATE TABLE undo_journal (
+     project_id INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+     label      TEXT    NOT NULL,
+     snapshot   TEXT    NOT NULL,
+     after_hash TEXT    NOT NULL,
+     created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   )`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -152,4 +160,23 @@ function migrate(db) {
       throw err;
     }
   }
+}
+
+// Transaktsioon, mis toimib ka teise transaktsiooni sees (L21 undoable): välise sees kasutatakse SAVEPOINT'i.
+// txBegin tagastab savepoint'i nime või null; sama väärtus antakse txCommit'ile / txRollback'ile.
+let savepoint = 0;
+export function txBegin(db) {
+  if (!db.isTransaction) {
+    db.exec('BEGIN IMMEDIATE');
+    return null;
+  }
+  const name = `sp_${++savepoint}`;
+  db.exec(`SAVEPOINT ${name}`);
+  return name;
+}
+export const txCommit = (db, sp) => db.exec(sp ? `RELEASE ${sp}` : 'COMMIT');
+export function txRollback(db, sp) {
+  if (!sp) return db.exec('ROLLBACK');
+  db.exec(`ROLLBACK TO ${sp}`);
+  db.exec(`RELEASE ${sp}`);
 }

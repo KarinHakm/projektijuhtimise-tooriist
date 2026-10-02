@@ -42,7 +42,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Tehtud |
 | L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
 | L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Pooleli |
-| L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Plaanitud |
+| L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Tehtud |
 | L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Tehtud |
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Tehtud |
@@ -560,6 +560,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Nupu juures on kirjas, milline muudatus tagasi võetakse.
 - Tagasivõtmine töötab ka pärast lehe värskendamist.
 - Kui tagasi võetavat muudatust ei ole, on nupp keelatud.
+
+**Seis 02.10.2026 (L21 tehtud):** backlog'i kaardi ülaosas on nupp **„↶ Võta tagasi viimane toetatud muudatus“** koos muudatuse sildiga (nt „Kustutasid loo 4 „…““). Iga projekti kohta hoitakse ühte püsivat kirjet (migratsioon v14, tabel `undo_journal`): projekti seis enne muudatust (lood, kriteeriumid, küsimused, mockup'id, kattuvusmärked, ettepanekud, alustamise lugu, MVP joon) ja pärast-seisu SHA-256 räsi kanoonilisest JSON-ist (read id järjekorras, ajatemplid välja jäetud). Kirje, toiming ja räsi salvestatakse **ühes SQLite transaktsioonis** (`server/undo.js`, `undoable`); kui kirje salvestamine ebaõnnestub, võetakse ka toiming tagasi. Kirje püsib pärast lehe värskendamist ja serveri taaskäivitust. Tagasivõtmine taastab enne-seisu samade id-dega; see on lubatud ainult siis, kui praegune seis on sama mis kohe pärast muudatust – kui pärast seda on tehtud uus muudatus (ka toetamata, nt küsimus või uus AI ettepanek), on nupp keelatud ja põhjus nähtav; osalist taastamist ei tehta. **Toetatud muudatused:** lugude käsitsi lisamine, muutmine, kustutamine ja ümberjärjestamine; kriteeriumide käsitsi lisamine, muutmine ja kustutamine; kattuvuse märkimine ja eemaldamine; käsitsi jagamine ja ühendamine; uue vaate „Lisa“ (L24); ülevaatuse leiust tehtud jagamine ja ühendamine (L28, L29). **Toetamata** (ei loo kirjet): AI ettepanekute küsimine ja tagasilükkamine, ülevaatuse ignoreerimine, mockup'i seos, versiooni taastamine, kooskõla ülevaatus, küsimused, staatus, MVP joon, etapi ja vestluse andmed. L29 leiu enda tagasivõtmine kustutab üldise kirje; üldine tagasivõtmine avab leiu uuesti – topelttagasivõtmist ei teki. API: `GET` / `POST /api/projects/:id/undo` (`at` kontroll). **Automaattestid:** räsi deterministlikkus, täpne taastamine ka taaskäivituse järel, ainult viimane muudatus, aegumine toetamata muudatuse järel, jagamine ja ühendamine, kirje salvestamise tõrge tühistab toimingu, L24 ja L29 koostöö, renderdus. **Arendaja nägi brauseris (demobaasi koopia):** kustutamine → silt → F5 → tagasivõtmine (lugu, kriteeriumid ja vaated tagasi, teised kaardid uuenevad), ainult viimane muudatus, küsimuse lisamise järel keelatud koos põhjusega.
 
 ### L22 · Mockup'i versioonid ja mitu mockup'i loo kohta (S)
 *Projektijuhina soovin näha mockup'i varasemaid versioone ja vajaduse korral mõne taastada, et ükski kliendiga arutatud variant ei kaoks.*

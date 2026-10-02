@@ -3,6 +3,7 @@ import { composeTitle, validateStoryText } from '../shared/story-format.js';
 import { listRoles, roleKey } from './roles.js';
 import { cleanCriterion } from '../shared/criteria-check.js';
 import { componentLabel } from '../shared/consistency.js';
+import { txBegin, txCommit, txRollback } from './db.js';
 
 export const SIZES = ['S', 'M', 'L'];
 
@@ -29,27 +30,27 @@ export function moveStory(db, projectId, storyId, direction) {
   if (direction !== 'up' && direction !== 'down') {
     return { status: 400, code: 'invalid_direction', error: 'Suund peab olema "up" või "down".' };
   }
-  db.exec('BEGIN IMMEDIATE');
+  const sp = txBegin(db);
   try {
     const story = db.prepare('SELECT id, position FROM stories WHERE id = ? AND project_id = ?').get(storyId, projectId);
     if (!story) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       return { status: 404, code: 'not_found', error: 'Lugu ei leitud.' };
     }
     const neighbour = direction === 'up'
       ? db.prepare('SELECT id, position FROM stories WHERE project_id = ? AND position < ? ORDER BY position DESC LIMIT 1').get(projectId, story.position)
       : db.prepare('SELECT id, position FROM stories WHERE project_id = ? AND position > ? ORDER BY position ASC LIMIT 1').get(projectId, story.position);
     if (!neighbour) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       return { status: 409, code: 'at_edge', error: direction === 'up' ? 'Lugu on juba esimene.' : 'Lugu on juba viimane.' };
     }
     const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
     setPosition.run(neighbour.position, story.id);
     setPosition.run(story.position, neighbour.id);
-    db.exec('COMMIT');
+    txCommit(db, sp);
     return { ok: true };
   } catch (err) {
-    db.exec('ROLLBACK');
+    txRollback(db, sp);
     throw err;
   }
 }
@@ -174,11 +175,11 @@ export function deletionImpact(db, projectId, storyId) {
 // Alustamise valik tühjeneb (ON DELETE SET NULL), selle loo ootel ettepanekud lükatakse tagasi,
 // MVP joon nihkub üles, kui lugu oli joone kohal, ja järjekord tihendatakse. Kõik ühes transaktsioonis.
 export function deleteManualStory(db, projectId, storyId) {
-  db.exec('BEGIN IMMEDIATE');
+  const sp = txBegin(db);
   try {
     const impact = deletionImpact(db, projectId, storyId);
     if (!impact) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       return null;
     }
     for (const p of pendingForStory(db, projectId, storyId)) {
@@ -190,10 +191,10 @@ export function deleteManualStory(db, projectId, storyId) {
     const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
     rest.forEach((r, i) => setPosition.run(i + 1, r.id));
     db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
-    db.exec('COMMIT');
+    txCommit(db, sp);
     return impact;
   } catch (err) {
-    db.exec('ROLLBACK');
+    txRollback(db, sp);
     throw err;
   }
 }
@@ -249,13 +250,13 @@ export function validateSplit(raw, info) {
 
 // Jagab loo ühes transaktsioonis. Teiste lugude sisu ei muutu; järgnevad lood nihkuvad ühe koha võrra.
 export function splitStory(db, projectId, storyId, split) {
-  db.exec('BEGIN IMMEDIATE');
+  const sp = txBegin(db);
   try {
     const result = splitStoryInTx(db, projectId, storyId, split);
-    db.exec(result ? 'COMMIT' : 'ROLLBACK');
+    if (result) txCommit(db, sp); else txRollback(db, sp);
     return result;
   } catch (err) {
-    db.exec('ROLLBACK');
+    txRollback(db, sp);
     throw err;
   }
 }
@@ -374,13 +375,13 @@ export function validateMerge(raw, info) {
 }
 
 export function mergeStories(db, projectId, keepId, removeId, merge) {
-  db.exec('BEGIN IMMEDIATE');
+  const sp = txBegin(db);
   try {
     const result = mergeStoriesInTx(db, projectId, keepId, removeId, merge);
-    db.exec(result?.keepId ? 'COMMIT' : 'ROLLBACK');
+    if (result?.keepId) txCommit(db, sp); else txRollback(db, sp);
     return result;
   } catch (err) {
-    db.exec('ROLLBACK');
+    txRollback(db, sp);
     throw err;
   }
 }

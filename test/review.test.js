@@ -299,3 +299,28 @@ test('AI ühendamise tagasivõtmine taastab kaskaadiga kadunud kattuvusmärke', 
   assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/undo`)).status, 200);
   assert.deepEqual(marks(), before);
 });
+
+// L21 ja L29: üldine tagasivõtmine avab leiu uuesti; leiu enda tagasivõtmine kustutab üldise kirje (topelttagasivõtmist pole).
+test('L21 ja L29 ei lähe konflikti: üldine tagasivõtmine avab leiu, leiu tagasivõtmine kustutab üldise kirje', async () => {
+  const { captureProject } = await import('../server/undo.js');
+  const undoUrl = `${base}/${projectId}/undo`;
+  const undoState = async () => (await fetch(undoUrl)).json();
+  const undo = (at) => fetch(undoUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ at }) });
+  await runReview();
+  const before = captureProject(db, projectId);
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`)).status, 200);
+  let st = await undoState();
+  assert.match(st.label, /^Ühendasid lood \d+ ja \d+ \(ülevaatuse leid\)$/);
+  assert.equal((await undo(st.at)).status, 200);
+  assert.deepEqual(captureProject(db, projectId), before);
+  const review = (await (await fetch(`${base}/${projectId}/review`)).json()).review;
+  assert.equal(finding(review, `overlap-${ids.dupA}-${ids.dupB}`).status, 'open');
+
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`)).status, 200);
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/undo`)).status, 200);
+  st = await undoState();
+  assert.deepEqual([st.available, st.label], [false, null]);
+  // teised leiutüübid (nt Ignoreeri, mittekontrollitava asendamine) üldist kirjet ei loo
+  assert.equal((await post(`/findings/untestable-${ids.vague}/apply`)).status, 200);
+  assert.equal((await undoState()).label, null);
+});

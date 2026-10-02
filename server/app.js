@@ -9,6 +9,7 @@ import { refinementRouter } from './routes/refinement.js';
 import { stageRouter } from './routes/stage.js';
 import { reviewRouter } from './routes/review.js';
 import { viewsRouter } from './routes/views.js';
+import { undoRouter } from './routes/undo.js';
 import { createDisabledAi } from './ai/client.js';
 
 // Loob Express'i rakenduse. Eraldi index.js-ist, et testid saaksid rakenduse ise käivitada
@@ -30,6 +31,7 @@ export function createApp({ db, ai = createDisabledAi() } = {}) {
     app.use('/api/projects/:id/refinement', refinementRouter({ db, ai }));
     app.use('/api/projects/:id/review', reviewRouter({ db, ai }));
     app.use('/api/projects/:id/views', viewsRouter({ db, ai }));
+    app.use('/api/projects/:id/undo', undoRouter({ db }));
     app.use('/api/projects/:id/stage', stageRouter({ db }));
     app.use('/api/projects', projectsRouter(db));
   }

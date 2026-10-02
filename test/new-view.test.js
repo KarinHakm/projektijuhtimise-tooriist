@@ -11,6 +11,7 @@ import { appendStories } from '../server/stories.js';
 import { appendCriteria, consistencyFor, saveMockup } from '../server/criteria.js';
 import { withReadiness } from '../server/readiness.js';
 import { listStories } from '../server/stories.js';
+import { captureProject } from '../server/undo.js';
 
 // L24: uus vaade promptist. Ajutine andmebaas ja võlts-AI; päris AI-d ei kutsuta.
 let dir, db, projectId, otherProjectId, storyId, otherStoryId, server, base, ai;
@@ -140,4 +141,17 @@ test('AI tõrge või vigane vastus: ettepanekut ei looda; tühi kirjeldus ja poo
   assert.equal((await post('/propose', { description: '   ' })).status, 400);
   await propose();
   assert.equal((await post('/propose', { description: 'Veel üks' })).status, 409);
+});
+
+// L21: L24 „Lisa“ on toetatud muudatus – tagasivõtmine eemaldab uue loo ja ettepanek on jälle ootel.
+test('uue loo lisamise tagasivõtmine: lugu, mockup ja kriteeriumid kaovad, ettepanek on jälle ootel', async () => {
+  const p = await propose();
+  const before = captureProject(db, projectId);
+  assert.equal((await post('/apply', { proposalId: p.id, target: { kind: 'new' } })).status, 200);
+  const undo = async (body) => fetch(`${base}/${projectId}/undo`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const st = await (await fetch(`${base}/${projectId}/undo`)).json();
+  assert.equal(st.label, 'Lisasid uue vaate põhjal uue loo');
+  assert.equal((await undo({ at: st.at })).status, 200);
+  assert.deepEqual(captureProject(db, projectId), before);
+  assert.equal((await (await fetch(`${base}/${projectId}/views`)).json()).proposal.id, p.id);
 });

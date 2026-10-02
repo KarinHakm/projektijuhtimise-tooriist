@@ -15,6 +15,8 @@ import {
 import { insertStoryQuestion, withReadiness } from '../readiness.js';
 import { addManualCriterion, deleteCriterion, updateCriterionText, validateManualCriterion } from '../criteria.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
+import { txBegin, txCommit, txRollback } from '../db.js';
+import { undoable } from '../undo.js';
 
 const QUESTION_MAX = 300;
 
@@ -64,6 +66,25 @@ export function storiesRouter({ db, ai }) {
 
   router.get('/', (req, res) => res.json(snapshot(req.projectId)));
 
+  // L21: toetatud käsitsi muudatused salvestavad tagasivõtmise kirje (undoable). Sildid arvutatakse enne toimingut.
+  const short = (t, n = 60) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
+  const ordered = (projectId) => listStories(db, projectId);
+  const no = (req, id) => { const i = ordered(req.projectId).findIndex((x) => x.id === Number(id)); return i < 0 ? '?' : i + 1; };
+  const titled = (req, id) => { const st = ordered(req.projectId).find((x) => x.id === Number(id)); return st ? ` „${short(st.title)}“` : ''; };
+  const L = {
+    create: () => "Lisasid uue loo backlog'i lõppu",
+    update: (req) => `Muutsid lugu ${no(req, req.params.storyId)}`,
+    remove: (req) => `Kustutasid loo ${no(req, req.params.storyId)}${titled(req, req.params.storyId)}`,
+    move: (req) => `Tõstsid lugu ${no(req, req.params.storyId)} ${req.body?.direction === 'up' ? 'üles' : 'alla'}`,
+    split: (req) => `Jagasid loo ${no(req, req.params.storyId)} kaheks`,
+    merge: (req) => `Ühendasid lood ${no(req, req.params.storyId)} ja ${no(req, req.body?.withId)}`,
+    mark: (req) => `Märkisid lood ${no(req, req.params.storyId)} ja ${no(req, req.body?.withId)} kattuvaks`,
+    unmark: (req) => `Eemaldasid lugude ${no(req, req.params.storyId)} ja ${no(req, req.params.otherId)} kattuvusmärke`,
+    critAdd: (req) => `Lisasid loole ${no(req, req.params.storyId)} kriteeriumi`,
+    critEdit: (req) => `Muutsid loo ${no(req, req.params.storyId)} kriteeriumi`,
+    critDelete: (req) => `Kustutasid loo ${no(req, req.params.storyId)} kriteeriumi`,
+  };
+
   // Küsib AI-lt lugude ettepaneku. Ilma "replace"-ita tagastab olemasoleva pooleli ettepaneku ilma AI-kutseta.
   // "replace": vana ettepanek jääb alles, kuni uus on edukalt kontrollitud; siis vahetatakse need ühes transaktsioonis.
   router.post('/propose', async (req, res) => {
@@ -104,21 +125,21 @@ export function storiesRouter({ db, ai }) {
       }),
     };
 
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     try {
       if (replace) {
         const { changes } = db
           .prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND project_id = ? AND kind = ? AND status = 'pending'")
           .run(replace, projectId, KIND);
         if (changes !== 1) {
-          db.exec('ROLLBACK');
+          txRollback(db, sp);
           return res.status(409).json({ error: 'See ettepanek ei ole enam pooleli.', code: 'stale_proposal' });
         }
       }
       db.prepare('INSERT INTO ai_proposals (id, project_id, kind, payload) VALUES (?, ?, ?, ?)').run(randomUUID(), projectId, KIND, JSON.stringify(payload));
-      db.exec('COMMIT');
+      txCommit(db, sp);
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       throw err;
     }
     res.json(snapshot(projectId));
@@ -155,30 +176,30 @@ export function storiesRouter({ db, ai }) {
   });
 
   // Tõstab backlog'i loo ühe koha võrra (L07). Teise projekti lugu ei leita (404).
-  router.post('/:storyId/move', (req, res) => {
+  router.post('/:storyId/move', undoable(db, L.move, (req, res) => {
     const storyId = Number(req.params.storyId);
     if (!Number.isInteger(storyId) || storyId <= 0) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     const result = moveStory(db, req.projectId, storyId, req.body?.direction);
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // L15: lugude käsitsi lisamine, muutmine ja kustutamine. Ei kasuta AI-d.
-  router.post('/', (req, res) => {
+  router.post('/', undoable(db, L.create, (req, res) => {
     const result = validateManualStory(req.body);
     if (result.error) return res.status(400).json({ error: result.error, field: result.field, code: 'invalid_story' });
     const id = createManualStory(db, req.projectId, result.value);
     res.status(201).json({ ...snapshot(req.projectId), createdId: id });
-  });
+  }));
 
-  router.put('/:storyId', (req, res) => {
+  router.put('/:storyId', undoable(db, L.update, (req, res) => {
     const storyId = Number(req.params.storyId);
     const result = validateManualStory(req.body);
     if (!Number.isInteger(storyId) || !storyIn(req.projectId, storyId)) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     if (result.error) return res.status(400).json({ error: result.error, field: result.field, code: 'invalid_story' });
     updateManualStory(db, req.projectId, storyId, result.value);
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // Mida kustutamine kaasa toob (kinnituse jaoks). Ainult lugemine.
   router.get('/:storyId/delete-impact', (req, res) => {
@@ -187,11 +208,11 @@ export function storiesRouter({ db, ai }) {
     res.json(impact);
   });
 
-  router.delete('/:storyId', (req, res) => {
+  router.delete('/:storyId', undoable(db, L.remove, (req, res) => {
     const impact = deleteManualStory(db, req.projectId, Number(req.params.storyId));
     if (!impact) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     res.json({ ...snapshot(req.projectId), deleted: impact });
-  });
+  }));
 
   // L25: loo käsitsi jagamine kaheks. split-info on eelvaate jaoks (ainult lugemine).
   router.get('/:storyId/split-info', (req, res) => {
@@ -200,7 +221,7 @@ export function storiesRouter({ db, ai }) {
     res.json(info);
   });
 
-  router.post('/:storyId/split', (req, res) => {
+  router.post('/:storyId/split', undoable(db, L.split, (req, res) => {
     const storyId = Number(req.params.storyId);
     const info = splitInfo(db, req.projectId, storyId);
     if (!info) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
@@ -209,7 +230,7 @@ export function storiesRouter({ db, ai }) {
     const result = splitStory(db, req.projectId, storyId, split);
     if (!result) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     res.json({ ...snapshot(req.projectId), split: result });
-  });
+  }));
 
   // L26: kahe loo käsitsi ühendamine. :storyId = säilitatav lugu, ?with / withId = eemaldatav lugu.
   router.get('/:storyId/merge-info', (req, res) => {
@@ -218,7 +239,7 @@ export function storiesRouter({ db, ai }) {
     res.json(info);
   });
 
-  router.post('/:storyId/merge', (req, res) => {
+  router.post('/:storyId/merge', undoable(db, L.merge, (req, res) => {
     const keepId = Number(req.params.storyId);
     const removeId = req.body?.withId;
     const info = Number.isInteger(removeId) ? mergeInfo(db, req.projectId, keepId, removeId) : null;
@@ -231,7 +252,7 @@ export function storiesRouter({ db, ai }) {
     const result = mergeStories(db, req.projectId, keepId, removeId, merge);
     if (!result) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     res.json({ ...snapshot(req.projectId), merge: result });
-  });
+  }));
 
   // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).
   router.post('/mvp', (req, res) => {
@@ -273,12 +294,12 @@ export function storiesRouter({ db, ai }) {
     const text = typeof req.body?.text === 'string' ? req.body.text.replace(/\s+/g, ' ').trim() : '';
     if (!text) return res.status(400).json({ error: 'Kirjuta küsimus.', field: 'text' });
     if (text.length > QUESTION_MAX) return res.status(400).json({ error: `Küsimus võib olla kuni ${QUESTION_MAX} märki.`, field: 'text' });
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     try {
       insertStoryQuestion(db, story.id, text);
-      db.exec('COMMIT');
+      txCommit(db, sp);
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       throw err;
     }
     res.json(snapshot(req.projectId));
@@ -295,27 +316,27 @@ export function storiesRouter({ db, ai }) {
   });
 
   // L26: kahe loo märkimine kattuvaks ja „Pole kattuv“. Muudavad ainult märke; otsus (ühenda / eemalda) on eraldi.
-  router.post('/:storyId/overlaps', (req, res) => {
+  router.post('/:storyId/overlaps', undoable(db, L.mark, (req, res) => {
     const result = markOverlap(db, req.projectId, Number(req.params.storyId), req.body?.withId);
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
-  });
-  router.delete('/:storyId/overlaps/:otherId', (req, res) => {
+  }));
+  router.delete('/:storyId/overlaps/:otherId', undoable(db, L.unmark, (req, res) => {
     const result = unmarkOverlap(db, req.projectId, Number(req.params.storyId), Number(req.params.otherId));
     if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // L15: vastuvõtukriteeriumide käsitsi lisamine, muutmine ja kustutamine (ilma AI-ta). Vastuses on lugude seis koos
   // uue DoR-iga. Kooskõla ülevaatus, kliendi täpsustuse ootel ettepanek ja ülevaatuse leiud aeguvad olemasoleva loogikaga.
   const inTx = (fn) => {
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     try {
       const result = fn();
-      db.exec(result?.error ? 'ROLLBACK' : 'COMMIT');
+      if (result?.error) txRollback(db, sp); else txCommit(db, sp);
       return result;
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       throw err;
     }
   };
@@ -324,16 +345,16 @@ export function storiesRouter({ db, ai }) {
     ? res.status(result.status).json({ error: result.error, code: result.code, field: 'text' })
     : res.json(snapshot(req.projectId)));
 
-  router.post('/:storyId/criteria', (req, res) => {
+  router.post('/:storyId/criteria', undoable(db, L.critAdd, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     reply(req, res, inTx(() => {
       const checked = validateManualCriterion(db, story.id, req.body);
       return checked.error ? checked : addManualCriterion(db, story.id, checked.text);
     }));
-  });
+  }));
 
-  router.put('/:storyId/criteria/:criterionId', (req, res) => {
+  router.put('/:storyId/criteria/:criterionId', undoable(db, L.critEdit, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     const criterion = story && criterionOf(story, req.params.criterionId);
     if (!criterion) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
@@ -343,14 +364,14 @@ export function storiesRouter({ db, ai }) {
       updateCriterionText(db, criterion.id, checked.text);
       return null;
     }));
-  });
+  }));
 
-  router.delete('/:storyId/criteria/:criterionId', (req, res) => {
+  router.delete('/:storyId/criteria/:criterionId', undoable(db, L.critDelete, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     const criterion = story && criterionOf(story, req.params.criterionId);
     if (!criterion) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
     reply(req, res, inTx(() => { deleteCriterion(db, story.id, criterion.id); return null; }));
-  });
+  }));
 
   return router;
 }
