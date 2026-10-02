@@ -144,3 +144,9 @@ export const updateCriterion = (projectId, storyId, criterionId, text) =>
   sendJson('PUT')(`${storyCriteriaPath(projectId, storyId)}/${encodeURIComponent(criterionId)}`, { text });
 export const deleteCriterion = (projectId, storyId, criterionId) =>
   request(`${storyCriteriaPath(projectId, storyId)}/${encodeURIComponent(criterionId)}`, { method: 'DELETE' });
+// L24: uus vaade promptist. target = { kind: 'new' } või { kind: 'story', storyId }; vaate number arvutatakse serveris.
+const viewsPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/views`;
+export const getNewView = (projectId) => request(viewsPath(projectId));
+export const proposeNewView = (projectId, description) => postJson(`${viewsPath(projectId)}/propose`, { description });
+export const applyNewView = (projectId, body) => postJson(`${viewsPath(projectId)}/apply`, body);
+export const rejectNewView = (projectId, proposalId) => postJson(`${viewsPath(projectId)}/reject`, { proposalId });

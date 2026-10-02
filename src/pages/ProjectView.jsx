@@ -8,6 +8,7 @@ import DemoTag from '../components/DemoTag.jsx';
 import BacklogPanel from '../components/BacklogPanel.jsx';
 import Conversation from '../components/Conversation.jsx';
 import CriteriaPanel from '../components/CriteriaPanel.jsx';
+import NewViewPanel from '../components/NewViewPanel.jsx';
 import NextSteps from '../components/NextSteps.jsx';
 import PriorityPanel from '../components/PriorityPanel.jsx';
 import RefinementPanel from '../components/RefinementPanel.jsx';
@@ -139,6 +140,11 @@ export default function ProjectView() {
                 <h2>Kriteeriumid ja mockup</h2>
                 <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} onConsistencyChanged={() => setConsistencyVersion((v) => v + 1)} />
                 {stepsAfter('criteria')}
+              </section>
+              <section className="card" id={CARDS.newView} tabIndex={-1}>
+                <h2>Uus vaade</h2>
+                <NewViewPanel projectId={project.id} onApplied={() => setBacklogVersion((v) => v + 1)} />
+                {stepsAfter('newView')}
               </section>
               <section className="card" id={CARDS.refinement} tabIndex={-1}>
                 <h2>Kliendi täpsustus</h2>

@@ -45,7 +45,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Plaanitud |
 | L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Tehtud |
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
-| L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Plaanitud |
+| L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Tehtud |
 | L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Pooleli |
 | L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Pooleli |
 | L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Tehtud |
@@ -615,6 +615,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - AI tagastab ühe vastusena mockup'i, Connextra vormis loo ja kriteeriumid.
 - Enne backlog'i lisamist näeb kasutaja eelvaadet nuppudega [Lisa backlog'i], [Muuda] ja [Loobu].
 - Backlog'i lisatud lugu on mockup'iga seotud.
+
+**Seis 02.10.2026 (L24 tehtud):** kaart „Uus vaade“ (kriteeriumide kaardi järel) ja väli „Kirjelda uut vaadet“. AI annab ühe vastusega mockup'i (komponentide loend), Connextra vormis loo ja 3–6 kriteeriumi koos viidetega mockup'i elementidele (`server/ai/tasks/new-view.js`; skeem, Connextra, korduste ja komponenditüüpide kontroll, L18 enesekontroll). Ettepanek jääb ootele (`ai_proposals`, `kind = 'new_view'`) – midagi ei salvestata enne kinnitust. Eelvaates on lugu, kriteeriumid seose ja hoiatustega, mockup ning sihtkoha valik; nupud **[Lisa] [Muuda] [Loobu]**. **Lisa** kas (a) loob uue loo backlog'i lõppu (MVP joone alla) koos mockup'i (vaade 1, versioon 1) ja seotud kriteeriumidega või (b) lisab olemasolevale loole **uue vaate** (L22) ja kriteeriumid loo lõppu – loo sõnastust ega vaadet 1 ei muudeta. Vaate number ja versioon arvutatakse serveris rakendamise tehingu sees; klient neid ei määra. **Muuda**: loo väljad ja kriteeriumide tekstid; muudetud kriteeriumi juures vana AI enesekontrolli märget ei näidata (hoiatus arvutatakse uue teksti järgi). Kordus, 10 piir, teise projekti lugu ja topeltrakendamine lükatakse tagasi; AI tõrke korral ettepanekut ei looda. Migratsiooni pole. **Päris AI** nõuab seadistatud AI-teenust (serveri arvutis sisse logitud Claude Code, `AI_PROVIDER=claude-cli`); ilma selleta annab „Paku vaade (AI)“ veateate. **Automaattestid (võlts-AI):** uus lugu, lisavaade (vaade 1 baidi pealt sama), Muuda/päritolu/piirangud/Loobu, AI tõrge ja kordus, eelvaate renderdus. **Arendaja nägi brauseris (käsitsi koostatud näidisettepanek koopias `data/demo-l14.db`, AI väljas):** eelvaade, Muuda märke kadumine, lisavaade 3 olemasolevale loole (vaated 1 ja 2 muutmata), Loobu, uus lugu 5 (MVP joone all, DoR ✓). **Teadaolevad pisiasjad:** suletud „Seo ise“ menüü ei näita mitme vaate korral vaate nime enne menüü avamist; „pole vastet“ on oodatud kooskõla vihje, kui kriteeriumi sõnal pole mockup'is sõnasõnalist vastet. **Pooleli:** päris AI-ga katsetamata; mockup'i käsitsi muuta ei saa.
 
 ### L25 · Loo käsitsi jagamine (M)
 *Projektijuhina soovin liiga suure loo käsitsi mitmeks jagada, et iga lugu oleks arendatav eraldi.*

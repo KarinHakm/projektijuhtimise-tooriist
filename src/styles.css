@@ -496,3 +496,16 @@ button.danger { background: var(--error); }
 /* L22: mitu vaadet (mockup'i) loo kohta */
 .mockup-view { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
 .mockup-view__title { margin: 0.25rem 0; }
+/* L24: uus vaade promptist */
+.new-view__form textarea { width: 100%; box-sizing: border-box; }
+.new-view__form button { margin-top: 0.5rem; }
+.new-view__proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem; }
+.new-view__criteria { padding-left: 1.25rem; }
+.new-view__criteria li { margin: 0.35rem 0; }
+.new-view__edit-row { display: flex; gap: 0.5rem; align-items: center; }
+.new-view__edit-row input { flex: 1; min-width: 0; }
+.new-view__target { margin: 0.75rem 0; }
+.new-view__target label { display: block; margin: 0.25rem 0; }
+/* L24: raadionupp valiku ees (üldine input-reegel venitaks selle üle rea) */
+.new-view__target input[type="radio"] { width: auto; margin: 0 0.4rem 0 0; vertical-align: middle; }
+.new-view__target select { width: auto; max-width: 100%; margin-top: 0.25rem; }

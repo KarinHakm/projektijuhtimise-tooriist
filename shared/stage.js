@@ -13,6 +13,7 @@ export const CARDS = {
   priority: 'kaart-prioriteet',
   criteria: 'kaart-kriteeriumid',
   refinement: 'kaart-tapsustus',
+  newView: 'kaart-uus-vaade',
   backlog: 'kaart-backlog',
 };
 
@@ -28,6 +29,7 @@ export const AI_OUTPUT_CARD = {
   criteria: 'criteria',
   mockup: 'criteria',
   refinement: 'refinement',
+  new_view: 'newView', // L24
 };
 
 const STAGES = [
