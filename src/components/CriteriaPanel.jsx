@@ -69,6 +69,41 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
 export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
   const { story, criteria, mockup, criteriaProposal, mockupProposal } = data;
+  // L22: lisavaated (vaade 2, …). Versiooni number on loo piires ühine kõigile vaadetele.
+  const extraViews = data.extraViews ?? [];
+  const nextVersion = Math.max(mockup?.version ?? 0, ...extraViews.map((v) => v.mockup.version)) + 1;
+  // Versioon → vaade ka vanade versioonide järgi: aegunud seos näitab õige vaate (sama indeksiga) elementi.
+  const viewOfVersion = new Map([
+    ...[mockup, ...(data.mockupVersions ?? [])].filter(Boolean).map((m) => [m.version, 1]),
+    ...extraViews.flatMap((v) => [v.mockup, ...v.versions].map((m) => [m.version, v.viewNo])),
+  ]);
+  const elementValue = (ref) => {
+    const viewNo = viewOfVersion.get(ref.version) ?? 1;
+    return viewNo === 1 ? `element-${ref.index}` : `element-${viewNo}-${ref.index}`;
+  };
+  // Ülevaatuse tekst mitme vaate korral: kõik arvestatud versioonid.
+  const versionsLabel = extraViews.length && mockup
+    ? [`vaate 1 v${mockup.version}`, ...extraViews.map((v) => `vaate ${v.viewNo} v${v.mockup.version}`)].join(', ')
+    : null;
+  const versionList = (versions) => versions.length > 0 && (
+    <details className="mockup-versions">
+      <summary>Varasemad versioonid ({versions.length})</summary>
+      <ol className="mockup-versions__list">
+        {versions.map((v) => (
+          <li key={v.version}>
+            <details>
+              <summary>Versioon {v.version} · {new Date(v.createdAt).toLocaleString('et-EE')} · elemente {v.components.length}</summary>
+              <MockupView mockup={v} />
+              <button type="button" className="secondary" disabled={disabled} onClick={() => onRestore(v.version)}>
+                {busy === 'mockup-restore' ? 'Taastan…' : 'Taasta see versioon'}
+              </button>
+              <p className="muted">Taastamine loob uue versiooni {nextVersion}. Ajalugu jääb alles; kooskõla ülevaatus aegub.</p>
+            </details>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
   const disabled = Boolean(busy);
   if (!story) return <p className="muted">Vali enne prioriteedi juures lugu, millest alustada.</p>;
 
@@ -87,7 +122,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
             <ol className="criteria-saved">
               {criteria.map((c, i) => {
                 const check = data.consistency?.criteria[i];
-                const value = c.ref?.kind === 'element' ? `element-${c.ref.index}` : c.ref?.kind === 'no_view' ? 'no_view' : 'none';
+                const value = c.ref?.kind === 'element' ? elementValue(c.ref) : c.ref?.kind === 'no_view' ? 'no_view' : 'none';
                 return (
                   <li key={c.id}>
                     <span className="criterion__number">K{i + 1}.</span> {c.text} <span className="tag">{CRITERIA_ORIGIN_LABELS[c.origin] ?? c.origin}</span>
@@ -105,7 +140,15 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
                         <select value={value} disabled={disabled} onChange={(e) => onLink(c.id, e.target.value)}>
                           <option value="none">— seos puudub —</option>
                           <option value="no_view">ei puuduta vaadet</option>
-                          {mockup.components.map((comp, ci) => <option key={ci} value={`element-${ci}`}>{componentLabel(comp, ci)}</option>)}
+                          {extraViews.length === 0
+                            ? mockup.components.map((comp, ci) => <option key={ci} value={`element-${ci}`}>{componentLabel(comp, ci)}</option>)
+                            : [{ viewNo: 1, mockup }, ...extraViews].map((v) => (
+                              <optgroup key={v.viewNo} label={`Vaade ${v.viewNo}: ${v.mockup.title}`}>
+                                {v.mockup.components.map((comp, ci) => (
+                                  <option key={ci} value={v.viewNo === 1 ? `element-${ci}` : `element-${v.viewNo}-${ci}`}>{componentLabel(comp, ci)}</option>
+                                ))}
+                              </optgroup>
+                            ))}
                         </select>
                       </label>
                     )}
@@ -151,31 +194,23 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           <h3 id="mockup-title">Mockup</h3>
           {mockup && (
             <>
+              {extraViews.length > 0 && <h4 className="mockup-view__title">Vaade 1: {mockup.title}</h4>}
               <p className="muted">Kinnitatud, versioon {mockup.version}</p>
               <MockupView mockup={mockup} notes={data.consistency?.components ?? null} />
               {restoreNotice && <p className="notice" role="status">{restoreNotice}</p>}
               {/* L22: varasemad versioonid jäävad alles; taastamine loob uue versiooni. */}
-              {data.mockupVersions?.length > 0 && (
-                <details className="mockup-versions">
-                  <summary>Varasemad versioonid ({data.mockupVersions.length})</summary>
-                  <ol className="mockup-versions__list">
-                    {data.mockupVersions.map((v) => (
-                      <li key={v.version}>
-                        <details>
-                          <summary>Versioon {v.version} · {new Date(v.createdAt).toLocaleString('et-EE')} · elemente {v.components.length}</summary>
-                          <MockupView mockup={v} />
-                          <button type="button" className="secondary" disabled={disabled} onClick={() => onRestore(v.version)}>
-                            {busy === 'mockup-restore' ? 'Taastan…' : 'Taasta see versioon'}
-                          </button>
-                          <p className="muted">Taastamine loob uue versiooni {mockup.version + 1}. Ajalugu jääb alles; kooskõla ülevaatus aegub.</p>
-                        </details>
-                      </li>
-                    ))}
-                  </ol>
-                </details>
-              )}
+              {versionList(data.mockupVersions ?? [])}
             </>
           )}
+          {/* L22: lisavaated (iga oma versioonidega). Kliendi täpsustus muudab ainult vaadet 1. */}
+          {extraViews.map((v) => (
+            <div key={v.viewNo} className="mockup-view">
+              <h4 className="mockup-view__title">Vaade {v.viewNo}: {v.mockup.title}</h4>
+              <p className="muted">Kinnitatud, versioon {v.mockup.version}. Kliendi täpsustus muudab ainult vaadet 1.</p>
+              <MockupView mockup={v.mockup} notes={data.consistency?.views?.find((x) => x.viewNo === v.viewNo)?.components ?? null} />
+              {versionList(v.versions)}
+            </div>
+          ))}
           {mockupProposal && (
             <div className="mockup-proposal">
               <p className="muted">AI ettepanek – mockup ei ole veel looga seotud.</p>
@@ -194,7 +229,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
         </section>
       </div>
       {(criteria.length > 0 || mockup) && data.consistency && (
-        <ReviewBox consistency={data.consistency} mockupVersion={mockup?.version ?? null} busy={disabled} onReview={onReview} />
+        <ReviewBox consistency={data.consistency} mockupVersion={mockup?.version ?? null} versionsLabel={versionsLabel} busy={disabled} onReview={onReview} />
       )}
     </div>
   );
@@ -288,8 +323,10 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
         onProposeMockup={() => { setMockupError(''); run('mockup-propose', () => proposeMockup(projectId), (e) => setMockupError(e.message)); }}
         onLink={(criterionId, value) => {
           setLinkError('');
-          const [kind, index] = value.startsWith('element-') ? ['element', Number(value.slice(8))] : [value, undefined];
-          run('link', () => linkCriterion(projectId, criterionId, kind, index), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
+          // L22: „element-<indeks>“ = vaade 1, „element-<vaade>-<indeks>“ = lisavaade.
+          const m = value.match(/^element-(?:(\d+)-)?(\d+)$/);
+          const [kind, index, view] = m ? ['element', Number(m[2]), m[1] ? Number(m[1]) : 1] : [value, undefined, 1];
+          run('link', () => linkCriterion(projectId, criterionId, kind, index, view), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
         }}
         restoreNotice={restoreNotice}
         onRestore={(version) => {

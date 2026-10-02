@@ -255,3 +255,14 @@ test('enesekontroll: endiselt vigane parandus jätab algse teksti märkega; muut
   assert.deepEqual([p.after.criteria[2].text, p.after.criteria[2].selfCheck.status], ['Hinnakiri on kiire lugeda.', 'still_untestable']);
   assert.equal((await post(projectId, '/apply', { proposalId: p.id, storyId: target })).status, 200);
 });
+
+// L22: täpsustus muudab ainult vaadet 1 – olemasoleva kriteeriumi seos vaate 2 elemendiga jääb alles.
+test('täpsustuse rakendamine säilitab üle tuleva kriteeriumi seose vaate 2 elemendiga', async () => {
+  const v2 = saveMockup(db, target, { title: 'Kinnitus', components: [{ type: 'text', text: 'Hinnad sisaldavad käibemaksu', items: [] }] }, 2);
+  const firstId = db.prepare('SELECT id FROM criteria WHERE story_id = ? ORDER BY position').get(target).id;
+  db.prepare("UPDATE criteria SET ref_kind = 'element', ref_index = 0, ref_version = ?, ref_source = 'user' WHERE id = ?").run(v2, firstId);
+  const p = await propose(); // kriteerium 0 tuleb üle (from: 0)
+  assert.equal((await post(projectId, '/apply', { proposalId: p.id, storyId: target })).status, 200);
+  const ref = { ...db.prepare('SELECT ref_kind, ref_index, ref_version, ref_source FROM criteria WHERE story_id = ? ORDER BY position').get(target) };
+  assert.deepEqual(ref, { ref_kind: 'element', ref_index: 0, ref_version: v2, ref_source: 'user' });
+});

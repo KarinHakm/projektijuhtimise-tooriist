@@ -4,7 +4,7 @@
 // kui lugu on vahepeal muutunud, on leid aegunud ja seda ei rakendata.
 import { checkCriterion, cleanCriterion, CRITERION_MAX } from '../shared/criteria-check.js';
 import { validateStoryText } from '../shared/story-format.js';
-import { CRITERIA_MAX_COUNT, appendCriteria, latestMockup, listCriteria } from './criteria.js';
+import { CRITERIA_MAX_COUNT, appendCriteria, hasAnyMockup, listCriteria } from './criteria.js';
 import { insertStoryQuestion } from './readiness.js';
 import { listStories, mergeInfo, mergeStoriesInTx, splitInfo, splitStoryInTx, updateManualStory, validateMerge, validateSplit } from './stories.js';
 import { VIEW_DECISIONS } from './ai/tasks/review.js';
@@ -44,7 +44,7 @@ export function codeFindings(db, projectId) {
         problem: `Kriteerium „${c.text}“ ei ole kontrollitav.`, reason: warnings.join(' '),
       });
     }
-    if (s.touchesView && !latestMockup(db, s.id)) {
+    if (s.touchesView && !hasAnyMockup(db, s.id)) {
       findings.push({
         id: `no_mockup-${s.id}`, type: 'no_mockup', storyIds: [s.id], before: {},
         problem: "Vaatelool pole mockup'i.", reason: "Lugu on märgitud kasutajaliidese vaadet puudutavaks, kuid kinnitatud mockup'i pole.",
@@ -188,7 +188,7 @@ export function findingIsCurrent(db, projectId, f) {
     case 'connextra': return sameText(textOf(story), f.before);
     case 'no_criteria': return listCriteria(db, story.id).length === 0;
     case 'untestable': return listCriteria(db, story.id).some((c) => c.id === f.criterionId && c.text === f.before.text);
-    case 'no_mockup': return story.touchesView && !latestMockup(db, story.id);
+    case 'no_mockup': return story.touchesView && !hasAnyMockup(db, story.id);
     // Jagamine lisab uue loo kohe algse järele, seega muutub ka järgmise loo id.
     case 'too_large': return story.title === f.before.title && (stories[stories.indexOf(story) + 1]?.id ?? null) === f.before.nextId
       && JSON.stringify(listCriteria(db, story.id).map((c) => ({ id: c.id, text: c.text }))) === JSON.stringify(f.before.criteria ?? []);

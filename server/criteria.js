@@ -16,23 +16,37 @@ export function listCriteria(db, storyId) {
     }));
 }
 
-export function latestMockup(db, storyId) {
-  const row = db.prepare('SELECT version, spec, created_at AS createdAt FROM mockups WHERE story_id = ? ORDER BY version DESC LIMIT 1').get(storyId);
-  return row ? { version: row.version, createdAt: row.createdAt, ...JSON.parse(row.spec) } : null;
+// L22: lool võib olla mitu vaadet (mockup'i) 1, 2, …; versiooni number on loo piires ühine kõigile vaadetele.
+// Vaate uusim kinnitatud versioon (vaikimisi vaade 1 – alustamise loo mockup, kliendi täpsustus).
+export function latestMockup(db, storyId, viewNo = 1) {
+  const row = db.prepare('SELECT version, view_no AS viewNo, spec, created_at AS createdAt FROM mockups WHERE story_id = ? AND view_no = ? ORDER BY version DESC LIMIT 1')
+    .get(storyId, viewNo);
+  return row ? { version: row.version, viewNo: row.viewNo, createdAt: row.createdAt, ...JSON.parse(row.spec) } : null;
 }
 
-// Kõik kinnitatud mockup'i versioonid, uusim eespool (L22). Vanu versioone ei muudeta ega kustutata.
-export function listMockupVersions(db, storyId) {
-  return db.prepare('SELECT version, spec, created_at AS createdAt FROM mockups WHERE story_id = ? ORDER BY version DESC').all(storyId)
-    .map((r) => ({ version: r.version, createdAt: r.createdAt, ...JSON.parse(r.spec) }));
+// Kas lool on vähemalt üks kinnitatud mockup (ükskõik milline vaade) – DoR, ülevaatus, etapp, AI kontekst.
+export const hasAnyMockup = (db, storyId) => Boolean(db.prepare('SELECT 1 FROM mockups WHERE story_id = ? LIMIT 1').get(storyId));
+
+// Loo vaated järjekorras, igaühe uusim versioon: [{ viewNo, mockup }].
+export function listViews(db, storyId) {
+  return db.prepare('SELECT DISTINCT view_no AS v FROM mockups WHERE story_id = ? ORDER BY view_no').all(storyId)
+    .map((r) => ({ viewNo: r.v, mockup: latestMockup(db, storyId, r.v) }));
+}
+
+// Vaate kõik kinnitatud versioonid, uusim eespool (L22). Vanu versioone ei muudeta ega kustutata.
+export function listMockupVersions(db, storyId, viewNo = 1) {
+  return db.prepare('SELECT version, view_no AS viewNo, spec, created_at AS createdAt FROM mockups WHERE story_id = ? AND view_no = ? ORDER BY version DESC')
+    .all(storyId, viewNo)
+    .map((r) => ({ version: r.version, viewNo: r.viewNo, createdAt: r.createdAt, ...JSON.parse(r.spec) }));
 }
 
 // Taastab varasema versiooni UUE versioonina (ajalugu jääb alles). Kriteeriumide viited taastatud versiooni
 // elementidele viiakse uuele versioonile (elemendid on samad); viited teistele versioonidele jäävad ja on aegunud.
 // Kutsuda transaktsiooni sees. Tagastab uue versiooni numbri.
+// Taastatud versioon jääb samasse vaatesse, kuhu vana versioon kuulus.
 export function restoreMockup(db, storyId, version) {
-  const row = db.prepare('SELECT spec FROM mockups WHERE story_id = ? AND version = ?').get(storyId, version);
-  const next = saveMockup(db, storyId, JSON.parse(row.spec));
+  const row = db.prepare('SELECT spec, view_no AS viewNo FROM mockups WHERE story_id = ? AND version = ?').get(storyId, version);
+  const next = saveMockup(db, storyId, JSON.parse(row.spec), row.viewNo);
   db.prepare("UPDATE criteria SET ref_version = ? WHERE story_id = ? AND ref_kind = 'element' AND ref_version = ?").run(next, storyId, version);
   return next;
 }
@@ -86,21 +100,24 @@ export const aiRef = (ref, version) => {
 };
 
 // Kooskõla vihjed ja kasutaja ülevaatuse kinnituse seis (L23). Ainult lugemine.
+// L22: kõik vaated – seos kontrollitakse oma vaate uusima versiooni vastu; ühe vaatega loo tulemus on sama mis varem.
 export function consistencyFor(db, storyId) {
   const criteria = listCriteria(db, storyId);
-  const mockup = latestMockup(db, storyId);
-  const analysis = analyzeConsistency(criteria, mockup);
-  const fingerprint = reviewFingerprint(criteria, mockup);
+  const views = listViews(db, storyId).map((v) => v.mockup);
+  const mockups = views.length > 1 ? views : views[0] ?? null;
+  const analysis = analyzeConsistency(criteria, mockups);
+  const fingerprint = reviewFingerprint(criteria, mockups);
   const raw = db.prepare('SELECT consistency_review AS r FROM stories WHERE id = ?').get(storyId)?.r;
   const saved = raw ? JSON.parse(raw) : null;
   const review = saved ? { mockupVersion: saved.mockupVersion, at: saved.at, valid: saved.fingerprint === fingerprint } : null;
   return { ...analysis, fingerprint, review };
 }
 
-// Kutsuda transaktsiooni sees. Uus kinnitatud mockup saab järgmise versiooninumbri (esimene = 1).
-export function saveMockup(db, storyId, mockup) {
+// Kutsuda transaktsiooni sees. Uus kinnitatud mockup saab järgmise versiooninumbri (esimene = 1). Number võetakse loo
+// KÕIGI vaadete pealt, seega eri vaadete versioonid ei kattu ja ref_version määrab ühemõtteliselt vaate (L22).
+export function saveMockup(db, storyId, mockup, viewNo = 1) {
   const next = db.prepare('SELECT COALESCE(MAX(version), 0) + 1 AS v FROM mockups WHERE story_id = ?').get(storyId).v;
-  db.prepare('INSERT INTO mockups (story_id, version, spec) VALUES (?, ?, ?)').run(storyId, next, JSON.stringify(mockup));
+  db.prepare('INSERT INTO mockups (story_id, version, view_no, spec) VALUES (?, ?, ?, ?)').run(storyId, next, viewNo, JSON.stringify(mockup));
   return next;
 }
 

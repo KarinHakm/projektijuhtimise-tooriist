@@ -86,7 +86,7 @@ export const proposeMockup = (projectId) => postJson(`${criteriaPath(projectId)}
 // L22: varasema mockup'i versiooni taastamine uue versioonina.
 export const restoreMockupVersion = (projectId, storyId, version) => postJson(`${criteriaPath(projectId)}/mockup/restore`, { storyId, version });
 // Kooskõla (L23): kriteeriumi käsitsi sidumine ja kasutaja ülevaatuse kinnitus.
-export const linkCriterion = (projectId, criterionId, kind, index) => postJson(`${criteriaPath(projectId)}/link`, { criterionId, kind, index });
+export const linkCriterion = (projectId, criterionId, kind, index, view = 1) => postJson(`${criteriaPath(projectId)}/link`, { criterionId, kind, index, view });
 export const reviewConsistency = (projectId, storyId, fingerprint) => postJson(`${criteriaPath(projectId)}/review`, { storyId, fingerprint });
 
 const refinementPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/refinement`;

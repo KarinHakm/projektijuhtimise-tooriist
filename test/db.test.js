@@ -62,7 +62,7 @@ test('andmebaas ei luba tühja nime ega ainult tühikutest nime', () => {
 });
 
 // data/app.db on skeemiversioonil 5: esimesel avamisel rakenduvad migratsioonid v6–v11 korraga ja andmed jäävad alles.
-test('versioonil 5 andmebaas viiakse versioonile 11; projekt ja lood jäävad, uued etapi väljad saavad vaikeväärtused', () => {
+test('versioonil 5 andmebaas viiakse viimasele versioonile; projekt ja lood jäävad, uued etapi väljad saavad vaikeväärtused', () => {
   const path = join(dir, 'v5.db');
   const old = new DatabaseSync(path);
   for (const m of MIGRATIONS.slice(0, 5)) old.exec(m);
@@ -76,8 +76,39 @@ test('versioonil 5 andmebaas viiakse versioonile 11; projekt ja lood jäävad, u
   const project = { ...db.prepare('SELECT name, skipped_stages, active_stage, mvp_count FROM projects WHERE id = ?').get(pid) };
   const stories = db.prepare('SELECT want, status FROM stories').all().map((r) => ({ ...r }));
   db.close();
-  assert.equal(SCHEMA_VERSION, 11);
-  assert.equal(version, 11);
+  assert.equal(SCHEMA_VERSION, 12);
+  assert.equal(version, 12);
   assert.deepEqual(project, { name: 'Vana projekt', skipped_stages: '[]', active_stage: null, mvp_count: null });
   assert.deepEqual(stories, [{ want: 'näha hindu', status: 'idee' }]);
+});
+
+// L22 (v12): senised mockup'id on vaade 1; versioon on loo piires ühine kõigile vaadetele ja ref_version jääb ühemõtteliseks.
+test('v11 → v12: olemasolevad mockupid ja seosed jäävad, kõik saavad vaate 1', () => {
+  const path = join(dir, 'v11.db');
+  const old = new DatabaseSync(path);
+  for (const m of MIGRATIONS.slice(0, 11)) old.exec(m);
+  old.exec('PRAGMA user_version = 11');
+  const pid = old.prepare("INSERT INTO projects (name) VALUES ('P') RETURNING id").get().id;
+  const sid = old.prepare("INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, origin) VALUES (?, 1, 'K', 'Kna', 'näha', 'saaksin', 'S', 'ai') RETURNING id").get(pid).id;
+  old.prepare("INSERT INTO mockups (story_id, version, spec) VALUES (?, 1, '{}'), (?, 2, '{}')").run(sid, sid);
+  old.prepare("INSERT INTO criteria (story_id, position, text, origin, ref_kind, ref_index, ref_version, ref_source) VALUES (?, 1, 'Lehel on pealkiri.', 'ai', 'element', 0, 2, 'ai')").run(sid);
+  old.close();
+  const db = openDb(path);
+  const mockups = db.prepare('SELECT version, view_no FROM mockups ORDER BY version').all().map((r) => ({ ...r }));
+  const ref = { ...db.prepare('SELECT ref_kind, ref_index, ref_version FROM criteria').get() };
+  db.close();
+  assert.deepEqual(mockups, [{ version: 1, view_no: 1 }, { version: 2, view_no: 1 }]);
+  assert.deepEqual(ref, { ref_kind: 'element', ref_index: 0, ref_version: 2 });
+});
+
+test('mockupi versioon on loo piires ühine kõigile vaadetele: vaadete versioonid ei kattu, UNIQUE(story_id, version) kehtib', async () => {
+  const { saveMockup } = await import('../server/criteria.js');
+  const db = openDb(join(dir, 'app.db'));
+  const pid = db.prepare("INSERT INTO projects (name) VALUES ('P') RETURNING id").get().id;
+  const sid = db.prepare("INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, origin) VALUES (?, 1, 'K', 'Kna', 'näha', 'saaksin', 'S', 'ai') RETURNING id").get(pid).id;
+  const spec = { title: 'V', components: [] };
+  const got = [saveMockup(db, sid, spec, 1), saveMockup(db, sid, spec, 2), saveMockup(db, sid, spec, 1), saveMockup(db, sid, spec, 2)];
+  assert.deepEqual(got, [1, 2, 3, 4]); // vaated 1 ja 2 jagavad ühte numeratsiooni
+  assert.throws(() => db.prepare("INSERT INTO mockups (story_id, version, view_no, spec) VALUES (?, 2, 1, '{}')").run(sid), /UNIQUE/);
+  db.close();
 });

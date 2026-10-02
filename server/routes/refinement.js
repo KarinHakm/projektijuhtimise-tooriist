@@ -215,7 +215,7 @@ export function refinementRouter({ db, ai }) {
       else if (from >= 0) origin = 'ai_edited';
       else origin = aiTexts.has(t) ? 'ai' : 'ai_edited';
       const ref = Number.isInteger(c?.ref) && c.ref >= -1 && c.ref < after.mockup.components.length ? c.ref : null;
-      criteria.push({ text: t, origin, ref });
+      criteria.push({ text: t, origin, ref, from });
     }
     if (checkMockup(after.mockup).length) return reject(400, 'invalid_changes', 'Mockup on vigane; muudatust ei salvestatud.');
 
@@ -231,8 +231,14 @@ export function refinementRouter({ db, ai }) {
           ? saveMockup(tx, target, after.mockup)
           : before.mockup.version;
         tx.prepare('DELETE FROM criteria WHERE story_id = ?').run(target);
-        // AI viited uue mockup'i kohta; viidete kontroll tehakse rakendamisel uuesti (vihjed arvutatakse lugemisel).
-        appendCriteria(tx, target, criteria.map((c) => ({ text: c.text, origin: c.origin, ref: aiRef(c.ref, version) })));
+        // AI viited uue mockup'i (vaade 1) kohta; viidete kontroll tehakse rakendamisel uuesti (vihjed arvutatakse lugemisel).
+        // L22: täpsustus muudab ainult vaadet 1 – olemasoleva kriteeriumi seos vaate 2+ elemendiga jääb alles.
+        const viewOf = (v) => tx.prepare('SELECT view_no AS v FROM mockups WHERE story_id = ? AND version = ?').get(target, v)?.v ?? null;
+        const keepRef = (c) => {
+          const prev = c.from >= 0 ? before.criteria[c.from].ref : null;
+          return prev?.kind === 'element' && viewOf(prev.version) > 1 ? prev : null;
+        };
+        appendCriteria(tx, target, criteria.map((c) => ({ text: c.text, origin: c.origin, ref: keepRef(c) ?? aiRef(c.ref, version) })));
       }, { projectId, kind: KIND });
     } catch (err) {
       if (err instanceof ProposalError || err instanceof RefineError) return reject(err.status, err.code, err.message);

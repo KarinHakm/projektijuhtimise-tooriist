@@ -14,14 +14,16 @@ export function CheckWarnings({ warnings }) {
 }
 
 // Kasutaja ülevaatuse kinnitus: sinu kinnitus konkreetsele seisule, mitte automaatne tõend.
-export function ReviewBox({ consistency, mockupVersion, busy, onReview }) {
+// versionsLabel (L22): mitme vaate korral arvestatud versioonid, nt „vaate 1 v3, vaate 2 v6“; ühe vaatega null (senine tekst).
+export function ReviewBox({ consistency, mockupVersion, versionsLabel = null, busy, onReview }) {
+  const reviewed = versionsLabel ? `mockup'i versioonid (${versionsLabel})` : `mockup'i versiooni ${mockupVersion ?? '–'}`;
   const { review, warningCount } = consistency;
   const at = review?.at ? new Date(review.at).toLocaleString('et-EE') : '';
   return (
     <section className="review-box" aria-labelledby="review-title">
       <h4 id="review-title">Ülevaatus</h4>
       <p className="muted">
-        Kinnitus tähendab, et <strong>sina</strong> vaatasid selle loo kriteeriumid ja mockup'i versiooni {mockupVersion ?? '–'} üle.
+        Kinnitus tähendab, et <strong>sina</strong> vaatasid selle loo kriteeriumid ja {reviewed} üle.
         See ei ole automaatne tõend täieliku kooskõla kohta. Kinnitus aegub, kui kriteeriumid, viited või mockup muutuvad.
       </p>
       {review?.valid && <p className="review-box__ok">✓ Vaatasid üle: mockup'i versioon {review.mockupVersion}, {at}.</p>}
@@ -32,7 +34,7 @@ export function ReviewBox({ consistency, mockupVersion, busy, onReview }) {
         <>
           <p className="muted">Kontrollimist vajavaid hoiatusi: {warningCount}.</p>
           <button type="button" className="secondary" onClick={onReview} disabled={busy || mockupVersion == null}>
-            Kinnitan: vaatasin mockup'i versiooni {mockupVersion ?? '–'} ja kriteeriumid üle
+            Kinnitan: vaatasin {reviewed} ja kriteeriumid üle
           </button>
         </>
       )}

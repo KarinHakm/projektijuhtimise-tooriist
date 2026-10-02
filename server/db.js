@@ -109,6 +109,10 @@ export const MIGRATIONS = [
   // kus kasutaja viimati oli (NULL = soovitatud etapp). Vana veergu stage ei kasutata.
   `ALTER TABLE projects ADD COLUMN skipped_stages TEXT NOT NULL DEFAULT '[]';
    ALTER TABLE projects ADD COLUMN active_stage TEXT`,
+  // Mitu mockup'i loo kohta (L22): iga mockup on loo vaade 1, 2, … oma versioonidega. Versiooni number jääb loo piires
+  // ühiseks (UNIQUE(story_id, version) ei muutu), seega kriteeriumi ref_version määrab ühemõtteliselt ka vaate.
+  // Senised mockup'id on vaade 1.
+  `ALTER TABLE mockups ADD COLUMN view_no INTEGER NOT NULL DEFAULT 1 CHECK (view_no >= 1)`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

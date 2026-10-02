@@ -1,6 +1,6 @@
 // Loo staatus, avatud küsimused ja valmisolek (L19, L20).
 import { evaluateDor, READY } from '../shared/dor.js';
-import { latestMockup, listCriteria } from './criteria.js';
+import { hasAnyMockup, listCriteria } from './criteria.js';
 import { linkLabel } from './stories.js';
 
 export function listQuestions(db, storyId) {
@@ -21,7 +21,7 @@ export function withReadiness(db, stories) {
     const dor = evaluateDor({
       story: s,
       criteria,
-      hasMockup: latestMockup(db, s.id) !== null,
+      hasMockup: hasAnyMockup(db, s.id), // L22: ükskõik milline vaade
       openQuestions: questions.filter((q) => !q.resolvedAt).length,
     });
     return { ...s, criteria, questions, readiness: { ...dor, ready: s.status === READY && dor.ok, expired: s.status === READY && !dor.ok } };

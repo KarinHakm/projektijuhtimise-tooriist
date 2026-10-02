@@ -1,7 +1,7 @@
 import { listMessages } from '../conversation.js';
 import { listRoles } from '../roles.js';
 import { listStories } from '../stories.js';
-import { listCriteria, latestMockup } from '../criteria.js';
+import { hasAnyMockup, listCriteria } from '../criteria.js';
 import { withReadiness } from '../readiness.js';
 import { progressFor, stageFor } from '../stage.js';
 import { getFocusStoryId } from '../priority.js';
@@ -34,7 +34,7 @@ export function buildProjectContext(db, projectId) {
       ready: s.readiness.ready,
       focus: s.id === focusId,
       criteria: listCriteria(db, s.id).map((c) => c.text),
-      hasMockup: latestMockup(db, s.id) !== null,
+      hasMockup: hasAnyMockup(db, s.id),
       openQuestions: s.questions.filter((q) => !q.resolvedAt).map((q) => q.text),
     })),
   };

@@ -1,6 +1,6 @@
 // Etapi faktid andmebaasist (L13, L14). Ainult lugemine; tulemuse arvutab shared/stage.js.
 import { computeStage } from '../shared/stage.js';
-import { consistencyFor, latestMockup } from './criteria.js';
+import { consistencyFor, hasAnyMockup } from './criteria.js';
 import { findPendingProposal } from './proposals.js';
 import { getFocusStoryId, storyInProject } from './priority.js';
 import { findingIsCurrent, KIND as REVIEW_KIND } from './review.js';
@@ -48,7 +48,7 @@ export function stageFacts(db, projectId) {
       .some((r) => JSON.parse(r.payload).storyId === focus);
   };
   const criteria = focus === null ? 0 : count(db, 'SELECT COUNT(*) AS n FROM criteria WHERE story_id = ?', focus);
-  const mockup = focus !== null && latestMockup(db, focus) !== null;
+  const mockup = focus !== null && hasAnyMockup(db, focus); // L22: ükskõik milline vaade
   let consistency = null;
   if (criteria > 0 && mockup) {
     const c = consistencyFor(db, focus);

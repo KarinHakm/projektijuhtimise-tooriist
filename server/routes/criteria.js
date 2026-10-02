@@ -8,7 +8,7 @@ import {
   buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, resolveRef,
 } from '../ai/tasks/criteria.js';
 import {
-  aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, listMockupVersions, restoreMockup, saveMockup, validateCriteriaSave,
+  aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, listMockupVersions, listViews, restoreMockup, saveMockup, validateCriteriaSave,
 } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
@@ -43,6 +43,9 @@ export function criteriaRouter({ db, ai }) {
       criteria: listCriteria(db, story.id),
       mockup: latestMockup(db, story.id),
       mockupVersions: listMockupVersions(db, story.id).slice(1), // L22: varasemad versioonid (uusim on "mockup")
+      // L22: lisavaated (vaade 2, …) – igaühe uusim versioon ja varasemad versioonid. Vaade 1 on "mockup".
+      extraViews: listViews(db, story.id).filter((v) => v.viewNo > 1)
+        .map((v) => ({ viewNo: v.viewNo, mockup: v.mockup, versions: listMockupVersions(db, story.id, v.viewNo).slice(1) })),
       criteriaProposal: cp
         ? {
           id: cp.id,
@@ -207,7 +210,9 @@ export function criteriaRouter({ db, ai }) {
       return res.status(409).json({ error: 'Taastada saab ainult alustamise loo mockup\'i. Värskenda lehte.', code: 'not_focus' });
     }
     const version = req.body?.version;
-    const versions = listMockupVersions(db, story.id);
+    // L22: versioon määrab vaate; taastatakse samasse vaatesse.
+    const viewNo = Number.isInteger(version) ? db.prepare('SELECT view_no AS v FROM mockups WHERE story_id = ? AND version = ?').get(story.id, version)?.v : null;
+    const versions = viewNo ? listMockupVersions(db, story.id, viewNo) : [];
     if (!Number.isInteger(version) || !versions.some((v) => v.version === version)) {
       return res.status(404).json({ error: 'Sellist mockup\'i versiooni ei leitud.', code: 'not_found' });
     }
@@ -270,11 +275,12 @@ export function criteriaRouter({ db, ai }) {
   router.post('/link', (req, res) => {
     const projectId = req.projectId;
     const { criterionId, kind, index } = req.body ?? {};
+    const viewNo = req.body?.view ?? 1; // L22: seos võib olla ükskõik millise vaate elemendiga
     const row = Number.isInteger(criterionId) && db
       .prepare('SELECT c.id, c.story_id AS storyId FROM criteria c JOIN stories s ON s.id = c.story_id WHERE c.id = ? AND s.project_id = ?')
       .get(criterionId, projectId);
     if (!row) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
-    const mockup = latestMockup(db, row.storyId);
+    const mockup = Number.isInteger(viewNo) && viewNo >= 1 ? latestMockup(db, row.storyId, viewNo) : null;
     let values;
     if (kind === 'element') {
       if (!mockup || !Number.isInteger(index) || index < 0 || index >= mockup.components.length) {
