@@ -5,8 +5,10 @@ import StoryFields from './StoryFields.jsx';
 // Kahe loo käsitsi ühendamine (L26). Kasutaja valib teise loo; säilitatav on vaikimisi backlog'is eespool olev lugu.
 // Kõik kriteeriumid on vaikimisi valitud (ka duplikaadid); märkimata kriteerium eemaldatakse ja eelvaade nimetab selle
 // koos kaduva seosega. Kui mõlemal lool on mockup'i versioonid, ühendamist ei tehta.
-// initialUnchecked: ainult renderdustestide jaoks (rakenduses on vaikimisi kõik kriteeriumid valitud).
-export default function MergeStoryForm({ story, stories, info = null, roles = [], busy = false, error = null, initialUnchecked = [], onPick, onSubmit, onCancel }) {
+// initialUnchecked: renderdustestide jaoks (käsitsi ühendamisel on vaikimisi kõik kriteeriumid valitud).
+// initial = L29 AI ettepanek ({ keepId, story, duplicates: [{ id, of }] }): sõnastus ja AI korduseks märgitud kriteeriumid
+// on algselt märkimata ja sildiga; kasutaja saab korduse märkida tagasi. undoable = vorm on avatud ülevaatuse leiust.
+export default function MergeStoryForm({ story, stories, info = null, roles = [], busy = false, error = null, initialUnchecked = [], initial = null, undoable = false, onPick, onSubmit, onCancel }) {
   const number = (id) => stories.findIndex((s) => s.id === id) + 1;
   const others = stories.filter((s) => s.id !== story.id);
   const [partner, setPartner] = useState(info ? (info.keepId === story.id ? info.removeId : info.keepId) : '');
@@ -26,7 +28,8 @@ export default function MergeStoryForm({ story, stories, info = null, roles = []
         <option value="">— vali lugu —</option>
         {others.map((s) => <option key={s.id} value={s.id}>{number(s.id)}. {s.title}</option>)}
       </select>
-      {info && <MergeDetails key={`${info.keepId}-${info.removeId}`} info={info} stories={stories} number={number} roles={roles} busy={busy} error={error} initialUnchecked={initialUnchecked}
+      {info && <MergeDetails key={`${info.keepId}-${info.removeId}`} info={info} stories={stories} number={number} roles={roles} busy={busy} error={error}
+        initialUnchecked={[...initialUnchecked, ...(initial?.duplicates ?? []).map((d) => d.id)]} initial={initial} undoable={undoable}
         onSwap={() => onPick(info.removeId, info.keepId)} onSubmit={onSubmit} />}
       {error && !info && <p className="error" role="alert">{error.message}</p>}
       <div className="actions">
@@ -36,10 +39,15 @@ export default function MergeStoryForm({ story, stories, info = null, roles = []
   );
 }
 
-function MergeDetails({ info, stories, number, roles, busy, error, initialUnchecked, onSwap, onSubmit }) {
+function MergeDetails({ info, stories, number, roles, busy, error, initialUnchecked, initial, undoable, onSwap, onSubmit }) {
   const keep = stories.find((s) => s.id === info.keepId);
   const remove = stories.find((s) => s.id === info.removeId);
-  const [value, setValue] = useState({ role: keep.role, rolePhrase: keep.rolePhrase, want: keep.want, soThat: keep.soThat, size: keep.size, touchesView: keep.touchesView });
+  const aiText = initial?.keepId === info.keepId ? initial.story : null; // AI sõnastus käib AI valitud säilitatava loo rolliga
+  const [value, setValue] = useState({
+    role: keep.role, rolePhrase: keep.rolePhrase, want: aiText?.want ?? keep.want, soThat: aiText?.soThat ?? keep.soThat, size: keep.size,
+    touchesView: aiText ? keep.touchesView || remove.touchesView : keep.touchesView,
+  });
+  const aiDuplicateOf = new Map((initial?.duplicates ?? []).map((d) => [d.id, d.of]));
   const [checked, setChecked] = useState(() => info.criteria.map((c) => c.id).filter((id) => !initialUnchecked.includes(id))); // vaikimisi kõik valitud
   const label = (c) => `K${info.criteria.indexOf(c) + 1}`;
   const byId = new Map(info.criteria.map((c) => [c.id, c]));
@@ -80,6 +88,9 @@ function MergeDetails({ info, stories, number, roles, busy, error, initialUnchec
               <span>
                 <strong>{label(c)}</strong> (lugu {number(c.from === 'keep' ? info.keepId : info.removeId)}) {c.text}
                 {c.duplicateWith.length > 0 && <span className="tag tag--dup">duplikaat: sama tekst kui {c.duplicateWith.map((id) => label(byId.get(id))).join(', ')}</span>}
+                {aiDuplicateOf.has(c.id) && byId.get(aiDuplicateOf.get(c.id)) && (
+                  <span className="tag tag--dup">AI: sisuline kordus – kordab {label(byId.get(aiDuplicateOf.get(c.id)))}; märgi, kui see peab alles jääma</span>
+                )}
                 <span className="merge-criterion__link">
                   {c.linkLabel ? `Seos: ${c.linkLabel}${c.linkSurvives ? '' : ' – eemaldatakse ühendamisel (mockup ei jää alles)'}` : 'Seos mockup\'iga puudub'}
                 </span>
@@ -96,7 +107,9 @@ function MergeDetails({ info, stories, number, roles, busy, error, initialUnchec
           <li>Kriteeriumid: alles jääb {checked.length}, eemaldatakse {removedCriteria.length}.</li>
           {removedCriteria.map((c) => (
             <li key={c.id} className="merge-preview__removed">
-              Eemaldatakse {label(c)} „{c.text}“{c.duplicateWith.length ? ' (duplikaat)' : ''} – {c.linkLabel ? `koos sellega kaob seos „${c.linkLabel}“` : 'sellel polnud mockup\'i seost'}.
+              Eemaldatakse {label(c)} „{c.text}“{c.duplicateWith.length ? ' (duplikaat)' : ''}
+              {aiDuplicateOf.has(c.id) && byId.get(aiDuplicateOf.get(c.id)) && checked.includes(aiDuplicateOf.get(c.id)) ? ` (AI kordus; säilib ${label(byId.get(aiDuplicateOf.get(c.id)))} „${byId.get(aiDuplicateOf.get(c.id)).text}“)` : ''}
+              {' '}– {c.linkLabel ? `koos sellega kaob seos „${c.linkLabel}“` : 'sellel polnud mockup\'i seost'}.
             </li>
           ))}
           {lostLinks.map((c) => <li key={c.id}>{label(c)} jääb alles, aga selle seos „{c.linkLabel}“ eemaldatakse (selle loo mockup ei jää alles).</li>)}
@@ -109,7 +122,8 @@ function MergeDetails({ info, stories, number, roles, busy, error, initialUnchec
           )}
           <li>
             Teiste lugude sisu ei muutu{number(info.removeId) < stories.length ? '; eemaldatava loo järel olevad lood nihkuvad ühe koha võrra ettepoole' : ' ega järjekord muutu'}.
-            {' '}Loo {number(info.removeId)} („{remove.title}“) rida kustutatakse. Tagasivõtmist veel pole.
+            {' '}Loo {number(info.removeId)} („{remove.title}“) rida kustutatakse.
+            {undoable ? ' Ühendamise saab ülevaatuse leiu juures tagasi võtta, kuni ühendatud lugu ega backlog\'i järjekord pole muutunud.' : ' Tagasivõtmist veel pole.'}
           </li>
         </ul>
       </div>

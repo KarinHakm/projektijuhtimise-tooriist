@@ -87,6 +87,7 @@ export default function BacklogList({
               )}
               {manage?.mode?.type === 'merge' && manage.mode.id === s.id && (
                 <MergeStoryForm story={s} stories={stories} info={manage.mode.info} roles={manage.roles} busy={busy} error={manage.error}
+                  initial={manage.mode.initial ?? null} undoable={Boolean(manage.mode.findingId)}
                   onPick={(keepId, removeId) => manage.onMergePick(s.id, keepId, removeId)}
                   onSubmit={(body) => manage.onConfirmMerge(manage.mode.info.keepId, body)} onCancel={manage.onCancel} />
               )}

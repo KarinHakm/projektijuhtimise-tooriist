@@ -346,47 +346,51 @@ export function validateMerge(raw, info) {
 export function mergeStories(db, projectId, keepId, removeId, merge) {
   db.exec('BEGIN IMMEDIATE');
   try {
-    const info = mergeInfo(db, projectId, keepId, removeId);
-    if (!info || info.blocked) {
-      db.exec('ROLLBACK');
-      return info ? { blocked: true } : null;
-    }
-    const pending = mergePending(db, projectId, keepId, removeId);
-    for (const p of pending) {
-      db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status = 'pending'").run(p.id);
-    }
-    if (info.focus === 'remove') db.prepare('UPDATE projects SET focus_story_id = ? WHERE id = ?').run(keepId, projectId);
-    updateManualStory(db, projectId, keepId, merge.story);
-
-    // Kriteeriumid: täpselt kasutaja valik. Märkimata kriteeriumid eemaldatakse (eelvaates nimetatud).
-    const kept = new Set(merge.keepCriteria);
-    const removed = info.criteria.filter((c) => !kept.has(c.id));
-    for (const c of removed) db.prepare('DELETE FROM criteria WHERE id = ?').run(c.id);
-    const clearRef = db.prepare("UPDATE criteria SET ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL WHERE id = ? AND ref_kind = 'element'");
-    const ordered = info.criteria.filter((c) => kept.has(c.id));
-    ordered.forEach((c, i) => {
-      db.prepare('UPDATE criteria SET story_id = ?, position = ? WHERE id = ?').run(keepId, i + 1, c.id);
-      if (!c.linkSurvives) clearRef.run(c.id);
-    });
-    db.prepare('UPDATE story_questions SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
-    if (info.mockups.from === 'remove') db.prepare('UPDATE mockups SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
-    if (db.prepare('SELECT 1 FROM story_questions WHERE story_id = ? AND resolved_at IS NULL').get(keepId)) {
-      db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(keepId);
-    }
-
-    // Koht: ühendatud lugu kahest eespool olevale kohale; eemaldatav rida kustutatakse; järjekord tihendatakse.
-    const order = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).map((r) => r.id).filter((id) => id !== removeId);
-    order.splice(order.indexOf(keepId), 1);
-    order.splice(info.resultPosition - 1, 0, keepId);
-    db.prepare('DELETE FROM stories WHERE id = ? AND project_id = ?').run(removeId, projectId);
-    const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
-    order.forEach((id, i) => setPosition.run(i + 1, id));
-    if (info.mvp.keepAbove && info.mvp.removeAbove) db.prepare('UPDATE projects SET mvp_count = mvp_count - 1 WHERE id = ?').run(projectId);
-    db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
-    db.exec('COMMIT');
-    return { keepId, removedCriteria: removed.length, rejectedProposals: pending.length, movedQuestions: info.questions.filter((q) => q.from === 'remove').length };
+    const result = mergeStoriesInTx(db, projectId, keepId, removeId, merge);
+    db.exec(result?.keepId ? 'COMMIT' : 'ROLLBACK');
+    return result;
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
   }
+}
+
+// Sama ühendamine olemasoleva transaktsiooni sees (L29: ülevaatuse leiu rakendamine salvestab samas ka tagasivõtmise seisu).
+// null = lugu pole projektis; { blocked: true } = mõlemal lool on mockup'i versioonid.
+export function mergeStoriesInTx(db, projectId, keepId, removeId, merge) {
+  const info = mergeInfo(db, projectId, keepId, removeId);
+  if (!info || info.blocked) return info ? { blocked: true } : null;
+  const pending = mergePending(db, projectId, keepId, removeId);
+  for (const p of pending) {
+    db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status = 'pending'").run(p.id);
+  }
+  if (info.focus === 'remove') db.prepare('UPDATE projects SET focus_story_id = ? WHERE id = ?').run(keepId, projectId);
+  updateManualStory(db, projectId, keepId, merge.story);
+
+  // Kriteeriumid: täpselt kasutaja valik. Märkimata kriteeriumid eemaldatakse (eelvaates nimetatud).
+  const kept = new Set(merge.keepCriteria);
+  const removed = info.criteria.filter((c) => !kept.has(c.id));
+  for (const c of removed) db.prepare('DELETE FROM criteria WHERE id = ?').run(c.id);
+  const clearRef = db.prepare("UPDATE criteria SET ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL WHERE id = ? AND ref_kind = 'element'");
+  const ordered = info.criteria.filter((c) => kept.has(c.id));
+  ordered.forEach((c, i) => {
+    db.prepare('UPDATE criteria SET story_id = ?, position = ? WHERE id = ?').run(keepId, i + 1, c.id);
+    if (!c.linkSurvives) clearRef.run(c.id);
+  });
+  db.prepare('UPDATE story_questions SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
+  if (info.mockups.from === 'remove') db.prepare('UPDATE mockups SET story_id = ? WHERE story_id = ?').run(keepId, removeId);
+  if (db.prepare('SELECT 1 FROM story_questions WHERE story_id = ? AND resolved_at IS NULL').get(keepId)) {
+    db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(keepId);
+  }
+
+  // Koht: ühendatud lugu kahest eespool olevale kohale; eemaldatav rida kustutatakse; järjekord tihendatakse.
+  const order = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).map((r) => r.id).filter((id) => id !== removeId);
+  order.splice(order.indexOf(keepId), 1);
+  order.splice(info.resultPosition - 1, 0, keepId);
+  db.prepare('DELETE FROM stories WHERE id = ? AND project_id = ?').run(removeId, projectId);
+  const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ?');
+  order.forEach((id, i) => setPosition.run(i + 1, id));
+  if (info.mvp.keepAbove && info.mvp.removeAbove) db.prepare('UPDATE projects SET mvp_count = mvp_count - 1 WHERE id = ?').run(projectId);
+  db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
+  return { keepId, removedCriteria: removed.length, rejectedProposals: pending.length, movedQuestions: info.questions.filter((q) => q.from === 'remove').length };
 }

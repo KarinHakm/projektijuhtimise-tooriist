@@ -6,14 +6,14 @@ import AiWait from './AiWait.jsx';
 import DemoTag from './DemoTag.jsx';
 
 // Backlog'i ülevaatus (L27). Ülevaatuse käivitamine ei muuda backlog'i. Iga leiu juures [Rakenda] [Muuda] [Ignoreeri]:
-// tüübid 1–4 ja AI jagamine (5, L28) rakendatakse siin; jagamise „Muuda“ ja ühendamine (6) avavad olemasoleva vormi backlog'is.
+// tüübid 1–4, AI jagamine (5, L28) ja ühendamine (6, L29) rakendatakse siin; jagamise ja ühendamise „Muuda“ avab olemasoleva vormi backlog'is.
 
 export const TYPE_LABELS = {
   connextra: 'Pealkirja vorm', no_criteria: 'Kriteeriumid puuduvad', untestable: 'Mittekontrollitav kriteerium',
   no_mockup: "Mockup puudub", too_large: 'Liiga suur lugu', overlap: 'Kattuvad lood',
 };
 export const DECISION_LABELS = { not_view: 'märgi mitte-vaatelooks', needs_mockup: "lisa küsimus „Vajab mockup'i“" };
-const STATUS_TEXT = { applied: 'Rakendatud', ignored: 'Ignoreeritud', undone: 'Jagamine võeti tagasi' };
+const STATUS_TEXT = { applied: 'Rakendatud', ignored: 'Ignoreeritud', undone: 'Tagasi võetud' };
 
 // Leiu ettepaneku tekst kaardil. Mockup'i leiu juures on alati näha, kumba tulemust AI soovitab.
 function Suggestion({ f, stories }) {
@@ -29,7 +29,7 @@ function Suggestion({ f, stories }) {
     case 'untestable': return <p><strong>Ettepanek:</strong> asenda tekstiga „{s.text}“{why}</p>;
     case 'no_mockup': return <p><strong>AI soovitab:</strong> {DECISION_LABELS[s.decision]}{why}</p>;
     case 'too_large': return <SplitPreview f={f} stories={stories} />;
-    case 'overlap': return <p><strong>Ettepanek:</strong> {s.text}</p>;
+    case 'overlap': return s.merge ? <MergePreview f={f} stories={stories} /> : <><p><strong>Ettepanek:</strong> {s.text}</p><p>AI ühendamisettepanek oli vigane – vajuta „Muuda“ ja ühenda ise.</p></>;
     default: return null;
   }
 }
@@ -70,6 +70,60 @@ function SplitPreview({ f, stories }) {
           {info.aboveMvpLine && <li>Ka osa 2 läheb MVP joone kohale.</li>}
           {info.pendingProposals > 0 && <li>Algse loo ootel ettepanekud ({info.pendingProposals}) lükatakse tagasi.</li>}
           <li>Jagamise saab tagasi võtta, kuni kumbagi osa pole muudetud.</li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// L29: AI ühendamise eelvaade – ühendatud lugu, alles jäävad kriteeriumid, kordused (mõlema tekstiga) ja mis juhtub.
+function MergePreview({ f, stories }) {
+  const m = f.suggestion.merge;
+  const info = f.mergeInfo;
+  const keep = stories.find((x) => x.id === f.suggestion.keepId);
+  const remove = stories.find((x) => x.id === f.suggestion.removeId);
+  if (!keep || !remove) return null;
+  const number = (id) => stories.findIndex((x) => x.id === id) + 1;
+  const all = [...f.before.criteria.keep, ...f.before.criteria.remove];
+  const text = (id) => all.find((c) => c.id === id)?.text ?? '';
+  const lostLinks = info ? info.criteria.filter((c) => m.keepCriteria.includes(c.id) && c.linkLabel && !c.linkSurvives) : [];
+  return (
+    <div className="split-preview">
+      <p className="split-preview__title">Ettepanek: ühenda lugu {number(remove.id)} looga {number(keep.id)} – eelvaade</p>
+      {info?.blocked && (
+        <p className="error" role="alert">Ühendada ei saa: mõlemal lool on mockup'i versioonid ({info.mockups.keep} ja {info.mockups.remove}). Teisi lugusid saab ühendada.</p>
+      )}
+      <p><strong>Ühendatud lugu{info ? ` (kohal ${info.resultPosition})` : ''}:</strong> {composeTitle({ rolePhrase: keep.rolePhrase, ...m.story })}</p>
+      <p>Säilib lugu {number(keep.id)} (id, staatus, roll „{keep.role}“); lugu {number(remove.id)} eemaldatakse.
+        {keep.role !== remove.role && ` Loo ${number(remove.id)} roll „${remove.role}“ ühendatud loos ei säili.`}</p>
+      <p className="review-split__label">Kriteeriumid, mis jäävad alles ({m.keepCriteria.length}):</p>
+      {m.keepCriteria.length ? <ol>{m.keepCriteria.map((id) => <li key={id}>{text(id)}</li>)}</ol> : <p className="muted">Kriteeriume ei jää.</p>}
+      {m.duplicates.length > 0 && (
+        <>
+          <p className="review-split__label">Korduseks märgitud – eemaldatakse ({m.duplicates.length}):</p>
+          <ul className="review-dups">
+            {m.duplicates.map((d) => (
+              <li key={d.id}>
+                Eemaldatakse: <span className="review-dups__removed">„{text(d.id)}“</span><br />
+                <span className="review-dups__kept">Säilib: „{text(d.of)}“</span>
+              </li>
+            ))}
+          </ul>
+          <p className="muted">Kriteeriume ei liideta uueks tekstiks. Kui kordus pole tegelikult kordus, vajuta „Muuda“ ja märgi see alles.</p>
+        </>
+      )}
+      {f.suggestion.text && <p className="muted">AI põhjendus: {f.suggestion.text}</p>}
+      {info && !info.blocked && (
+        <ul>
+          <li>Küsimused: {info.questions.length ? `kõik ${info.questions.length} jäävad ühendatud loole${info.questions.some((q) => !q.resolvedAt) ? '; avatud küsimuse tõttu saab lugu staatuse „Vajab täpsustamist“' : ''}.` : 'küsimusi pole.'}</li>
+          <li>Mockup: {info.mockups.from ? `loo ${number(info.mockups.from === 'keep' ? keep.id : remove.id)} mockup (${info.mockups[info.mockups.from]} versiooni) jääb ühendatud loole.` : 'kummalgi lool pole mockup\'i.'}</li>
+          {lostLinks.map((c) => <li key={c.id}>Kriteeriumi „{c.text}“ seos „{c.linkLabel}“ eemaldatakse (selle loo mockup ei jää alles).</li>)}
+          {info.focus && <li>Alustamise lugu on ühendatud lugu.</li>}
+          {info.mvp.count !== null && (info.mvp.keepAbove || info.mvp.removeAbove) && (
+            <li>MVP joon: ühendatud lugu on joone kohal{info.mvp.keepAbove && info.mvp.removeAbove ? '; joone kohal on ühe loo võrra vähem' : ''}.</li>
+          )}
+          {info.pendingProposals > 0 && <li>Ootel ettepanekud ({info.pendingProposals}) lükatakse tagasi ja tagasivõtmisel neid ei taastata.</li>}
+          <li>Ühendamise saab tagasi võtta, kuni ühendatud lugu ega backlog'i järjekord pole muutunud.</li>
         </ul>
       )}
     </div>
@@ -134,7 +188,7 @@ function FindingEditor({ f, busy, error, onSubmit, onCancel }) {
 
 function FindingCard({ f, stories, number, busy, editing, error, actions }) {
   const decided = f.status !== 'open';
-  const canApply = !decided && !f.stale && f.suggestion !== null;
+  const canApply = !decided && !f.stale && f.suggestion !== null && (f.type !== 'overlap' || (Boolean(f.suggestion.merge) && !f.mergeInfo?.blocked));
   return (
     <li className={`review-finding${decided ? ' review-finding--decided' : ''}`}>
       <p className="review-finding__head">
@@ -148,7 +202,7 @@ function FindingCard({ f, stories, number, busy, editing, error, actions }) {
       {f.canUndo && (
         <>
           {error && <p className="error" role="alert">{error.message}</p>}
-          <button type="button" className="secondary" disabled={busy} onClick={() => actions.undo(f)}>Võta jagamine tagasi</button>
+          <button type="button" className="secondary" disabled={busy} onClick={() => actions.undo(f)}>{f.type === 'overlap' ? 'Võta ühendamine tagasi' : 'Võta jagamine tagasi'}</button>
         </>
       )}
       {!decided && (
@@ -208,7 +262,7 @@ export function ReviewView({ review, stories, running = false, busy = false, err
   );
 }
 
-// onSplit(storyId, initial, findingId) ja onMerge(keepId, removeId | null, findingId) avavad backlog'i vormi.
+// onSplit(storyId, initial, findingId) ja onMerge(keepId, removeId, findingId, initial) avavad backlog'i vormi.
 export default function ReviewPanel({ projectId, stories, onSplit, onMerge }) {
   const [review, setReview] = useState(null);
   const [running, setRunning] = useState(false);
@@ -272,13 +326,12 @@ export default function ReviewPanel({ projectId, stories, onSplit, onMerge }) {
 
   const actions = {
     apply: (f, value) => {
-      if (f.type === 'overlap') return onMerge(f.suggestion.keepId, f.suggestion.removeId, f.id);
-      return decide(f, () => applyFinding(projectId, f.id, value)); // ka AI jagamine (L28): server jagab ja salvestab tagasivõtmise seisu
+      return decide(f, () => applyFinding(projectId, f.id, value)); // ka AI jagamine ja ühendamine (L28, L29): server salvestab tagasivõtmise seisu
     },
     edit: (f) => {
       setFindingError(null);
       if (f.type === 'too_large') return onSplit(f.storyIds[0], f.suggestion, f.id); // vorm AI osade ja jaotusega
-      if (f.type === 'overlap') return onMerge(f.storyIds[0], null, f.id);
+      if (f.type === 'overlap') return onMerge(f.suggestion.keepId, f.suggestion.removeId, f.id, f.suggestion.merge); // vorm AI sõnastuse ja kordustega
       return setEditingId(f.id);
     },
     cancelEdit: () => { setEditingId(null); setFindingError(null); },

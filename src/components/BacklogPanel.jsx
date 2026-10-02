@@ -143,14 +143,7 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       setBusy(false);
     }
   }
-  // L27: ülevaatuse leiust avatud jagamine/ühendamine. Pärast vormis kinnitamist märgitakse leid rakendatuks;
-  // kui see ei õnnestu, jääb leid ülevaatuses avatuks (backlog'i muudatus on siiski tehtud).
-  const withFinding = (call) => async () => {
-    const findingId = mode?.findingId;
-    const data = await call();
-    if (findingId) await applyFinding(projectId, findingId).catch(() => {});
-    return data;
-  };
+  // L27–L29: ülevaatuse leiust avatud jagamis- või ühendamisvorm (mode.findingId); kinnitamine käib leiu kaudu.
   const showForm = () => requestAnimationFrame(() => document.querySelector('.backlog .split-form, .backlog .merge-form')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   const openFromReview = async (load) => {
     setManageError(null);
@@ -166,8 +159,9 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
   const review = (
     <ReviewPanel projectId={projectId} stories={stories ?? []}
       onSplit={(id, initial, findingId) => openFromReview(async () => ({ type: 'split', id, info: await getSplitInfo(projectId, id), initial, findingId }))}
-      onMerge={(keepId, removeId, findingId) => openFromReview(async () => ({
+      onMerge={(keepId, removeId, findingId, initial) => openFromReview(async () => ({
         type: 'merge', id: keepId, info: removeId ? await getMergeInfo(projectId, keepId, removeId) : null, findingId,
+        initial: initial ? { keepId, ...initial } : null,
       }))} />
   );
 
@@ -212,15 +206,21 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
     onMergePick: async (id, keepId, removeId) => {
       setManageError(null);
       try {
-        setMode({ type: 'merge', id, info: await getMergeInfo(projectId, keepId, removeId), findingId: mode?.findingId });
+        setMode({ type: 'merge', id, info: await getMergeInfo(projectId, keepId, removeId), findingId: mode?.findingId, initial: mode?.initial });
       } catch (e) {
         setManageError({ message: e.message });
       }
     },
-    onConfirmMerge: (keepId, body) => runManage(withFinding(() => mergeStoriesInto(projectId, keepId, body)), (d) => {
+    // L29: ülevaatuse leiust avatud vorm ühendab leiu kaudu (server salvestab tagasivõtmise seisu); muidu käsitsi (L26).
+    onConfirmMerge: (keepId, body) => (mode?.findingId
+      ? runManage(async () => {
+        const { result } = await applyFinding(projectId, mode.findingId, { ...body, keepId });
+        return { ...(await getStories(projectId)), reviewResult: result };
+      }, (d) => d.reviewResult)
+      : runManage(() => mergeStoriesInto(projectId, keepId, body), (d) => {
       const at = d.stories.findIndex((x) => x.id === d.merge.keepId) + 1;
       return `Lood ühendati: ühendatud lugu on kohal ${at}.${d.merge.removedCriteria ? ` Eemaldatud kriteeriume: ${d.merge.removedCriteria}.` : ''}${d.merge.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.merge.rejectedProposals}.` : ''}`;
-    }),
+    })),
     onConfirmDelete: (id) => runManage(() => deleteStory(projectId, id),
       (d) => (d.deleted.isFocus ? 'Lugu kustutati. See oli alustamise lugu – vali prioriteedi juures uus.' : 'Lugu kustutati.')),
   };

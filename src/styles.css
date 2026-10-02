@@ -471,3 +471,9 @@ button.danger { background: var(--error); }
 .review-split__part { margin: 0.25rem 0 0.5rem; }
 .review-split__part .warning, .split-preview__overlap { margin: 0.25rem 0; }
 .split-preview__criteria { margin: 0.15rem 0 0.25rem; padding-left: 1.25rem; font-size: 0.9em; }
+/* L29: ühendamise eelvaate kordused */
+.review-split__label { margin: 0.4rem 0 0.1rem; font-weight: 600; }
+.review-dups { margin: 0.25rem 0; padding-left: 1.25rem; }
+.review-dups li { margin: 0.2rem 0; }
+.review-dups__removed { text-decoration: line-through; color: var(--muted); }
+.review-dups__kept { color: #1d6b35; }

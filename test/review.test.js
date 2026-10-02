@@ -35,10 +35,11 @@ function seed() {
   const tooLarge = add(5, 'Külastajana', 'registreeruda, maksta liikmemaksu ja broneerida trenni', 'saaksin klubiga liituda', 'L', false);
   const largeCriteria = ok(tooLarge);
   const dupA = add(6, 'Külastajana', 'näha treeningute nädalakava', 'saaksin aja valida', 'S', false);
-  ok(dupA);
+  const dupACriteria = ok(dupA);
   const dupB = add(7, 'Külastajana', 'vaadata nädala treeninguid', 'saaksin sobiva aja leida', 'S', false);
-  ok(dupB);
-  return { badTitle, untestable, vague, noCriteria, noMockup, tooLarge, largeCriteria, dupA, dupB };
+  const dupBCriteria = [crit.get(dupB, 1, 'Nädalavaates on iga trenni algusaeg.').id, crit.get(dupB, 2, 'Lehel on otsing.').id,
+    crit.get(dupB, 3, 'Trenni juures on treeneri nimi.').id];
+  return { badTitle, untestable, vague, noCriteria, noMockup, tooLarge, largeCriteria, dupA, dupB, dupACriteria, dupBCriteria };
 }
 
 const AI_REVIEW = () => ({
@@ -53,8 +54,16 @@ const AI_REVIEW = () => ({
     firstCriteria: [ids.largeCriteria[0], ids.largeCriteria[2]], secondCriteria: [ids.largeCriteria[1]],
   }],
   overlaps: [
-    { keepId: ids.dupA, removeId: ids.dupB, problem: 'Mõlemad näitavad nädala treeninguid.', reason: 'Sama nõue kahes loos.', suggestion: 'Ühenda lugu 7 looga 6.' },
-    { keepId: ids.dupA, removeId: 999, problem: 'Olematu lugu.', reason: 'x', suggestion: 'x' }, // vigane viide jäetakse välja
+    {
+      keepId: ids.dupA, removeId: ids.dupB, problem: 'Mõlemad näitavad nädala treeninguid.', reason: 'Sama nõue kahes loos.', suggestion: 'Ühenda lugu 7 looga 6.',
+      story: { want: 'näha nädala treeningute kava', soThat: 'saaksin sobiva aja valida' },
+      // „Lehel on otsing.“ on sisuline (mitte täpne) kordus kriteeriumist „Lehel on otsinguväli.“
+      criteria: [...ids.dupACriteria.map((id) => ({ criterionId: id, action: 'keep', duplicateOf: 0 })),
+        { criterionId: ids.dupBCriteria[0], action: 'keep', duplicateOf: 0 },
+        { criterionId: ids.dupBCriteria[1], action: 'duplicate', duplicateOf: ids.dupACriteria[1] },
+        { criterionId: ids.dupBCriteria[2], action: 'keep', duplicateOf: 0 }],
+    },
+    { keepId: ids.dupA, removeId: 999, problem: 'Olematu lugu.', reason: 'x', suggestion: 'x', story: { want: 'x', soThat: 'y' }, criteria: [] }, // vigane viide jäetakse välja
   ],
 });
 
@@ -101,7 +110,8 @@ test('ülevaatus leiab kõik leiutüübid meelega vigastest lugudest ega muuda b
   assert.equal(large.problem, 'Lool on kolm eraldi tegevust.');
   assert.ok(large.reason && large.suggestion.second.want === 'broneerida trenni');
   assert.deepEqual(large.suggestion.criteriaToSecond, [ids.largeCriteria[1]]); // L28: kriteeriumide jaotus
-  assert.deepEqual(finding(review, `overlap-${ids.dupA}-${ids.dupB}`).suggestion, { keepId: ids.dupA, removeId: ids.dupB, text: 'Ühenda lugu 7 looga 6.' });
+  const overlap = finding(review, `overlap-${ids.dupA}-${ids.dupB}`).suggestion;
+  assert.deepEqual([overlap.keepId, overlap.removeId, overlap.merge.duplicates], [ids.dupA, ids.dupB, [{ id: ids.dupBCriteria[1], of: ids.dupACriteria[1] }]]);
   assert.equal(review.findings.filter((f) => f.type === 'overlap').length, 1); // olematu loo leid jäeti välja
   for (const f of review.findings) assert.ok(f.problem && f.reason, f.id);
 
@@ -136,8 +146,6 @@ test('Rakenda, Muuda ja Ignoreeri muudavad ainult leiu lugu; Ignoreeri jätab ba
 
   res = await post(`/findings/no_criteria-${ids.noCriteria}/apply`);
   assert.equal(res.status, 409);
-  res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`);
-  assert.equal((await res.json()).code, 'use_form'); // ühendamine käib eelvaatega vormis
 });
 
 test('AI-ta on ainult koodi leiud ilma otsuseta; aegunud leidu ei rakendata', async () => {
@@ -207,4 +215,64 @@ test('vigane kriteeriumide jaotus jäetakse välja; muudetud osa korral tagasiv�
   assert.equal(res.status, 409);
   assert.match((await res.json()).error, /osa 2 on pärast jagamist muutunud.*Osalist taastamist ei tehta/);
   assert.deepEqual(fullRows(), after);
+});
+
+// L29: AI ühendamine leiust ja selle tagasivõtmine.
+const withMockups = () => ({ ...fullRows(), mockups: db.prepare('SELECT * FROM mockups ORDER BY id').all().map((r) => ({ ...r })) });
+const addMockup = (storyId) => db.prepare('INSERT INTO mockups (story_id, version, spec) VALUES (?, 1, ?)')
+  .run(storyId, JSON.stringify({ title: 'Nädal', components: [{ type: 'heading', text: 'Nädala treeningud', items: [] }] }));
+
+test('AI ühendamine järgib ettepanekut (mockup ühel lool lubatud) ja tagasivõtmine taastab mõlemad lood täpselt', async () => {
+  addMockup(ids.dupB); // mockup ainult eemaldataval lool: säilib ühendatud loos
+  db.prepare("UPDATE criteria SET ref_kind = 'element', ref_index = 0, ref_version = 1, ref_source = 'user' WHERE id = ?").run(ids.dupBCriteria[0]);
+  db.prepare("INSERT INTO story_questions (story_id, text) VALUES (?, 'Kas näidata ka saali?')").run(ids.dupB);
+  db.prepare('UPDATE projects SET focus_story_id = ?, mvp_count = 7 WHERE id = ?').run(ids.dupB, projectId);
+  const review = await runReview();
+  assert.equal(finding(review, `overlap-${ids.dupA}-${ids.dupB}`).mergeInfo.blocked, false);
+  const before = withMockups();
+
+  let res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`);
+  assert.equal(res.status, 200);
+  assert.equal(db.prepare('SELECT 1 FROM stories WHERE id = ?').get(ids.dupB), undefined);
+  const kept = db.prepare('SELECT id, ref_kind FROM criteria WHERE story_id = ? ORDER BY position').all(ids.dupA).map((r) => ({ ...r }));
+  assert.deepEqual(kept.map((c) => c.id), [...ids.dupACriteria, ids.dupBCriteria[0], ids.dupBCriteria[2]]); // kordus eemaldatud
+  assert.equal(kept[3].ref_kind, 'element'); // mockup tuli kaasa, seos säilis
+  assert.deepEqual({ ...db.prepare('SELECT want, status FROM stories WHERE id = ?').get(ids.dupA) }, { want: 'näha nädala treeningute kava', status: 'vajab_tapsustamist' });
+  assert.deepEqual({ ...db.prepare('SELECT focus_story_id AS f, mvp_count AS m FROM projects WHERE id = ?').get(projectId) }, { f: ids.dupA, m: 6 });
+  assert.equal(db.prepare('SELECT story_id FROM mockups').get().story_id, ids.dupA);
+
+  res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/undo`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(withMockups(), before); // id-d, kriteeriumid ja järjekord, seosed, küsimus, staatused, MVP, alustamise lugu, mockup
+});
+
+test('vigane ühendamisjaotus jäetakse välja; mõlema mockupi korral keeldutakse; muudetud ühendatud lugu ei võeta tagasi', async () => {
+  const [a1, a2, a3] = ids.dupACriteria;
+  const [b1, b2, b3] = ids.dupBCriteria;
+  const keep = (id) => ({ criterionId: id, action: 'keep', duplicateOf: 0 });
+  const bad = [
+    [keep(a1), keep(a2), keep(a3), keep(b1), keep(b2)], // b3 puudub
+    [keep(a1), keep(a2), keep(a3), keep(b1), keep(b2), keep(b3), keep(b3)], // b3 kaks korda
+    [keep(a1), keep(a2), keep(a3), keep(b1), keep(b3), { criterionId: b2, action: 'duplicate', duplicateOf: 9999 }], // kordab olematut
+  ];
+  for (const criteria of bad) {
+    const data = AI_REVIEW();
+    data.overlaps[0].criteria = criteria;
+    assert.equal(finding(await runReview(data), `overlap-${ids.dupA}-${ids.dupB}`).suggestion.merge, null);
+  }
+
+  addMockup(ids.dupA);
+  addMockup(ids.dupB);
+  await runReview();
+  let res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`);
+  assert.equal((await res.json()).code, 'both_mockups');
+  db.prepare('DELETE FROM mockups WHERE story_id = ?').run(ids.dupA);
+
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`)).status, 200);
+  db.prepare("UPDATE stories SET want = 'näha nädala kava' WHERE id = ?").run(ids.dupA);
+  const after = withMockups();
+  res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/undo`);
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /Ühendamist ei saa tagasi võtta.*Osalist taastamist ei tehta/);
+  assert.deepEqual(withMockups(), after);
 });

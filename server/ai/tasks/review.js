@@ -8,6 +8,7 @@ import { renderConversation, renderProjectState } from './clarify.js';
 
 export const REVIEW_CRITERIA_MAX = 6;
 export const VIEW_DECISIONS = ['not_view', 'needs_mockup'];
+export const MERGE_ACTIONS = ['keep', 'duplicate'];
 
 const reason = { type: 'string', minLength: 1, maxLength: 300 };
 const storyText = {
@@ -88,8 +89,21 @@ export const REVIEW_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['keepId', 'removeId', 'problem', 'reason', 'suggestion'],
-        properties: { keepId: { type: 'integer' }, removeId: { type: 'integer' }, problem: reason, reason, suggestion: reason },
+        required: ['keepId', 'removeId', 'problem', 'reason', 'suggestion', 'story', 'criteria'],
+        properties: {
+          keepId: { type: 'integer' }, removeId: { type: 'integer' }, problem: reason, reason, suggestion: reason, story: storyText,
+          // L29: mõlema loo iga kriteerium täpselt üks kord – jääb alles (keep) või on sisuline kordus (duplicate) säilitatavast kriteeriumist.
+          criteria: {
+            type: 'array',
+            maxItems: 40,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['criterionId', 'action', 'duplicateOf'],
+              properties: { criterionId: { type: 'integer' }, action: { type: 'string', enum: MERGE_ACTIONS }, duplicateOf: { type: 'integer' } },
+            },
+          },
+        },
       },
     },
   },
@@ -137,6 +151,9 @@ Vaata backlog üle. Midagi ei muudeta enne, kui kasutaja ettepaneku kinnitab.
 - "tooLarge": lood, mis on liiga suured (mitu rolli, mitu eraldi tegevust või palju kriteeriume). "first" ja "second" on kahe väiksema loo tegevus ja kasu sama rolliga.
   "firstCriteria" ja "secondCriteria" on selle loo kriteeriumide id-d, mis lähevad vastavalt esimesele ja teisele loole: iga selle loo kriteerium on TÄPSELT ühes loendis.
 - "overlaps": kaks lugu, mis nõuavad sisuliselt sama asja. "keepId" on lugu, mis jääb alles, "removeId" see, mis ühendatakse sellesse.
+  "story" on ühendatud loo tegevus ja kasu säilitatava loo rolliga. "criteria" sisaldab MÕLEMA loo iga kriteeriumi täpselt üks kord:
+  "action" "keep" = jääb ühendatud lukku (siis "duplicateOf" on 0); "duplicate" = sama tähendusega kordus, "duplicateOf" on selle
+  "keep" kriteeriumi id, mida see kordab. Kriteeriumide teksti ära muuda ega liida.
 - Kasuta ainult ülal toodud lugude ja kriteeriumide id-sid. Kui mõnda probleemi pole, jäta selle loend tühjaks.
 - "problem" on lühike probleemi kirjeldus, "reason" põhjendus, "suggestion" konkreetne ettepanek. "message" on üks lühike lause kasutajale.`,
     },

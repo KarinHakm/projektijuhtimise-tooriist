@@ -5,8 +5,8 @@ import { buildProjectContext } from '../ai/context.js';
 import { buildReviewMessages, REVIEW_SCHEMA } from '../ai/tasks/review.js';
 import { createProposal, findPendingProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
-import { applyFinding, codeFindings, findingIsCurrent, KIND, mergeAiReview, ReviewError, undoSplit } from '../review.js';
-import { splitInfo } from '../stories.js';
+import { applyFinding, codeFindings, findingIsCurrent, KIND, mergeAiReview, ReviewError, undoFinding } from '../review.js';
+import { mergeInfo, splitInfo } from '../stories.js';
 import { listCriteria } from '../criteria.js';
 
 // Backlog'i ülevaatus (L27). /run koostab leiud ega muuda backlog'i; /findings/:id/apply muudab ainult selle
@@ -33,6 +33,8 @@ export function reviewRouter({ db, ai }) {
           stale,
           // L28: jagamise eelvaade (mis algse looga juhtub) ja tagasivõtmise võimalus. Enne-seisu brauserisse ei saadeta.
           splitInfo: f.type === 'too_large' && f.status === 'open' && !stale ? splitInfo(db, projectId, f.storyIds[0]) : undefined,
+          // L29: ühendamise eelvaade (koht, mockup, seosed, alustamise lugu, MVP; mõlema mockup'i korral blocked).
+          mergeInfo: f.type === 'overlap' && f.status === 'open' && !stale ? mergeInfo(db, projectId, f.suggestion.keepId, f.suggestion.removeId) : undefined,
           canUndo: f.status === 'applied' && Boolean(undo),
         };
       }),
@@ -117,8 +119,8 @@ export function reviewRouter({ db, ai }) {
   // body.value (valikuline) = „Muuda“ järel kasutaja muudetud väärtus; ilma selleta rakendatakse AI ettepanek.
   router.post('/findings/:findingId/apply', (req, res) => decide(req, res, 'applied', (f) => applyFinding(db, req.projectId, f, req.body?.value)));
   router.post('/findings/:findingId/ignore', (req, res) => decide(req, res, 'ignored', () => 'Leid ignoreeriti. Backlog jäi muutmata.'));
-  // L28: ülevaatuse kaudu tehtud jagamise tagasivõtmine (undoSplit kontrollib, et kumbagi osa pole muudetud).
-  router.post('/findings/:findingId/undo', (req, res) => decide(req, res, 'undone', (f) => undoSplit(db, req.projectId, f), 'applied'));
+  // L28/L29: ülevaatuse kaudu tehtud jagamise või ühendamise tagasivõtmine (ainult muutmata seisu korral).
+  router.post('/findings/:findingId/undo', (req, res) => decide(req, res, 'undone', (f) => undoFinding(db, req.projectId, f), 'applied'));
 
   return router;
 }
