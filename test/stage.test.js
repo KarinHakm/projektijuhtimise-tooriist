@@ -22,19 +22,23 @@ test('uus projekt: ükski etapp pole läbitud, soovitatud on idee kirjeldamine; 
   assert.equal(r.lastDone, null);
   assert.deepEqual(r.next, { key: 'idee', label: 'Idee' });
   assert.deepEqual(ids(r), ['write-idea']);
-  assert.deepEqual(statuses(r), { idee: 'next', rollid: 'blocked', lood: 'blocked', prioriteedid: 'blocked', kriteeriumid: 'blocked', tapsustused: 'blocked', groomimine: 'not_built' });
+  assert.deepEqual(statuses(r), { idee: 'next', rollid: 'blocked', lood: 'blocked', prioriteedid: 'blocked', kriteeriumid: 'blocked', tapsustused: 'blocked', groomimine: 'blocked' });
   assert.equal(r.latestAiCard, null);
 });
 
-test('projekt 101: etapid 2–6 tehtud, viimati läbitud „Täpsustused“, edasi ainult valikulised sammud', () => {
+test('projekt 101: etapid 2–6 tehtud, soovitatud Groomimine (backlog’i ülevaatus); pärast ülevaatust ainult valikulised sammud', () => {
   const r = computeStage(P101);
-  assert.deepEqual(statuses(r), { idee: 'skipped', rollid: 'done', lood: 'done', prioriteedid: 'done', kriteeriumid: 'done', tapsustused: 'done', groomimine: 'not_built' });
+  assert.deepEqual(statuses(r), { idee: 'skipped', rollid: 'done', lood: 'done', prioriteedid: 'done', kriteeriumid: 'done', tapsustused: 'done', groomimine: 'next' });
   assert.deepEqual(r.lastDone, { key: 'tapsustused', label: 'Täpsustused' });
-  assert.equal(r.next, null);
-  assert.equal(r.allBuiltDone, true);
-  assert.deepEqual(ids(r), ['refine-again', 'view-backlog', 'choose-other']);
-  assert.ok(r.steps.every((s) => s.optional));
+  assert.deepEqual(r.next, { key: 'groomimine', label: 'Groomimine' });
+  assert.equal(r.allBuiltDone, false);
+  assert.deepEqual(ids(r), ['run-review']);
   assert.equal(r.latestAiCard, 'refinement');
+  const reviewed = computeStage({ ...P101, review: { open: 0 } });
+  assert.equal(statuses(reviewed).groomimine, 'done');
+  assert.equal(reviewed.allBuiltDone, true);
+  assert.deepEqual(ids(reviewed), ['refine-again', 'view-backlog', 'choose-other']);
+  assert.ok(reviewed.steps.every((s) => s.optional));
 });
 
 test('projekt 102: viimati läbitud „Lood“, soovitatud prioriteet; kriteeriumide sammu pole, etapp on eelduseta', () => {
@@ -76,7 +80,7 @@ test('kriteeriumide etapp: ootel kriteeriumid ja mockup; ilma mockup’ita krite
   assert.deepEqual(ids(computeStage(facts({ ...base, criteria: 2 }))), ['propose-mockup']);
 });
 
-test('sammu kunagi üle 4 ja kunagi eelduseta etapile; Groomimist ei soovitata ega saa valida', () => {
+test('sammu kunagi üle 4 ja kunagi eelduseta etapile; Groomimine on valitav ainult lugude olemasolul', () => {
   const bools = [false, true];
   let checked = 0;
   for (const conversation of ['empty', 'questions', 'unanswered', 'done']) for (const roles of [0, 2]) for (const stories of [0, 3])
@@ -87,8 +91,7 @@ test('sammu kunagi üle 4 ja kunagi eelduseta etapile; Groomimist ei soovitata e
         assert.ok(r.steps.length >= 1 && r.steps.length <= MAX_STEPS, JSON.stringify(r.steps));
         const byKey = Object.fromEntries(r.stages.map((s) => [s.key, s]));
         for (const s of r.steps) assert.ok(byKey[s.stage].status !== 'blocked' && byKey[s.stage].status !== 'not_built', `${s.id} eelduseta etapis ${s.stage}`);
-        assert.equal(byKey.groomimine.selectable, false);
-        assert.ok(!r.steps.some((s) => s.stage === 'groomimine'));
+        assert.equal(byKey.groomimine.selectable, stories > 0); // Groomimine on päris etapp: eeldus on lood backlog'is
         assert.equal(r.stages.filter((s) => s.status === 'next').length, r.next ? 1 : 0);
         checked++;
       }
@@ -113,7 +116,7 @@ test('kõigi sammude kaardid ja fookuse sihtmärgid on projekti vaates olemas', 
     facts({ roles: 1, stories: 2, focus: true }), facts({ roles: 1, stories: 2, focus: true, criteria: 1 }),
     facts({ roles: 1, stories: 2, focus: true, pending: { criteria: true, mockup: true } }),
     facts({ roles: 1, stories: 2, focus: true, criteria: 1, mockup: true, consistency: { warnings: 1, reviewValid: false }, pending: { refinement: true } }),
-    facts({ roles: 1, stories: 2, focus: true, criteria: 1, mockup: true })];
+    facts({ roles: 1, stories: 2, focus: true, criteria: 1, mockup: true }), { ...P101, review: { open: 0 } }, { ...P101, review: { open: 2 } }];
   for (const v of variants) for (const s of computeStage(v).steps) seen.set(s.id, s);
   const allIds = [...readFileSync('shared/stage.js', 'utf8').matchAll(/add(?:Pending)?\(\{ id: '([\w-]+)'/g)].map((m) => m[1]);
   assert.deepEqual([...seen.keys()].sort(), [...new Set(allIds)].sort()); // kõik sammud on läbi proovitud
@@ -143,4 +146,28 @@ test('tehtud etapi ootel lisaettepanek on viimane: esimene samm vastab ribal soo
     ['review-consistency', 'Vaata kooskõla hoiatused üle'],
     ['review-stories', "Vali lisalood backlog'i"],
   ]);
+});
+
+// L14: vahelejätmine ja Groomimise etapp; L13: 1–4 sammu iga nähtava AI väljundi kaardi juures.
+test('vahelejätmine märgib etapi ega ava eeldusega etappe; vahele saab jätta ainult soovitatud või aktiivse etapi', () => {
+  const P102 = facts({ roles: 2, stories: 3, latestAi: { kind: 'stories' } });
+  const before = computeStage(P102);
+  assert.deepEqual(before.stages.filter((s) => s.skippable).map((s) => s.key), ['prioriteedid']);
+  const r = computeStage({ ...P102, skipped: ['prioriteedid'] });
+  assert.equal(statuses(r).prioriteedid, 'passed');
+  assert.equal(statuses(r).kriteeriumid, 'blocked'); // lukk jääb
+  assert.equal(r.stages.find((s) => s.key === 'kriteeriumid').reason, 'Vali enne alustamise lugu. (etapp „Prioriteedid“ jäeti vahele)');
+  assert.deepEqual(r.next, { key: 'groomimine', label: 'Groomimine' });
+  assert.deepEqual(r.stages.filter((s) => s.skippable).map((s) => s.key), ['groomimine']);
+  assert.ok(computeStage({ ...P102, active: 'idee' }).stages.find((s) => s.key === 'idee').skippable === false); // lukus/tegemata reegel
+  assert.equal(computeStage({ ...P102, review: { open: 1 }, skipped: ['prioriteedid'] }).stages.find((s) => s.key === 'groomimine').status, 'next');
+});
+
+test('iga nähtava AI väljundi kaardi juures on 1–4 sammu, kaardi enda sammud eespool; backlog’i ülevaatusel plokki pole', () => {
+  const r = computeStage(facts({ roles: 1, stories: 2, focus: true, latestAi: { kind: 'criteria' }, conversationAiLast: true, pending: { criteria: true, mockup: true, roles: true } }));
+  assert.deepEqual(Object.keys(r.stepsByCard).sort(), ['conversation', 'criteria', 'roles']);
+  for (const list of Object.values(r.stepsByCard)) assert.ok(list.length >= 1 && list.length <= MAX_STEPS);
+  assert.equal(r.stepsByCard.criteria[0].card, 'criteria');
+  const reviewed = computeStage({ ...P101, review: { open: 2 } });
+  assert.equal(reviewed.stepsByCard.backlog, undefined);
 });

@@ -477,3 +477,7 @@ button.danger { background: var(--error); }
 .review-dups li { margin: 0.2rem 0; }
 .review-dups__removed { text-decoration: line-through; color: var(--muted); }
 .review-dups__kept { color: #1d6b35; }
+/* L14: etapi vahelejätmine */
+.stage--passed .stage__button { border-style: dashed; }
+.stage--passed .stage__mark { color: var(--muted); }
+.stage-summary__skip { margin-left: 0.5rem; }

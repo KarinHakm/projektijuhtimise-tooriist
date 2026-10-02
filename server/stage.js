@@ -3,6 +3,7 @@ import { computeStage } from '../shared/stage.js';
 import { consistencyFor, latestMockup } from './criteria.js';
 import { findPendingProposal } from './proposals.js';
 import { getFocusStoryId, storyInProject } from './priority.js';
+import { findingIsCurrent, KIND as REVIEW_KIND } from './review.js';
 
 const count = (db, sql, ...args) => db.prepare(sql).get(...args).n;
 
@@ -21,6 +22,21 @@ function latestAiOutput(db, projectId) {
       UNION ALL
       SELECT kind, created_at AS at, 0 AS ord FROM ai_proposals WHERE project_id = ? AND kind != 'review'
     ) ORDER BY at DESC, ord DESC LIMIT 1`).get(projectId, projectId) ?? null;
+}
+
+// Kasutaja vahele jäetud etapid ja aktiivne etapp (L14, migratsioon v11).
+export function stageState(db, projectId) {
+  const row = db.prepare('SELECT skipped_stages AS skipped, active_stage AS active FROM projects WHERE id = ?').get(projectId);
+  let skipped = [];
+  try { skipped = JSON.parse(row?.skipped ?? '[]'); } catch { skipped = []; }
+  return { skipped: Array.isArray(skipped) ? skipped : [], active: row?.active ?? null };
+}
+
+// Groomimise etapi seis backlog'i ülevaatuse (L27) andmetest: avatud ja aegumata leidude arv. Ainult lugemine.
+function reviewState(db, projectId) {
+  const p = findPendingProposal(db, projectId, REVIEW_KIND);
+  if (!p) return null;
+  return { open: p.payload.findings.filter((f) => f.status === 'open' && findingIsCurrent(db, projectId, f)).length };
 }
 
 export function stageFacts(db, projectId) {
@@ -58,6 +74,9 @@ export function stageFacts(db, projectId) {
     },
     consistency,
     latestAi: latestAiOutput(db, projectId),
+    ...stageState(db, projectId),
+    review: reviewState(db, projectId),
+    conversationAiLast: db.prepare('SELECT role FROM conversation_messages WHERE project_id = ? ORDER BY id DESC LIMIT 1').get(projectId)?.role === 'assistant',
   };
 }
 

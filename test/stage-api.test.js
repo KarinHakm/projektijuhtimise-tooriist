@@ -91,8 +91,8 @@ test('alustamise loo järgsed etapid; teise loo ootel ettepanek ei loe', async (
   const applied = createProposal(db, { projectId, kind: 'refinement', payload: { storyId: target } });
   db.prepare("UPDATE ai_proposals SET status = 'applied' WHERE id = ?").run(applied.id);
   r = (await stage()).body;
-  assert.deepEqual([r.lastDone.key, r.next, r.allBuiltDone, r.latestAiCard], ['tapsustused', null, true, 'refinement']);
-  assert.equal(r.stages.find((x) => x.key === 'groomimine').status, 'not_built');
+  assert.deepEqual([r.lastDone.key, r.next.key, r.allBuiltDone, r.latestAiCard], ['tapsustused', 'groomimine', false, 'refinement']);
+  assert.equal(r.stages.find((x) => x.key === 'groomimine').status, 'next');
   assert.equal(aiCalls, 0);
 });
 
@@ -105,7 +105,40 @@ test('projektide loendis on iga projekti etapi kokkuvõte (ainult lugemine)', as
     stages: list[0].progress.stages,
     lastDone: 'Lood', next: 'Prioriteedid', nextStep: 'Küsi AI-lt prioriteedisoovitus', allBuiltDone: false, storyCount: 1,
   });
-  assert.deepEqual(list[0].progress.stages.map((x) => x.status), ['skipped', 'done', 'done', 'next', 'blocked', 'blocked', 'not_built']);
+  assert.deepEqual(list[0].progress.stages.map((x) => x.status), ['skipped', 'done', 'done', 'next', 'blocked', 'blocked', 'available']);
   assert.deepEqual(dump(), before);
+  assert.equal(aiCalls, 0);
+});
+
+// L14: vahelejätmine ja aktiivne etapp on püsivad, ei muuda backlog'i ega kutsu AI-d.
+test('„Jäta vahele“ ja tagasiminek püsivad uue rakenduse eksemplariga; lukus või tegemata-mitte-soovitatud etappi vahele ei jäeta', async () => {
+  replaceRoles(db, projectId, [{ name: 'Külastaja', source: 'ai' }]);
+  appendStories(db, projectId, [s('esitada taotluse')], null);
+  const post = (path, key) => fetch(`${base}/${projectId}/stage/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key }) });
+  const backlog = () => Object.fromEntries(Object.entries(dump()).filter(([t]) => t !== 'projects'));
+  const before = backlog();
+
+  assert.equal((await post('skip', 'kriteeriumid')).status, 409); // lukus
+  assert.equal((await post('skip', 'groomimine')).status, 409); // tegemata, kuid mitte soovitatud ega aktiivne
+  assert.equal((await post('skip', 'lood')).status, 409); // tehtud
+  assert.equal((await post('skip', 'tundmatu')).status, 400);
+  let res = await post('skip', 'prioriteedid');
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).next.key, 'groomimine');
+
+  // Sama andmebaas, uus rakendus (nagu serveri taaskäivitus).
+  const again = createApp({ db, ai: createDisabledAi() }).listen(0);
+  await new Promise((r) => again.once('listening', r));
+  const r = await (await fetch(`http://127.0.0.1:${again.address().port}/api/projects/${projectId}/stage`)).json();
+  again.closeAllConnections();
+  await new Promise((done) => again.close(done));
+  assert.deepEqual(r.skipped, ['prioriteedid']);
+  assert.equal(r.stages.find((x) => x.key === 'kriteeriumid').status, 'blocked'); // eeldust ei leevendata
+
+  assert.equal((await post('active', 'kriteeriumid')).status, 409);
+  res = await post('active', 'prioriteedid'); // tagasiminek eemaldab vahelejätmise
+  const body = await res.json();
+  assert.deepEqual([body.active, body.skipped, body.next.key], ['prioriteedid', [], 'prioriteedid']);
+  assert.deepEqual(backlog(), before);
   assert.equal(aiCalls, 0);
 });

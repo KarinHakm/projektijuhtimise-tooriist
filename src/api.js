@@ -104,6 +104,9 @@ export const moveStory = (projectId, storyId, direction) =>
   postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/move`, { direction });
 
 export const getStage = (projectId) => request(`/projects/${encodeURIComponent(projectId)}/stage`);
+// L14: etapi vahelejätmine ja aktiivne etapp (ka tagasiminek). Ei muuda backlog'i ega kutsu AI-d.
+export const skipStage = (projectId, key) => postJson(`/projects/${encodeURIComponent(projectId)}/stage/skip`, { key });
+export const setActiveStage = (projectId, key) => postJson(`/projects/${encodeURIComponent(projectId)}/stage/active`, { key });
 
 // L19/L20: loo staatus ja avatud küsimused.
 export const setStoryStatus = (projectId, storyId, status) =>

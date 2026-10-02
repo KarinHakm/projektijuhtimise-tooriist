@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openDb, SCHEMA_VERSION } from '../server/db.js';
+import { DatabaseSync } from 'node:sqlite';
+import { MIGRATIONS, openDb, SCHEMA_VERSION } from '../server/db.js';
 
 // Iga test saab oma ajutise kausta; arendaja data/app.db faili ei puututa.
 let dir;
@@ -22,7 +23,7 @@ test('andmebaasis on projects tabel oodatud veergudega', () => {
   const db = openDb(join(dir, 'app.db'));
   const cols = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
   db.close();
-  assert.deepEqual(cols, ['id', 'name', 'description', 'stage', 'created_at', 'updated_at', 'focus_story_id', 'mvp_count']);
+  assert.deepEqual(cols, ['id', 'name', 'description', 'stage', 'created_at', 'updated_at', 'focus_story_id', 'mvp_count', 'skipped_stages', 'active_stage']);
 });
 
 test('lisatud projekt on alles pärast andmebaasi sulgemist ja uuesti avamist', () => {
@@ -58,4 +59,25 @@ test('andmebaas ei luba tühja nime ega ainult tühikutest nime', () => {
   const n = db.prepare('SELECT count(*) AS n FROM projects').get().n;
   db.close();
   assert.equal(n, 0);
+});
+
+// data/app.db on skeemiversioonil 5: esimesel avamisel rakenduvad migratsioonid v6–v11 korraga ja andmed jäävad alles.
+test('versioonil 5 andmebaas viiakse versioonile 11; projekt ja lood jäävad, uued etapi väljad saavad vaikeväärtused', () => {
+  const path = join(dir, 'v5.db');
+  const old = new DatabaseSync(path);
+  for (const m of MIGRATIONS.slice(0, 5)) old.exec(m);
+  old.exec('PRAGMA user_version = 5');
+  const pid = old.prepare("INSERT INTO projects (name) VALUES ('Vana projekt') RETURNING id").get().id;
+  old.prepare("INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, origin) VALUES (?, 1, 'Külastaja', 'Külastajana', 'näha hindu', 'saaksin valida', 'S', 'ai')").run(pid);
+  old.close();
+
+  const db = openDb(path);
+  const version = db.prepare('PRAGMA user_version').get().user_version;
+  const project = { ...db.prepare('SELECT name, skipped_stages, active_stage, mvp_count FROM projects WHERE id = ?').get(pid) };
+  const stories = db.prepare('SELECT want, status FROM stories').all().map((r) => ({ ...r }));
+  db.close();
+  assert.equal(SCHEMA_VERSION, 11);
+  assert.equal(version, 11);
+  assert.deepEqual(project, { name: 'Vana projekt', skipped_stages: '[]', active_stage: null, mvp_count: null });
+  assert.deepEqual(stories, [{ want: 'näha hindu', status: 'idee' }]);
 });

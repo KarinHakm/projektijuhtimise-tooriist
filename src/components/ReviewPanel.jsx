@@ -250,7 +250,7 @@ export function ReviewView({ review, stories, running = false, busy = false, err
             {review.message && <> {review.message}</>}
           </p>
           {review.aiNote && <p className="muted">{review.aiNote}</p>}
-          <ul className="review__list">
+          <ul className="review__list" data-step="review-findings">
             {[...open, ...decided].map((f) => (
               <FindingCard key={f.id} f={f} stories={stories} number={number} busy={busy || running} editing={editingId === f.id}
                 error={findingError?.id === f.id ? findingError : null} actions={actions} />

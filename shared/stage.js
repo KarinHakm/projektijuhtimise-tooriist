@@ -37,15 +37,22 @@ const STAGES = [
   { key: 'prioriteedid', label: 'Prioriteedid', card: 'priority' },
   { key: 'kriteeriumid', label: 'Kriteeriumid ja mockup', card: 'criteria' },
   { key: 'tapsustused', label: 'Täpsustused', card: 'refinement', optional: true },
-  { key: 'groomimine', label: 'Groomimine', card: null, notBuilt: true },
+  { key: 'groomimine', label: 'Groomimine', card: 'backlog' },
 ];
+export const STAGE_KEYS = STAGES.map((s) => s.key);
+
+// Etapp, mille andmeid järgmine etapp eeldab – lukustatud etapi põhjuse juures öeldakse, kui see jäeti vahele.
+const PREREQUISITE = { rollid: 'idee', lood: 'rollid', prioriteedid: 'lood', kriteeriumid: 'prioriteedid', tapsustused: 'kriteeriumid', groomimine: 'lood' };
 
 // facts = {
 //   conversation: 'empty' | 'questions' | 'unanswered' | 'done', roles, stories (arvud), focus (kas alustamise lugu on valitud),
 //   criteria (arv), mockup (bool), refinements (rakendatud täpsustuste arv) – kolm viimast alustamise loo kohta,
 //   pending: { roles, stories, priority, criteria, mockup, refinement } (bool; kolm viimast alustamise loo kohta),
-//   consistency: { warnings, reviewValid } | null, latestAi: { kind, at } | null
+//   consistency: { warnings, reviewValid } | null, latestAi: { kind, at } | null,
+//   skipped: [etapi võti] (kasutaja vahele jäetud), active: etapi võti | null (kus kasutaja viimati oli),
+//   review: { open } | null (backlog'i ülevaatus ja selle avatud, aegumata leidude arv), conversationAiLast (bool)
 // }
+// Vahelejätmine (L14) ainult märgib etapi; eeldusi ega lukke see ei leevenda.
 export function computeStage(facts) {
   const f = { pending: {}, ...facts };
   const p = f.pending;
@@ -56,8 +63,9 @@ export function computeStage(facts) {
     prioriteedid: f.focus,
     kriteeriumid: f.focus && f.criteria > 0 && f.mockup,
     tapsustused: f.focus && f.refinements > 0,
-    groomimine: false,
+    groomimine: f.stories > 0 && Boolean(f.review) && f.review.open === 0,
   };
+  const skipped = new Set((f.skipped ?? []).filter((k) => !done[k]));
   // Eeldus = see, mida server selle etapi tegevuseks nõuab (vt marsruutide 409 vastuseid).
   const blockedReason = {
     idee: null,
@@ -66,33 +74,40 @@ export function computeStage(facts) {
     prioriteedid: f.stories > 0 ? null : "Lisa enne lood backlog'i.",
     kriteeriumid: f.focus ? null : 'Vali enne alustamise lugu.',
     tapsustused: done.kriteeriumid ? null : 'Kinnita enne alustamise loole kriteeriumid ja mockup.',
-    groomimine: 'Pole veel tehtud – seda funktsiooni rakenduses pole.',
+    groomimine: f.stories > 0 ? null : "Lisa enne lood backlog'i.",
   };
+  for (const [key, before] of Object.entries(PREREQUISITE)) {
+    if (blockedReason[key] && skipped.has(before)) blockedReason[key] += ` (etapp „${STAGES.find((x) => x.key === before).label}“ jäeti vahele)`;
+  }
 
   const lastDoneIndex = STAGES.findLastIndex((s) => done[s.key]);
-  const nextIndex = STAGES.findIndex((s, i) => i > lastDoneIndex && !done[s.key] && !s.notBuilt && !blockedReason[s.key]);
+  const nextIndex = STAGES.findIndex((s, i) => i > lastDoneIndex && !done[s.key] && !skipped.has(s.key) && !blockedReason[s.key]);
   const next = nextIndex >= 0 ? STAGES[nextIndex] : null;
 
   const stages = STAGES.map((s, i) => {
     let status;
-    if (s.notBuilt) status = 'not_built';
-    else if (done[s.key]) status = 'done';
+    if (done[s.key]) status = 'done';
+    else if (skipped.has(s.key)) status = 'passed';
     else if (i < lastDoneIndex) status = 'skipped';
     else if (s === next) status = 'next';
     else if (blockedReason[s.key]) status = 'blocked';
     else status = 'available';
-    const reason = status === 'blocked' || status === 'not_built' ? blockedReason[s.key]
-      : status === 'skipped' ? 'Selle etapi andmeid pole, kuid järgmised etapid on tehtud.' : null;
+    const reason = status === 'blocked' ? blockedReason[s.key]
+      : status === 'skipped' ? 'Selle etapi andmeid pole, kuid järgmised etapid on tehtud.'
+        : status === 'passed' ? `Jäeti vahele – klõpsa, et selle juurde tagasi minna.${blockedReason[s.key] ? ` Eeldus puudub: ${blockedReason[s.key]}` : ''}` : null;
     // Riba kaudu saab avada tehtud, vahele jäetud või kättesaadava etapi kaardi; eelduseta ja tegemata etappi mitte.
-    const selectable = status !== 'blocked' && status !== 'not_built';
-    return { key: s.key, label: s.label, card: s.card, status, reason, selectable, optional: Boolean(s.optional) };
+    const selectable = status !== 'blocked' && !(status === 'passed' && blockedReason[s.key]);
+    // Vahele saab jätta ainult aktiivse või soovitatud, veel tegemata ja mitte-lukus etapi.
+    const skippable = (status === 'next' || status === 'available') && (s === next || s.key === f.active);
+    return { key: s.key, label: s.label, card: s.card, status, reason, selectable, skippable, optional: Boolean(s.optional) };
   });
 
-  const steps = [];
+  // Kõik sobivad sammud tähtsuse järjekorras; üldloendis on neist esimesed MAX_STEPS, kaartide plokkides kaardi omad eespool.
+  const all = [];
   // Eelduseta etapi sammu ei pakuta kunagi (ka siis, kui andmetes on selle etapi ootel ettepanek).
   const add = (step) => {
     if (blockedReason[step.stage] && !done[step.stage]) return;
-    if (steps.length < MAX_STEPS && !steps.some((x) => x.id === step.id)) steps.push({ ai: false, optional: false, ...step });
+    if (!all.some((x) => x.id === step.id)) all.push({ ai: false, optional: false, ...step });
   };
 
   // 1. Pooleli otsused (AI ettepanek ootab kasutajat) etappides, mis pole veel tehtud, etappide järjekorras.
@@ -107,6 +122,7 @@ export function computeStage(facts) {
   if (f.focus && p.criteria) addPending({ id: 'review-criteria', stage: 'kriteeriumid', label: 'Vaata kriteeriumid üle', card: 'criteria', focus: '.criteria-proposal' });
   if (f.focus && p.mockup) addPending({ id: 'review-mockup', stage: 'kriteeriumid', label: 'Kinnita või lükka mockup tagasi', card: 'criteria', focus: '.mockup-proposal' });
   if (f.focus && p.refinement) addPending({ id: 'review-refinement', stage: 'tapsustused', label: 'Vaata täpsustuse ettepanek üle', card: 'refinement', focus: '.refine-proposal' });
+  if (f.review?.open > 0) add({ id: 'review-findings', stage: 'groomimine', label: 'Vaata ülevaatuse leiud üle', card: 'backlog', focus: '[data-step="review-findings"]' });
 
   // 2. Kooskõla hoiatused, mida kasutaja pole selles seisus üle vaadanud.
   if (done.kriteeriumid && f.consistency?.warnings > 0 && !f.consistency.reviewValid) {
@@ -130,25 +146,46 @@ export function computeStage(facts) {
     add({ id: 'refine', stage: 'tapsustused', label: 'Sisesta kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
   }
 
-  // 4. Kõik rakenduses olemasolevad etapid on tehtud: ainult valikulised sammud.
-  if (!next && done.tapsustused) {
-    if (!p.refinement) add({ id: 'refine-again', stage: 'tapsustused', label: 'Sisesta uus kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
-    add({ id: 'view-backlog', stage: 'tapsustused', label: "Vaata backlog'i üle", card: 'backlog', focus: '[data-step="review-run"]', optional: true });
+  if (nextKey === 'groomimine' && !(f.review?.open > 0)) {
+    add({ id: 'run-review', stage: 'groomimine', label: 'Vaata backlog üle', card: 'backlog', focus: '[data-step="review-run"]', ai: true });
+  }
+
+  // 4. Soovitatud etappi pole ja töövoog on läbitud (Groomimine või vähemalt Täpsustused tehtud): ainult valikulised sammud.
+  if (!next && (done.groomimine || done.tapsustused)) {
+    if (done.tapsustused && !p.refinement) add({ id: 'refine-again', stage: 'tapsustused', label: 'Sisesta uus kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
+    if (done.groomimine) add({ id: 'view-backlog', stage: 'groomimine', label: "Vaata backlog'i uuesti üle", card: 'backlog', focus: '[data-step="review-run"]', ai: true, optional: true });
     if (f.stories > 1 && !p.priority) add({ id: 'choose-other', stage: 'prioriteedid', label: 'Vali teine alustamise lugu', card: 'priority', focus: '[data-step="priority-choose"]', optional: true });
   }
 
   // 5. Juba tehtud etapi ootel lisaettepanekud.
   for (const step of doneStagePending) add(step);
 
+  const steps = all.slice(0, MAX_STEPS);
   const lastDone = lastDoneIndex >= 0 ? { key: STAGES[lastDoneIndex].key, label: STAGES[lastDoneIndex].label } : null;
-  // Kõik rakenduses olemasolevad etapid on läbitud (Groomimist pole veel tehtud).
-  const allBuiltDone = !next && done.tapsustused;
+  // Kõik etapid on läbitud (vahele jäetud etapid loevad läbituks).
+  const allBuiltDone = !next && done.groomimine;
+
+  // L13: iga nähtava AI väljundi kaardi lõpus 1–4 sammu – kõigepealt selle kaardi omad, siis üldised.
+  // Nähtav AI väljund: uusim AI väljund, iga ootel AI ettepanek ja vestluse viimane AI sõnum.
+  // Backlog'i ülevaatuse kaardil plokki ei ole (seal on leidude Rakenda/Muuda/Ignoreeri).
+  const aiCards = new Set();
+  if (f.latestAi && AI_OUTPUT_CARD[f.latestAi.kind]) aiCards.add(AI_OUTPUT_CARD[f.latestAi.kind]);
+  if (f.conversationAiLast || !f.latestAi) aiCards.add('conversation');
+  for (const [kind, on] of Object.entries(p)) if (on && AI_OUTPUT_CARD[kind]) aiCards.add(AI_OUTPUT_CARD[kind]);
+  aiCards.delete('backlog');
+  const stepsByCard = Object.fromEntries([...aiCards].map((card) => {
+    const own = all.filter((x) => x.card === card);
+    return [card, [...own, ...all.filter((x) => x.card !== card)].slice(0, MAX_STEPS)];
+  }).filter(([, list]) => list.length > 0));
   return {
     stages,
     lastDone,
     next: next ? { key: next.key, label: next.label } : null,
     allBuiltDone,
     steps,
+    stepsByCard,
+    active: f.active && STAGE_KEYS.includes(f.active) ? f.active : null,
+    skipped: [...skipped],
     storyCount: f.stories,
     latestAiCard: f.latestAi ? AI_OUTPUT_CARD[f.latestAi.kind] ?? null : null,
   };

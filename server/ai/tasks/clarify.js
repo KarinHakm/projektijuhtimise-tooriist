@@ -69,8 +69,9 @@ export function renderConversation(conversation) {
 // Projekti hetkeseis (etapp ja backlog'i lood koos kriteeriumide, staatuse ja avatud küsimustega).
 // Lisatakse <andmed> ploki sisse, sest lugude ja kriteeriumide tekstid on kasutaja sisestatud.
 export function renderProjectState(context) {
-  const { lastDone, next, nextStep } = context.project.stage;
+  const { lastDone, next, nextStep, skipped = [] } = context.project.stage;
   const lines = [`Projekti etapp: viimati tehtud ${lastDone ?? '(veel mitte midagi)'}; järgmine ${next ?? '(puudub)'}${nextStep ? `, soovitatud samm: ${nextStep}` : ''}.`];
+  if (skipped.length) lines.push(`Kasutaja jättis vahele etapid: ${skipped.join(', ')}.`);
   if (!context.stories.length) return lines.join('\n');
   lines.push("Backlog'i lood:");
   for (const s of context.stories) {

@@ -106,14 +106,14 @@ test('projekti kustutamisel kustuvad ka selle ettepanekud', () => {
 
 test('AI kontekst loetakse andmebaasi hetkeseisust', () => {
   assert.deepEqual(buildProjectContext(db, projectId), {
-    project: { name: 'Spordiklubi', description: 'algne', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee' } },
+    project: { name: 'Spordiklubi', description: 'algne', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee', skipped: [] } },
     conversation: [],
     roles: [],
     stories: [],
   });
   // Käsitsi muudatus peab kohe järgmisesse konteksti jõudma (vahemälu pole).
   db.prepare("UPDATE projects SET name = 'Spordiklubi veeb', description = 'käsitsi muudetud' WHERE id = ?").run(projectId);
-  assert.deepEqual(buildProjectContext(db, projectId).project, { name: 'Spordiklubi veeb', description: 'käsitsi muudetud', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee' } });
+  assert.deepEqual(buildProjectContext(db, projectId).project, { name: 'Spordiklubi veeb', description: 'käsitsi muudetud', stage: { lastDone: null, next: 'Idee', nextStep: 'Kirjelda projekti idee', skipped: [] } });
 });
 
 function addStory(status = 'idee') {

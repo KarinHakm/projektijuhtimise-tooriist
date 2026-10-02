@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getProject, getStage } from '../api.js';
+import { getProject, getStage, setActiveStage, skipStage } from '../api.js';
 import { CARDS } from '../../shared/stage.js';
 import { goToStep } from '../stage/navigate.js';
 import { splitDemoName } from '../demo/name.js';
@@ -56,10 +56,40 @@ export default function ProjectView() {
     return () => { observer.disconnect(); document.documentElement.style.removeProperty('--project-header-h'); };
   }, [project]);
 
-  // "Mida teeme edasi?" ainult uusima AI väljundi kaardi lõpus; vanemate AI vastuste juurde nuppe ei lisata.
-  // Kui AI väljundit veel pole (uus projekt), on plokk vestluse kaardil.
-  const stepsCard = stage ? stage.latestAiCard ?? 'conversation' : null;
-  const stepsAfter = (card) => stepsCard === card && <NextSteps steps={stage.steps} onGo={goToStep} />;
+  // L13: "Mida teeme edasi?" (1–4 sammu) iga nähtava AI väljundi kaardi lõpus – server annab sammud kaardi kaupa
+  // (stepsByCard). Vanade, juba vastatud vestlussõnumite ega backlog'i ülevaatuse juures plokki ei ole.
+  const stepsAfter = (card) => stage?.stepsByCard?.[card] && <NextSteps steps={stage.stepsByCard[card]} onGo={goToStep} />;
+
+  // L14: projekti avamisel keritakse aktiivse etapi kaardi juurde (üks kord avamise kohta). Kaardid laadivad oma sisu
+  // alles pärast seda ja lükkavad sihtkaarti allapoole, seega lehe kõrguse muutumisel keritakse kuni ~2 s uuesti.
+  // Järelkerimine lõpeb kohe, kui kasutaja ise kerib, klõpsab või kasutab klaviatuuri (lehe enda kerimist ei arvestata).
+  const openedAt = useRef(null);
+  useEffect(() => {
+    if (!stage || !project || openedAt.current === id) return undefined;
+    openedAt.current = id;
+    const active = stage.stages.find((s) => s.key === stage.active);
+    const card = active?.card && document.getElementById(CARDS[active.card]);
+    if (!card) return undefined;
+    requestAnimationFrame(() => goToStep({ card: active.card, focus: null }));
+    const userEvents = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+    const observer = new ResizeObserver(() => card.scrollIntoView({ block: 'start' }));
+    const stop = () => {
+      observer.disconnect();
+      clearTimeout(timer);
+      userEvents.forEach((e) => window.removeEventListener(e, stop, true));
+    };
+    const timer = setTimeout(stop, 2000);
+    userEvents.forEach((e) => window.addEventListener(e, stop, { capture: true, passive: true }));
+    observer.observe(document.body);
+    return stop;
+  }, [stage, project, id]);
+  const [stageError, setStageError] = useState('');
+  const stageAction = (call) => call().then(setStage).then(() => setStageError('')).catch((e) => setStageError(e.message));
+  const onActivate = (s) => {
+    goToStep({ card: s.card, focus: null });
+    stageAction(() => setActiveStage(id, s.key));
+  };
+  const onSkip = (s) => stageAction(() => skipStage(id, s.key));
 
   return (
     <main>
@@ -70,7 +100,7 @@ export default function ProjectView() {
         <>
           <div ref={headerRef} className="project-header-wrap">
             {stage
-              ? <StagePanel {...splitDemoName(project.name)} stage={stage} onGo={goToStep} />
+              ? <StagePanel {...splitDemoName(project.name)} stage={stage} onGo={goToStep} onActivate={onActivate} onSkip={onSkip} error={stageError} />
               : <h2 className="project-header__title">{splitDemoName(project.name).name}{splitDemoName(project.name).demo && <DemoTag />}</h2>}
           </div>
           {project.description ? <p className="project-description">{project.description}</p> : <p className="muted project-description">Kirjeldus puudub.</p>}

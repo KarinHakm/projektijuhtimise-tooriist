@@ -3,7 +3,7 @@ import { listRoles } from '../roles.js';
 import { listStories } from '../stories.js';
 import { listCriteria, latestMockup } from '../criteria.js';
 import { withReadiness } from '../readiness.js';
-import { progressFor } from '../stage.js';
+import { progressFor, stageFor } from '../stage.js';
 import { getFocusStoryId } from '../priority.js';
 
 // AI kontekst koostatakse iga päringu jaoks andmebaasi hetkeseisust, mitte brauserist saadetud
@@ -14,12 +14,14 @@ export function buildProjectContext(db, projectId) {
   const project = db.prepare('SELECT id, name, description FROM projects WHERE id = ?').get(projectId);
   if (!project) return null;
   const progress = progressFor(db, projectId);
+  const stages = stageFor(db, projectId).stages;
+  const labelsOf = (status) => stages.filter((x) => x.status === status).map((x) => x.label);
   const focusId = getFocusStoryId(db, projectId);
   return {
     project: {
       name: project.name,
       description: project.description,
-      stage: { lastDone: progress.lastDone, next: progress.next, nextStep: progress.nextStep },
+      stage: { lastDone: progress.lastDone, next: progress.next, nextStep: progress.nextStep, skipped: labelsOf('passed') },
     },
     conversation: listMessages(db, projectId).map(({ role, kind, content }) => ({ role, kind, content })),
     roles: listRoles(db, projectId).map((r) => r.name),

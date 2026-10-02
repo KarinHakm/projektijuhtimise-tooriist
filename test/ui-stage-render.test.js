@@ -28,15 +28,19 @@ test('päis: projekti nimi, link „Backlog (n)“ ja seitse etappi; iga etapi o
   assert.match(stageItem(html, 2), /class="stage stage--done".*<span class="stage__mark" aria-hidden="true">✓<\/span>.*Rollid.*<span class="visually-hidden"> – tehtud ✓<\/span>/);
 });
 
-test('projekt 101: „Viimati läbitud etapp: Täpsustused“ ja valikuline järgmine samm; Groomimine hall, mitte nupp', () => {
+test('projekt 101: „Viimati läbitud etapp: Täpsustused“, soovitatud Groomimine (backlog’i ülevaatus) nupuna', () => {
   const html = render(P101);
   assert.match(html, /<strong>Viimati läbitud etapp:<\/strong> Täpsustused/);
-  assert.match(html, /<strong>Soovitatud järgmine samm:<\/strong> <button type="button" class="secondary stage-summary__go">Sisesta uus kliendi täpsustus \(valikuline\) \(AI\)<\/button><span class="muted"> – etapp „Täpsustused“<\/span>/);
-  assert.match(html, /Kõik rakenduses olemasolevad etapid on läbitud; edasised sammud on valikulised\./);
-  const groom = stageItem(html, 7);
-  assert.match(groom, /<span class="stage__button stage__button--off" title="7\. Groomimine: pole veel tehtud – Pole veel tehtud – seda funktsiooni rakenduses pole\." aria-disabled="true">/);
-  assert.doesNotMatch(groom, /<button/);
+  assert.match(html, /<strong>Soovitatud järgmine samm:<\/strong> <button type="button" class="secondary stage-summary__go">Vaata backlog üle \(AI\)<\/button><span class="muted"> – etapp „Groomimine“<\/span>/);
+  assert.match(stageItem(html, 7), /<li class="stage stage--next" aria-current="step"><button/);
   assert.match(stageItem(html, 1), /<button[^>]*>.*Idee.* – andmed puuduvad/);
+});
+
+test('L14: „Jäta vahele“ soovitatud etapile ja vahele jäetud etapp ribal märgiga »', () => {
+  const html = renderToStaticMarkup(createElement(StagePanel, { name: 'P', stage: P101, onGo: () => {}, onSkip: () => {} })).replace(/<!-- -->/g, '');
+  assert.match(html, /<button type="button" class="link-button stage-summary__skip">Jäta vahele etapp „Groomimine“<\/button>/);
+  const passed = computeStage(facts({ roles: 2, stories: 3, skipped: ['prioriteedid'] }));
+  assert.match(stageItem(render(passed), 4), /<li class="stage stage--passed"><button[^>]*>.*».*Prioriteedid.* – jäeti vahele/);
 });
 
 test('projekt 102: soovitatud „Prioriteedid“; kriteeriumide etapp hall, põhjus lahti voldiva rea all', () => {
@@ -50,21 +54,21 @@ test('projekt 102: soovitatud „Prioriteedid“; kriteeriumide etapp hall, põh
 });
 
 test('vahelejätmise piirang on päises (lahti voldiva rea all) olemas', () => {
-  assert.match(render(P102), /<details class="stage-details">.*Vahelejätmine: valikulise etapi „Täpsustused“ võib vahele jätta\. Teised etapid sõltuvad eelmistest/);
+  assert.match(render(P102), /<details class="stage-details">.*Vahelejätmine: soovitatud või aktiivse etapi saab „Jäta vahele“ nupuga vahele jätta\. See ei ava järgmisi etappe, mille\s+eeldus puudub/);
 });
 
 test('„Mida teeme edasi?“: 1–4 nuppu, AI tegevusel märge ja selgitus; tühja loendiga plokki pole', () => {
-  const html = renderToStaticMarkup(createElement(NextSteps, { steps: P101.steps, onGo: () => {} }));
+  const reviewed = computeStage(facts({ roles: 2, stories: 4, focus: true, criteria: 3, mockup: true, refinements: 3, consistency: { warnings: 0, reviewValid: true }, latestAi: { kind: 'refinement' }, review: { open: 0 } }));
+  const html = renderToStaticMarkup(createElement(NextSteps, { steps: reviewed.steps, onGo: () => {} }));
   assert.match(html, /<nav class="next-steps" aria-label="Mida teeme edasi\?"><p class="next-steps__title">Mida teeme edasi\?<\/p>/);
-  assert.deepEqual(buttons(html), ['Sisesta uus kliendi täpsustus (valikuline) (AI)', "Vaata backlog'i üle (valikuline)", 'Vali teine alustamise lugu (valikuline)']);
+  assert.deepEqual(buttons(html), ['Sisesta uus kliendi täpsustus (valikuline) (AI)', "Vaata backlog'i uuesti üle (valikuline) (AI)", 'Vali teine alustamise lugu (valikuline)']);
   assert.match(html, /AI-kutse käivitub alles sealse nupuga/);
   assert.equal(renderToStaticMarkup(createElement(NextSteps, { steps: [], onGo: () => {} })), '');
 });
 
-test('projekti vaates on plokk ainult uusima AI väljundi kaardi lõpus (iga AI kaardi jaoks üks koht, backlog’is mitte)', () => {
+test('projekti vaates on plokk nähtavate AI väljundi kaartide lõpus (iga AI kaardi jaoks üks koht, backlog’is mitte)', () => {
   const view = readFileSync('src/pages/ProjectView.jsx', 'utf8');
-  assert.match(view, /const stepsCard = stage \? stage\.latestAiCard \?\? 'conversation' : null;/);
-  assert.match(view, /const stepsAfter = \(card\) => stepsCard === card && <NextSteps/);
+  assert.match(view, /const stepsAfter = \(card\) => stage\?\.stepsByCard\?\.\[card\] && <NextSteps steps=\{stage\.stepsByCard\[card\]\}/);
   for (const card of new Set(Object.values(AI_OUTPUT_CARD))) {
     assert.equal(view.split(`{stepsAfter('${card}')}`).length - 1, 1, card);
     // plokk on sama kaardi sees, kaardi viimase elemendina

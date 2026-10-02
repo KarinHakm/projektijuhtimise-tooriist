@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 // Skeemi muudatused järjekorras. Uus muudatus lisatakse loendi lõppu, olemasolevaid ei muudeta.
 // Andmebaasi versioon hoitakse SQLite'i PRAGMA user_version väärtuses.
-const MIGRATIONS = [
+export const MIGRATIONS = [
   `CREATE TABLE projects (
      id          INTEGER PRIMARY KEY AUTOINCREMENT,
      name        TEXT    NOT NULL CHECK (length(trim(name)) > 0),
@@ -105,6 +105,10 @@ const MIGRATIONS = [
    CREATE INDEX story_questions_story ON story_questions(story_id, id)`,
   // MVP joon (L17): mitu backlog'i lugu on joonest ülalpool (NULL = joont pole). Joon on seotud kohaga, mitte looga.
   `ALTER TABLE projects ADD COLUMN mvp_count INTEGER CHECK (mvp_count IS NULL OR mvp_count >= 0)`,
+  // Juhitud protsessi etapp (L13, L14): kasutaja vahele jäetud etapid (JSON-loend etappide võtmetest) ja aktiivne etapp,
+  // kus kasutaja viimati oli (NULL = soovitatud etapp). Vana veergu stage ei kasutata.
+  `ALTER TABLE projects ADD COLUMN skipped_stages TEXT NOT NULL DEFAULT '[]';
+   ALTER TABLE projects ADD COLUMN active_stage TEXT`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
