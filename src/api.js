@@ -133,3 +133,4 @@ export const runReview = (projectId) => postJson(`${reviewPath(projectId)}/run`,
 export const applyFinding = (projectId, findingId, value) =>
   postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/apply`, value === undefined ? {} : { value });
 export const ignoreFinding = (projectId, findingId) => postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/ignore`, {});
+export const undoFinding = (projectId, findingId) => postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/undo`, {});

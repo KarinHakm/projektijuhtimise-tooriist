@@ -37,7 +37,8 @@ test('kriteeriumide ja küsimuste jaotus: igaühe juures Osa 1 / Osa 2 (vaikimis
 
 test('eelvaade: mõlema osa pealkiri ja mis algse looga juhtub (mockup, ettepanekud, alustamise lugu, MVP, midagi ei kustutata)', () => {
   const html = render();
-  assert.match(html, /<li><strong>Osa 1:<\/strong> Külastajana soovin registreeruda ja maksta, et saaksin liituda\.<\/li><li><strong>Osa 2:<\/strong> \(täida väljad\)<\/li>/);
+  // L28: iga osa juures on ka selle kriteeriumid (vaikimisi kõik osal 1).
+  assert.match(html, /<li><strong>Osa 1:<\/strong> Külastajana soovin registreeruda ja maksta, et saaksin liituda\.<ul class="split-preview__criteria"><li>Vormil on väli 'E-post'\.<\/li><li>Vormil on nupp 'Maksa'\.<\/li><\/ul><\/li><li><strong>Osa 2:<\/strong> \(täida väljad\)<span class="muted"> – kriteeriume ei ole<\/span><\/li>/);
   assert.match(html, /Algne lugu jääb osaks 1 \(sama lugu, uus sõnastus\)\. Osa 2 lisatakse kohe selle järele; järgnevad lood nihkuvad/);
   const last = render({ stories: [{ ...STORY, id: 1 }, STORY] });
   assert.match(last, /Osa 2 lisatakse kohe selle järele; teiste lugude järjekord ega sisu ei muutu\./);

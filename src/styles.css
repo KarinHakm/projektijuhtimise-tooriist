@@ -467,3 +467,7 @@ button.danger { background: var(--error); }
 .review-edit { margin: 0.5rem 0 0; }
 .review-edit input:not([type="radio"]), .review-edit textarea { width: 100%; box-sizing: border-box; }
 .review-edit__choice { display: block; margin: 0.25rem 0; }
+/* L28: AI jagamise eelvaade ja kattuvushoiatus */
+.review-split__part { margin: 0.25rem 0 0.5rem; }
+.review-split__part .warning, .split-preview__overlap { margin: 0.25rem 0; }
+.split-preview__criteria { margin: 0.15rem 0 0.25rem; padding-left: 1.25rem; font-size: 0.9em; }

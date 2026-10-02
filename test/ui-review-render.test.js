@@ -35,3 +35,22 @@ test('AI-ta mockupi leiul pole otsust ja Rakenda on keelatud', () => {
   assert.match(html, /<button type="button" disabled="">Rakenda<\/button>/);
   assert.match(html, /AI ei ole serveris seadistatud\./);
 });
+
+test('AI jagamise eelvaates on mõlema osa kriteeriumid ja kattuvushoiatus loo numbriga', () => {
+  const stories = [
+    { id: 4, role: 'Külastaja', rolePhrase: 'Külastajana', want: 'registreeruda ja broneerida trenni', title: 'L' },
+    { id: 5, role: 'Külastaja', rolePhrase: 'Külastajana', want: 'broneerida trenni kalendrist', title: 'B' },
+  ];
+  const f = {
+    id: 'too_large-4', type: 'too_large', source: 'ai', status: 'open', stale: false, storyIds: [4], stories: [{ id: 4, title: 'L' }],
+    problem: 'Kaks tegevust.', reason: 'Eraldi töövood.',
+    before: { criteria: [{ id: 1, text: 'Vormil on väli „Nimi“.' }, { id: 2, text: 'Kalendris on vabad ajad.' }] },
+    suggestion: { first: { want: 'registreeruda liikmeks', soThat: 'saaksin liituda' }, second: { want: 'broneerida trenni', soThat: 'saaksin osaleda' }, criteriaToSecond: [2] },
+    splitInfo: { criteria: [], questions: [], mockupVersions: 0, pendingProposals: 0, isFocus: false, aboveMvpLine: false },
+  };
+  const html = clean(renderToStaticMarkup(createElement(ReviewView, { review: { id: 'r', ai: true, findings: [f] }, stories, onRun: noop, actions })));
+  assert.match(html, /Osa 1 \(algne lugu\):<\/strong> Külastajana soovin registreeruda liikmeks, et saaksin liituda\.<\/p><ol><li>Vormil on väli „Nimi“\.<\/li><\/ol>/);
+  assert.match(html, /Osa 2 \(uus lugu\):<\/strong> Külastajana soovin broneerida trenni, et saaksin osaleda\.<\/p><ol><li>Kalendris on vabad ajad\.<\/li><\/ol>/);
+  assert.match(html, /Võimalik kattuvus looga 2 – kontrolli enne rakendamist\. Jagamist see ei keela\./);
+  assert.equal((html.match(/Võimalik kattuvus/g) ?? []).length, 1); // osa 1 ei kattu
+});

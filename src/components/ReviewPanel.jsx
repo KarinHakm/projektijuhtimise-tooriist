@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
-import { applyFinding, getReview, ignoreFinding, runReview } from '../api.js';
+import { applyFinding, getReview, ignoreFinding, runReview, undoFinding } from '../api.js';
 import { composeTitle } from '../../shared/story-format.js';
+import { findOverlaps } from '../../shared/overlap.js';
 import AiWait from './AiWait.jsx';
 import DemoTag from './DemoTag.jsx';
 
 // Backlog'i ülevaatus (L27). Ülevaatuse käivitamine ei muuda backlog'i. Iga leiu juures [Rakenda] [Muuda] [Ignoreeri]:
-// tüübid 1–4 rakendatakse siin, jagamine (5) ja ühendamine (6) avavad olemasoleva eelvaatega vormi backlog'is.
+// tüübid 1–4 ja AI jagamine (5, L28) rakendatakse siin; jagamise „Muuda“ ja ühendamine (6) avavad olemasoleva vormi backlog'is.
 
 export const TYPE_LABELS = {
   connextra: 'Pealkirja vorm', no_criteria: 'Kriteeriumid puuduvad', untestable: 'Mittekontrollitav kriteerium',
   no_mockup: "Mockup puudub", too_large: 'Liiga suur lugu', overlap: 'Kattuvad lood',
 };
 export const DECISION_LABELS = { not_view: 'märgi mitte-vaatelooks', needs_mockup: "lisa küsimus „Vajab mockup'i“" };
-const STATUS_TEXT = { applied: 'Rakendatud', ignored: 'Ignoreeritud' };
+const STATUS_TEXT = { applied: 'Rakendatud', ignored: 'Ignoreeritud', undone: 'Jagamine võeti tagasi' };
 
 // Leiu ettepaneku tekst kaardil. Mockup'i leiu juures on alati näha, kumba tulemust AI soovitab.
-function Suggestion({ f }) {
+function Suggestion({ f, stories }) {
   const s = f.suggestion;
   if (!s) {
     if (f.type === 'no_mockup') return <p><strong>Ettepanek:</strong> AI otsust pole – vajuta „Muuda“ ja vali ise, kas lugu puudutab vaadet.</p>;
@@ -27,10 +28,52 @@ function Suggestion({ f }) {
     case 'no_criteria': return <><p><strong>Ettepanek:</strong> lisa kriteeriumid{why}</p><ol>{s.criteria.map((c) => <li key={c}>{c}</li>)}</ol></>;
     case 'untestable': return <p><strong>Ettepanek:</strong> asenda tekstiga „{s.text}“{why}</p>;
     case 'no_mockup': return <p><strong>AI soovitab:</strong> {DECISION_LABELS[s.decision]}{why}</p>;
-    case 'too_large': return <><p><strong>Ettepanek:</strong> jaga kaheks loo eelvaatega:</p><ol><li>… soovin {s.first.want}, et {s.first.soThat}</li><li>… soovin {s.second.want}, et {s.second.soThat}</li></ol></>;
+    case 'too_large': return <SplitPreview f={f} stories={stories} />;
     case 'overlap': return <p><strong>Ettepanek:</strong> {s.text}</p>;
     default: return null;
   }
+}
+
+// L28: AI jagamise eelvaade – mõlema uue loo pealkiri ja kriteeriumid, mis algse looga juhtub ja võimalik kattuvus.
+function SplitPreview({ f, stories }) {
+  const s = f.suggestion;
+  const story = stories.find((x) => x.id === f.storyIds[0]);
+  const info = f.splitInfo;
+  if (!story) return null;
+  const parts = [s.first, s.second].map((p, i) => {
+    const toSecond = i === 1;
+    return {
+      title: composeTitle({ rolePhrase: story.rolePhrase, ...p }),
+      criteria: f.before.criteria.filter((c) => s.criteriaToSecond.includes(c.id) === toSecond),
+      overlaps: findOverlaps({ role: story.role, want: p.want }, stories, [story.id]),
+    };
+  });
+  return (
+    <div className="split-preview">
+      <p className="split-preview__title">Ettepanek: jaga kaheks – eelvaade</p>
+      {parts.map((p, i) => (
+        <div key={i} className="review-split__part">
+          <p><strong>Osa {i + 1}{i === 0 ? ' (algne lugu)' : ' (uus lugu)'}:</strong> {p.title}</p>
+          {p.criteria.length ? <ol>{p.criteria.map((c) => <li key={c.id}>{c.text}</li>)}</ol> : <p className="muted">Kriteeriume ei ole.</p>}
+          {p.overlaps.map((o) => (
+            <p key={o.id} className="warning" role="note">⚠ Võimalik kattuvus looga {o.number} – kontrolli enne rakendamist. Jagamist see ei keela.</p>
+          ))}
+        </div>
+      ))}
+      {s.reason && <p className="muted">AI põhjendus: {s.reason}</p>}
+      {info && (
+        <ul>
+          <li>Osa 1 jääb algse loo kohale, osa 2 lisatakse kohe selle järele.</li>
+          {info.questions.length > 0 && <li>Küsimused ({info.questions.length}) jäävad osale 1.</li>}
+          {info.mockupVersions > 0 && <li>Mockup'i versioonid jäävad osale 1; osale 2 viidud kriteeriumide seos mockup'iga eemaldatakse.</li>}
+          {info.isFocus && <li>Alustamise lugu jääb osaks 1.</li>}
+          {info.aboveMvpLine && <li>Ka osa 2 läheb MVP joone kohale.</li>}
+          {info.pendingProposals > 0 && <li>Algse loo ootel ettepanekud ({info.pendingProposals}) lükatakse tagasi.</li>}
+          <li>Jagamise saab tagasi võtta, kuni kumbagi osa pole muudetud.</li>
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // „Muuda“: ettepanek enne rakendamist muudetavana (tüübid 1–4).
@@ -89,7 +132,7 @@ function FindingEditor({ f, busy, error, onSubmit, onCancel }) {
   );
 }
 
-function FindingCard({ f, number, busy, editing, error, actions }) {
+function FindingCard({ f, stories, number, busy, editing, error, actions }) {
   const decided = f.status !== 'open';
   const canApply = !decided && !f.stale && f.suggestion !== null;
   return (
@@ -102,11 +145,17 @@ function FindingCard({ f, number, busy, editing, error, actions }) {
       <p className="review-finding__stories">
         {f.stories.map((s) => <span key={s.id}>Lugu {number(s.id) ?? '–'}: {s.title ?? '(kustutatud)'}<br /></span>)}
       </p>
+      {f.canUndo && (
+        <>
+          {error && <p className="error" role="alert">{error.message}</p>}
+          <button type="button" className="secondary" disabled={busy} onClick={() => actions.undo(f)}>Võta jagamine tagasi</button>
+        </>
+      )}
       {!decided && (
         <>
           <p><strong>Probleem:</strong> {f.problem}</p>
           <p><strong>Põhjendus:</strong> {f.reason}</p>
-          <Suggestion f={f} />
+          <Suggestion f={f} stories={stories} />
           {f.stale && <p className="error">Lugu on pärast ülevaatust muutunud – see leid on aegunud. Käivita ülevaatus uuesti.</p>}
           {editing ? (
             <FindingEditor f={f} busy={busy} error={error} onSubmit={(value) => actions.apply(f, value)} onCancel={actions.cancelEdit} />
@@ -149,7 +198,7 @@ export function ReviewView({ review, stories, running = false, busy = false, err
           {review.aiNote && <p className="muted">{review.aiNote}</p>}
           <ul className="review__list">
             {[...open, ...decided].map((f) => (
-              <FindingCard key={f.id} f={f} number={number} busy={busy || running} editing={editingId === f.id}
+              <FindingCard key={f.id} f={f} stories={stories} number={number} busy={busy || running} editing={editingId === f.id}
                 error={findingError?.id === f.id ? findingError : null} actions={actions} />
             ))}
           </ul>
@@ -223,18 +272,18 @@ export default function ReviewPanel({ projectId, stories, onSplit, onMerge }) {
 
   const actions = {
     apply: (f, value) => {
-      if (f.type === 'too_large') return onSplit(f.storyIds[0], f.suggestion, f.id);
       if (f.type === 'overlap') return onMerge(f.suggestion.keepId, f.suggestion.removeId, f.id);
-      return decide(f, () => applyFinding(projectId, f.id, value));
+      return decide(f, () => applyFinding(projectId, f.id, value)); // ka AI jagamine (L28): server jagab ja salvestab tagasivõtmise seisu
     },
     edit: (f) => {
       setFindingError(null);
-      if (f.type === 'too_large') return onSplit(f.storyIds[0], null, f.id);
+      if (f.type === 'too_large') return onSplit(f.storyIds[0], f.suggestion, f.id); // vorm AI osade ja jaotusega
       if (f.type === 'overlap') return onMerge(f.storyIds[0], null, f.id);
       return setEditingId(f.id);
     },
     cancelEdit: () => { setEditingId(null); setFindingError(null); },
     ignore: (f) => decide(f, () => ignoreFinding(projectId, f.id)),
+    undo: (f) => decide(f, () => undoFinding(projectId, f.id)),
   };
 
   return <ReviewView review={review} stories={stories} running={running} busy={busy} error={error} notice={notice}

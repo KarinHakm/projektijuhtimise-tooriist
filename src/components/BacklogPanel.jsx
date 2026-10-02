@@ -198,10 +198,16 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
         await refresh();
       }
     },
-    onConfirmSplit: (id, body) => runManage(withFinding(() => splitStoryInTwo(projectId, id, body)), (d) => {
+    // L28: ülevaatuse leiust avatud vorm jagab leiu kaudu (server salvestab tagasivõtmise seisu); muidu käsitsi jagamine (L25).
+    onConfirmSplit: (id, body) => (mode?.findingId
+      ? runManage(async () => {
+        const { result } = await applyFinding(projectId, mode.findingId, body);
+        return { ...(await getStories(projectId)), reviewResult: result };
+      }, (d) => d.reviewResult)
+      : runManage(() => splitStoryInTwo(projectId, id, body), (d) => {
       const at = d.stories.findIndex((x) => x.id === d.split.secondId) + 1;
       return `Lugu jagati kaheks: osa 2 on kohal ${at}.${d.split.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.split.rejectedProposals}.` : ''}`;
-    }),
+    })),
     onMerge: (id) => { setManageError(null); setMode({ type: 'merge', id, info: null }); },
     onMergePick: async (id, keepId, removeId) => {
       setManageError(null);

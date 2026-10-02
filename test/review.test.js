@@ -23,7 +23,7 @@ function seed() {
                              VALUES (?, ?, 'Külastaja', ?, ?, ?, ?, 'ai', ?) RETURNING id`);
   const add = (pos, rolePhrase, want, soThat, size, view) => insert.get(projectId, pos, rolePhrase, want, soThat, size, view ? 1 : 0).id;
   const crit = db.prepare("INSERT INTO criteria (story_id, position, text, origin) VALUES (?, ?, ?, 'ai') RETURNING id");
-  const ok = (storyId) => ['Lehel on pealkiri.', 'Lehel on otsinguväli.', 'Lehel on nupp „Saada“.'].forEach((t, i) => crit.get(storyId, i + 1, t));
+  const ok = (storyId) => ['Lehel on pealkiri.', 'Lehel on otsinguväli.', 'Lehel on nupp „Saada“.'].map((t, i) => crit.get(storyId, i + 1, t).id);
 
   const badTitle = add(1, 'Külastaja', 'näha tunniplaani', 'saaksin trenni valida', 'S', false); // pole olevas käändes
   ok(badTitle);
@@ -33,12 +33,12 @@ function seed() {
   const noMockup = add(4, 'Külastajana', 'näha treenerite tutvustust', 'saaksin treeneri valida', 'S', true);
   ok(noMockup);
   const tooLarge = add(5, 'Külastajana', 'registreeruda, maksta liikmemaksu ja broneerida trenni', 'saaksin klubiga liituda', 'L', false);
-  ok(tooLarge);
+  const largeCriteria = ok(tooLarge);
   const dupA = add(6, 'Külastajana', 'näha treeningute nädalakava', 'saaksin aja valida', 'S', false);
   ok(dupA);
   const dupB = add(7, 'Külastajana', 'vaadata nädala treeninguid', 'saaksin sobiva aja leida', 'S', false);
   ok(dupB);
-  return { badTitle, untestable, vague, noCriteria, noMockup, tooLarge, dupA, dupB };
+  return { badTitle, untestable, vague, noCriteria, noMockup, tooLarge, largeCriteria, dupA, dupB };
 }
 
 const AI_REVIEW = () => ({
@@ -50,6 +50,7 @@ const AI_REVIEW = () => ({
   tooLarge: [{
     storyId: ids.tooLarge, problem: 'Lool on kolm eraldi tegevust.', reason: 'Registreerumine, makse ja broneerimine on eraldi töövood.',
     first: { want: 'registreeruda klubi liikmeks', soThat: 'saaksin klubiga liituda' }, second: { want: 'broneerida trenni', soThat: 'saaksin trennis osaleda' },
+    firstCriteria: [ids.largeCriteria[0], ids.largeCriteria[2]], secondCriteria: [ids.largeCriteria[1]],
   }],
   overlaps: [
     { keepId: ids.dupA, removeId: ids.dupB, problem: 'Mõlemad näitavad nädala treeninguid.', reason: 'Sama nõue kahes loos.', suggestion: 'Ühenda lugu 7 looga 6.' },
@@ -78,8 +79,8 @@ const backlogRows = () => ({
   criteria: db.prepare('SELECT * FROM criteria ORDER BY id').all().map((r) => ({ ...r })),
   questions: db.prepare('SELECT * FROM story_questions ORDER BY id').all().map((r) => ({ ...r })),
 });
-async function runReview() {
-  ai.push(aiOk(AI_REVIEW()));
+async function runReview(data = AI_REVIEW()) {
+  ai.push(aiOk(data));
   const res = await post('/run');
   assert.equal(res.status, 200);
   return (await res.json()).review;
@@ -99,6 +100,7 @@ test('ülevaatus leiab kõik leiutüübid meelega vigastest lugudest ega muuda b
   const large = finding(review, `too_large-${ids.tooLarge}`);
   assert.equal(large.problem, 'Lool on kolm eraldi tegevust.');
   assert.ok(large.reason && large.suggestion.second.want === 'broneerida trenni');
+  assert.deepEqual(large.suggestion.criteriaToSecond, [ids.largeCriteria[1]]); // L28: kriteeriumide jaotus
   assert.deepEqual(finding(review, `overlap-${ids.dupA}-${ids.dupB}`).suggestion, { keepId: ids.dupA, removeId: ids.dupB, text: 'Ühenda lugu 7 looga 6.' });
   assert.equal(review.findings.filter((f) => f.type === 'overlap').length, 1); // olematu loo leid jäeti välja
   for (const f of review.findings) assert.ok(f.problem && f.reason, f.id);
@@ -134,17 +136,8 @@ test('Rakenda, Muuda ja Ignoreeri muudavad ainult leiu lugu; Ignoreeri jätab ba
 
   res = await post(`/findings/no_criteria-${ids.noCriteria}/apply`);
   assert.equal(res.status, 409);
-  res = await post(`/findings/too_large-${ids.tooLarge}/apply`);
-  assert.equal((await res.json()).code, 'use_form'); // jagamine käib eelvaatega vormis; enne seda leidu ei märgita
-  const part = (want) => ({ role: 'Külastaja', rolePhrase: 'Külastajana', want, soThat: 'saaksin klubiga liituda', size: 'M', touchesView: false });
-  const split = await fetch(`${base}/${projectId}/stories/${ids.tooLarge}/split`, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ first: part('registreeruda klubi liikmeks'), second: part('broneerida trenni'), criteriaToSecond: [], questionsToSecond: [] }),
-  });
-  assert.equal(split.status, 200);
-  res = await post(`/findings/too_large-${ids.tooLarge}/apply`);
-  assert.equal(res.status, 200);
-  assert.equal(finding((await res.json()).review, `too_large-${ids.tooLarge}`).status, 'applied');
+  res = await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`);
+  assert.equal((await res.json()).code, 'use_form'); // ühendamine käib eelvaatega vormis
 });
 
 test('AI-ta on ainult koodi leiud ilma otsuseta; aegunud leidu ei rakendata', async () => {
@@ -169,4 +162,49 @@ test('AI-ta on ainult koodi leiud ilma otsuseta; aegunud leidu ei rakendata', as
   assert.equal(stale.status, 409);
   assert.equal((await stale.json()).code, 'stale_finding');
   assert.equal(db.prepare('SELECT text FROM criteria WHERE id = ?').get(ids.vague).text, 'Hinnakirjas on hind.');
+});
+
+// L28: AI jagamine leiust ja selle tagasivõtmine.
+const fullRows = () => ({ ...backlogRows(), project: { ...db.prepare('SELECT focus_story_id, mvp_count FROM projects WHERE id = ?').get(projectId) } });
+
+test('AI jagamine jaotab kriteeriumid ettepaneku järgi ja tagasivõtmine taastab algse seisu täpselt', async () => {
+  db.prepare("INSERT INTO story_questions (story_id, text) VALUES (?, 'Kas makse käib kaardiga?')").run(ids.tooLarge);
+  db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(ids.tooLarge);
+  db.prepare('UPDATE projects SET focus_story_id = ?, mvp_count = 6 WHERE id = ?').run(ids.tooLarge, projectId);
+  db.prepare("UPDATE criteria SET ref_kind = 'no_view', ref_source = 'user' WHERE id = ?").run(ids.largeCriteria[1]);
+  await runReview();
+  const before = fullRows();
+
+  let res = await post(`/findings/too_large-${ids.tooLarge}/apply`);
+  assert.equal(res.status, 200);
+  const second = db.prepare('SELECT id FROM stories WHERE position = 6').get().id;
+  assert.notEqual(second, ids.tooLarge);
+  const textsOf = (id) => db.prepare('SELECT text FROM criteria WHERE story_id = ? ORDER BY position').all(id).map((r) => r.text);
+  assert.deepEqual(textsOf(ids.tooLarge), ['Lehel on pealkiri.', 'Lehel on nupp „Saada“.']);
+  assert.deepEqual(textsOf(second), ['Lehel on otsinguväli.']);
+  assert.equal(db.prepare('SELECT mvp_count AS n FROM projects WHERE id = ?').get(projectId).n, 7);
+
+  res = await post(`/findings/too_large-${ids.tooLarge}/undo`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(fullRows(), before); // koht, kriteeriumide järjestus ja seos, küsimus, staatus, MVP joon, alustamise lugu
+  assert.equal(finding((await res.json()).review, `too_large-${ids.tooLarge}`).status, 'undone');
+});
+
+test('vigane kriteeriumide jaotus jäetakse välja; muudetud osa korral tagasivõtmist ei tehta', async () => {
+  const [a, b, c] = ids.largeCriteria;
+  for (const [firstCriteria, secondCriteria] of [[[a], [b]], [[a, b], [b, c]], [[a, b], [c, ids.vague]]]) { // puudub / kahes / võõras
+    const data = AI_REVIEW();
+    Object.assign(data.tooLarge[0], { firstCriteria, secondCriteria });
+    assert.equal(finding(await runReview(data), `too_large-${ids.tooLarge}`).suggestion, null);
+  }
+
+  await runReview();
+  assert.equal((await post(`/findings/too_large-${ids.tooLarge}/apply`)).status, 200);
+  const second = db.prepare('SELECT id FROM stories WHERE position = 6').get().id;
+  db.prepare("UPDATE stories SET want = 'broneerida trenni veebis' WHERE id = ?").run(second);
+  const after = fullRows();
+  const res = await post(`/findings/too_large-${ids.tooLarge}/undo`);
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /osa 2 on pärast jagamist muutunud.*Osalist taastamist ei tehta/);
+  assert.deepEqual(fullRows(), after);
 });

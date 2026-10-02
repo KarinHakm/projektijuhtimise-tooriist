@@ -222,44 +222,47 @@ export function validateSplit(raw, info) {
 export function splitStory(db, projectId, storyId, split) {
   db.exec('BEGIN IMMEDIATE');
   try {
-    const info = splitInfo(db, projectId, storyId);
-    if (!info) {
-      db.exec('ROLLBACK');
-      return null;
-    }
-    const rejected = pendingToReject(db, projectId, storyId);
-    for (const p of rejected) {
-      db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status = 'pending'").run(p.id);
-    }
-    updateManualStory(db, projectId, storyId, split.first);
-    const position = db.prepare('SELECT position FROM stories WHERE id = ?').get(storyId).position;
-    db.prepare('UPDATE stories SET position = position + 1 WHERE project_id = ? AND position > ?').run(projectId, position);
-    const s = split.second;
-    const secondId = db.prepare(`INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, origin, touches_view)
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?) RETURNING id`)
-      .get(projectId, position + 1, s.role, s.rolePhrase, s.want, s.soThat, s.size, s.touchesView ? 1 : 0).id;
-    // Osale 2 viidud kriteeriumid: seos osa 1 mockup'iga eemaldatakse (osal 2 mockup'i pole).
-    const moveCriterion = db.prepare(`UPDATE criteria SET story_id = ?, ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL,
-                                      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND story_id = ?`);
-    for (const id of split.criteriaToSecond) moveCriterion.run(secondId, id, storyId);
-    const renumber = db.prepare('UPDATE criteria SET position = ? WHERE id = ?');
-    for (const sid of [storyId, secondId]) {
-      db.prepare('SELECT id FROM criteria WHERE story_id = ? ORDER BY position, id').all(sid).forEach((c, i) => renumber.run(i + 1, c.id));
-    }
-    const moveQuestion = db.prepare('UPDATE story_questions SET story_id = ? WHERE id = ? AND story_id = ?');
-    for (const id of split.questionsToSecond) moveQuestion.run(secondId, id, storyId);
-    // Avatud küsimusega osa 2 vajab täpsustamist (nagu küsimuse lisamisel).
-    if (db.prepare('SELECT 1 FROM story_questions WHERE story_id = ? AND resolved_at IS NULL').get(secondId)) {
-      db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(secondId);
-    }
-    if (info.aboveMvpLine) db.prepare('UPDATE projects SET mvp_count = mvp_count + 1 WHERE id = ?').run(projectId);
-    db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
-    db.exec('COMMIT');
-    return { secondId, rejectedProposals: rejected.length, movedCriteria: split.criteriaToSecond.length, movedQuestions: split.questionsToSecond.length };
+    const result = splitStoryInTx(db, projectId, storyId, split);
+    db.exec(result ? 'COMMIT' : 'ROLLBACK');
+    return result;
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
   }
+}
+
+// Sama jagamine olemasoleva transaktsiooni sees (L28: ülevaatuse leiu rakendamine salvestab samas ka tagasivõtmise seisu).
+export function splitStoryInTx(db, projectId, storyId, split) {
+  const info = splitInfo(db, projectId, storyId);
+  if (!info) return null;
+  const rejected = pendingToReject(db, projectId, storyId);
+  for (const p of rejected) {
+    db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status = 'pending'").run(p.id);
+  }
+  updateManualStory(db, projectId, storyId, split.first);
+  const position = db.prepare('SELECT position FROM stories WHERE id = ?').get(storyId).position;
+  db.prepare('UPDATE stories SET position = position + 1 WHERE project_id = ? AND position > ?').run(projectId, position);
+  const s = split.second;
+  const secondId = db.prepare(`INSERT INTO stories (project_id, position, role, role_phrase, want, so_that, size, origin, touches_view)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?) RETURNING id`)
+    .get(projectId, position + 1, s.role, s.rolePhrase, s.want, s.soThat, s.size, s.touchesView ? 1 : 0).id;
+  // Osale 2 viidud kriteeriumid: seos osa 1 mockup'iga eemaldatakse (osal 2 mockup'i pole).
+  const moveCriterion = db.prepare(`UPDATE criteria SET story_id = ?, ref_kind = NULL, ref_index = NULL, ref_version = NULL, ref_source = NULL,
+                                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND story_id = ?`);
+  for (const id of split.criteriaToSecond) moveCriterion.run(secondId, id, storyId);
+  const renumber = db.prepare('UPDATE criteria SET position = ? WHERE id = ?');
+  for (const sid of [storyId, secondId]) {
+    db.prepare('SELECT id FROM criteria WHERE story_id = ? ORDER BY position, id').all(sid).forEach((c, i) => renumber.run(i + 1, c.id));
+  }
+  const moveQuestion = db.prepare('UPDATE story_questions SET story_id = ? WHERE id = ? AND story_id = ?');
+  for (const id of split.questionsToSecond) moveQuestion.run(secondId, id, storyId);
+  // Avatud küsimusega osa 2 vajab täpsustamist (nagu küsimuse lisamisel).
+  if (db.prepare('SELECT 1 FROM story_questions WHERE story_id = ? AND resolved_at IS NULL').get(secondId)) {
+    db.prepare("UPDATE stories SET status = 'vajab_tapsustamist' WHERE id = ?").run(secondId);
+  }
+  if (info.aboveMvpLine) db.prepare('UPDATE projects SET mvp_count = mvp_count + 1 WHERE id = ?').run(projectId);
+  db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
+  return { secondId, rejectedProposals: rejected.length, movedCriteria: split.criteriaToSecond.length, movedQuestions: split.questionsToSecond.length };
 }
 
 // --- L26: kahe loo käsitsi ühendamine (ilma AI-ta) ---

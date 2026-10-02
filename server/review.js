@@ -6,7 +6,7 @@ import { checkCriterion, cleanCriterion, CRITERION_MAX } from '../shared/criteri
 import { validateStoryText } from '../shared/story-format.js';
 import { CRITERIA_MAX_COUNT, appendCriteria, latestMockup, listCriteria } from './criteria.js';
 import { insertStoryQuestion } from './readiness.js';
-import { listStories, updateManualStory } from './stories.js';
+import { listStories, splitInfo, splitStoryInTx, updateManualStory, validateSplit } from './stories.js';
 import { VIEW_DECISIONS } from './ai/tasks/review.js';
 
 export const KIND = 'review';
@@ -63,6 +63,12 @@ const cleanList = (list) => {
   });
 };
 
+// L28: iga algne kriteerium peab olema täpselt ühes osas (mitte kummaski või mõlemas, ega võõras kriteerium).
+export function exactPartition(ids, first, second) {
+  const all = [...first, ...second];
+  return all.length === ids.length && new Set(all).size === all.length && all.every((id) => ids.includes(id));
+}
+
 // Seob AI vastuse koodi leidudega ja lisab AI leiud. Vigane või olematule loole viitav ettepanek jäetakse välja.
 export function mergeAiReview(db, projectId, findings, data) {
   const stories = new Map(listStories(db, projectId).map((s) => [s.id, s]));
@@ -95,13 +101,19 @@ export function mergeAiReview(db, projectId, findings, data) {
   for (const t of data.tooLarge) {
     const s = stories.get(t.storyId);
     if (!s || extra.some((f) => f.id === `too_large-${s.id}`)) continue;
+    const criteria = listCriteria(db, s.id).map((c) => ({ id: c.id, text: c.text }));
     const first = validateStoryText({ rolePhrase: s.rolePhrase, ...t.first });
     const second = validateStoryText({ rolePhrase: s.rolePhrase, ...t.second });
-    const valid = !first.errors.length && !second.errors.length && first.value.want !== second.value.want;
+    const valid = !first.errors.length && !second.errors.length && first.value.want !== second.value.want
+      && exactPartition(criteria.map((c) => c.id), t.firstCriteria, t.secondCriteria);
     extra.push({
-      id: `too_large-${s.id}`, type: 'too_large', source: 'ai', storyIds: [s.id], before: { title: s.title, nextId: nextId(s.id) }, status: 'open',
+      id: `too_large-${s.id}`, type: 'too_large', source: 'ai', storyIds: [s.id], status: 'open',
+      before: { title: s.title, nextId: nextId(s.id), criteria },
       problem: t.problem.trim(), reason: t.reason.trim(),
-      suggestion: valid ? { first: { want: first.value.want, soThat: first.value.soThat }, second: { want: second.value.want, soThat: second.value.soThat } } : null,
+      suggestion: valid ? {
+        first: { want: first.value.want, soThat: first.value.soThat }, second: { want: second.value.want, soThat: second.value.soThat },
+        criteriaToSecond: criteria.map((c) => c.id).filter((id) => t.secondCriteria.includes(id)), // algses järjekorras
+      } : null,
     });
   }
   for (const o of data.overlaps) {
@@ -129,7 +141,8 @@ export function findingIsCurrent(db, projectId, f) {
     case 'untestable': return listCriteria(db, story.id).some((c) => c.id === f.criterionId && c.text === f.before.text);
     case 'no_mockup': return story.touchesView && !latestMockup(db, story.id);
     // Jagamine lisab uue loo kohe algse järele, seega muutub ka järgmise loo id.
-    case 'too_large': return story.title === f.before.title && (stories[stories.indexOf(story) + 1]?.id ?? null) === f.before.nextId;
+    case 'too_large': return story.title === f.before.title && (stories[stories.indexOf(story) + 1]?.id ?? null) === f.before.nextId
+      && JSON.stringify(listCriteria(db, story.id).map((c) => ({ id: c.id, text: c.text }))) === JSON.stringify(f.before.criteria ?? []);
     case 'overlap': return f.storyIds.every((id, i) => stories.find((s) => s.id === id)?.title === f.before.titles[i]);
     default: return false;
   }
@@ -178,14 +191,15 @@ const aiOrigin = (text, suggested) => (suggested === undefined ? 'manual' : text
 // Rakendab ühe koodi leiu (tüübid 1–4) ühes transaktsioonis. Muudab ainult selle leiu loo.
 // Tagastab rakendatud tulemuse kirjelduse.
 export function applyFinding(db, projectId, f, raw) {
-  // Jagamine ja ühendamine tehakse olemasolevas eelvaatega vormis (L25, L26); siin märgitakse leid ainult
-  // rakendatuks ja ainult siis, kui muutus on backlog'is näha (ühendamisel kadus eemaldatav lugu, jagamisel tekkis uus lugu).
-  if (f.type === 'too_large' || f.type === 'overlap') {
-    const stories = listStories(db, projectId);
-    const done = f.type === 'overlap' ? !stories.some((s) => s.id === f.storyIds[1]) : !findingIsCurrent(db, projectId, f);
-    if (!done) throw new ReviewError(409, 'use_form', 'Jagamine ja ühendamine tehakse eelvaatega vormis – vajuta „Rakenda“ või „Muuda“ ja kinnita vormis.');
-    return f.type === 'overlap' ? 'Lood ühendati.' : 'Lugu jagati.';
+  // Ühendamine tehakse olemasolevas eelvaatega vormis (L26); siin märgitakse leid ainult rakendatuks ja ainult siis,
+  // kui muutus on backlog'is näha (eemaldatav lugu on kadunud).
+  if (f.type === 'overlap') {
+    if (listStories(db, projectId).some((s) => s.id === f.storyIds[1])) {
+      throw new ReviewError(409, 'use_form', 'Ühendamine tehakse eelvaatega vormis – vajuta „Rakenda“ või „Muuda“ ja kinnita vormis.');
+    }
+    return 'Lood ühendati.';
   }
+  if (f.type === 'too_large') return applySplit(db, projectId, f, raw);
   const value = valueFor(f, raw);
   if (!findingIsCurrent(db, projectId, f)) {
     throw new ReviewError(409, 'stale_finding', 'Lugu on pärast ülevaatust muutunud – see leid on aegunud. Käivita ülevaatus uuesti.');
@@ -211,4 +225,82 @@ export function applyFinding(db, projectId, f, raw) {
   }
   insertStoryQuestion(db, story.id, NEEDS_MOCKUP_QUESTION);
   return `Loole lisati avatud küsimus „${NEEDS_MOCKUP_QUESTION}“.`;
+}
+
+// --- L28: AI jagamisettepanek ja selle tagasivõtmine ---
+// Rakenda (raw puudub) kasutab AI ettepanekut, Muuda saadab vormi väärtuse samal kujul nagu käsitsi jagamine (L25).
+// Enne jagamist salvestatakse leiu juurde algse loo seis; tagasivõtmine on lubatud ainult siis, kui kumbagi osa pole muudetud.
+function applySplit(db, projectId, f, raw) {
+  if (!findingIsCurrent(db, projectId, f)) {
+    throw new ReviewError(409, 'stale_finding', 'Lugu on pärast ülevaatust muutunud – see leid on aegunud. Käivita ülevaatus uuesti.');
+  }
+  if (raw === undefined && !f.suggestion) throw new ReviewError(400, 'no_suggestion', 'Sellel leiul pole AI jagamisettepanekut. Vajuta „Muuda“ ja jaga ise.');
+  const story = listStories(db, projectId).find((s) => s.id === f.storyIds[0]);
+  const info = splitInfo(db, projectId, story.id);
+  const base = { role: story.role, rolePhrase: story.rolePhrase, size: story.size, touchesView: story.touchesView };
+  const body = raw ?? {
+    first: { ...base, ...f.suggestion.first }, second: { ...base, ...f.suggestion.second },
+    criteriaToSecond: f.suggestion.criteriaToSecond, questionsToSecond: [],
+  };
+  const split = validateSplit(body, info);
+  if (split.error) throw new ReviewError(400, 'invalid_value', split.error, split.field);
+  const firstIds = info.criteria.map((c) => c.id).filter((id) => !split.criteriaToSecond.includes(id));
+  if (!exactPartition(info.criteria.map((c) => c.id), firstIds, split.criteriaToSecond)) {
+    throw new ReviewError(400, 'invalid_value', 'Iga algne kriteerium peab olema täpselt ühes uues loos.', 'criteria');
+  }
+
+  const before = {
+    story: { ...db.prepare('SELECT * FROM stories WHERE id = ?').get(story.id) },
+    criteria: db.prepare('SELECT * FROM criteria WHERE story_id = ?').all(story.id).map((r) => ({ ...r })),
+    questionIds: db.prepare('SELECT id FROM story_questions WHERE story_id = ?').all(story.id).map((r) => r.id),
+    mvpShift: info.aboveMvpLine ? 1 : 0,
+  };
+  const result = splitStoryInTx(db, projectId, story.id, split);
+  f.undo = { before, secondId: result.secondId, after: partsState(db, projectId, story.id, result.secondId) };
+  return `Lugu jagati kaheks: osa 2 lisati kohe osa 1 järele.${result.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${result.rejectedProposals}.` : ''}`;
+}
+
+// Mõlema osa täielik seis (sõnastus, staatus, koht, kriteeriumid ja seosed, küsimused, mockup) ja alustamise loo valik.
+function partsState(db, projectId, firstId, secondId) {
+  const part = (id) => JSON.stringify({
+    story: db.prepare('SELECT * FROM stories WHERE id = ?').get(id) ?? null,
+    criteria: db.prepare('SELECT * FROM criteria WHERE story_id = ? ORDER BY id').all(id),
+    questions: db.prepare('SELECT * FROM story_questions WHERE story_id = ? ORDER BY id').all(id),
+    mockups: db.prepare('SELECT version FROM mockups WHERE story_id = ? ORDER BY version').all(id),
+  });
+  return { first: part(firstId), second: part(secondId), focus: db.prepare('SELECT focus_story_id AS f FROM projects WHERE id = ?').get(projectId).f };
+}
+
+export function undoSplit(db, projectId, f) {
+  if (f.type !== 'too_large' || f.status !== 'applied' || !f.undo) {
+    throw new ReviewError(409, 'cannot_undo', 'Seda leidu ei saa tagasi võtta – tagasi saab võtta ainult ülevaatuse kaudu tehtud jagamise.');
+  }
+  const { before, secondId, after } = f.undo;
+  const storyId = before.story.id;
+  const now = partsState(db, projectId, storyId, secondId);
+  const changed = [now.first !== after.first && 'osa 1', now.second !== after.second && 'osa 2'].filter(Boolean);
+  if (changed.length || now.focus !== after.focus) {
+    const what = changed.length ? `${changed.join(' ja ')} on pärast jagamist muutunud (sõnastus, staatus, koht backlog'is, kriteeriumid, küsimused või mockup)`
+      : 'alustamise lugu on pärast jagamist muudetud';
+    throw new ReviewError(409, 'parts_changed', `Jagamist ei saa tagasi võtta: ${what}. Osalist taastamist ei tehta, et ükski muudatus vaikselt ei kaoks.`);
+  }
+
+  // Kriteeriumid ja küsimused enne osa 2 kustutamist tagasi (muidu kustuksid need koos osaga 2).
+  const restoreCriterion = db.prepare(`UPDATE criteria SET story_id = ?, position = ?, text = ?, origin = ?, ref_kind = ?, ref_index = ?, ref_version = ?,
+                                       ref_source = ?, updated_at = ? WHERE id = ?`);
+  for (const c of before.criteria) {
+    restoreCriterion.run(storyId, c.position, c.text, c.origin, c.ref_kind, c.ref_index, c.ref_version, c.ref_source, c.updated_at, c.id);
+  }
+  const restoreQuestion = db.prepare('UPDATE story_questions SET story_id = ? WHERE id = ?');
+  for (const id of before.questionIds) restoreQuestion.run(storyId, id);
+  const secondPosition = db.prepare('SELECT position FROM stories WHERE id = ?').get(secondId).position;
+  db.prepare('DELETE FROM stories WHERE id = ? AND project_id = ?').run(secondId, projectId);
+  db.prepare('UPDATE stories SET position = position - 1 WHERE project_id = ? AND position > ?').run(projectId, secondPosition);
+  const s = before.story;
+  db.prepare(`UPDATE stories SET role = ?, role_phrase = ?, want = ?, so_that = ?, size = ?, status = ?, origin = ?, touches_view = ?,
+              consistency_review = ?, updated_at = ? WHERE id = ?`)
+    .run(s.role, s.role_phrase, s.want, s.so_that, s.size, s.status, s.origin, s.touches_view, s.consistency_review, s.updated_at, storyId);
+  if (before.mvpShift) db.prepare('UPDATE projects SET mvp_count = MAX(mvp_count - ?, 0) WHERE id = ? AND mvp_count IS NOT NULL').run(before.mvpShift, projectId);
+  db.prepare("UPDATE projects SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(projectId);
+  return 'Jagamine võeti tagasi: algne lugu on taastatud oma kohal koos kriteeriumide, küsimuste ja mockup\'i seostega.';
 }
