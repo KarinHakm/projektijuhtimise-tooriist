@@ -133,7 +133,7 @@ export function computeStage(facts) {
   // 4. Kõik rakenduses olemasolevad etapid on tehtud: ainult valikulised sammud.
   if (!next && done.tapsustused) {
     if (!p.refinement) add({ id: 'refine-again', stage: 'tapsustused', label: 'Sisesta uus kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
-    add({ id: 'view-backlog', stage: 'tapsustused', label: "Vaata backlog'i üle", card: 'backlog', focus: null, optional: true });
+    add({ id: 'view-backlog', stage: 'tapsustused', label: "Vaata backlog'i üle", card: 'backlog', focus: '[data-step="review-run"]', optional: true });
     if (f.stories > 1 && !p.priority) add({ id: 'choose-other', stage: 'prioriteedid', label: 'Vali teine alustamise lugu', card: 'priority', focus: '[data-step="priority-choose"]', optional: true });
   }
 

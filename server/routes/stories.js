@@ -12,7 +12,7 @@ import {
   appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, mergeInfo, mergeStories, moveStory, splitInfo, splitStory,
   updateManualStory, validateApply, validateManualStory, validateMerge, validateSplit,
 } from '../stories.js';
-import { withReadiness } from '../readiness.js';
+import { insertStoryQuestion, withReadiness } from '../readiness.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
 
 const QUESTION_MAX = 300;
@@ -274,8 +274,7 @@ export function storiesRouter({ db, ai }) {
     if (text.length > QUESTION_MAX) return res.status(400).json({ error: `Küsimus võib olla kuni ${QUESTION_MAX} märki.`, field: 'text' });
     db.exec('BEGIN IMMEDIATE');
     try {
-      db.prepare('INSERT INTO story_questions (story_id, text) VALUES (?, ?)').run(story.id, text);
-      db.prepare(`UPDATE stories SET status = 'vajab_tapsustamist', ${touch} WHERE id = ?`).run(story.id);
+      insertStoryQuestion(db, story.id, text);
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');

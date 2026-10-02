@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addStoryQuestion, createStory, deleteStory, getDeleteImpact, getSplitInfo, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus,
-  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory,
+  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding,
 } from '../api.js';
+import ReviewPanel from './ReviewPanel.jsx';
 import StoryForm from './StoryForm.jsx';
 import { focusAfterMove, movedMessage, sizeCounts } from '../backlog/order.js';
 import BacklogList from './BacklogList.jsx';
@@ -10,7 +11,8 @@ import BacklogList from './BacklogList.jsx';
 const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null }) {
+// review = L27 ülevaatuse paneel (element) või null.
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null, review = null }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -20,6 +22,7 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
       </p>
       <p className="backlog__status" role="status" aria-live="polite">{status}</p>
       {error && <p className="error" role="alert">{error}</p>}
+      {review}
       {/* L15: käsitsi lisamine; uus lugu läheb backlog'i lõppu (MVP joone alla). */}
       {manage && manage.mode?.type !== 'add' && (
         <button type="button" className="secondary backlog__add" disabled={busy} onClick={manage.onAdd}>+ Lisa lugu</button>
@@ -140,6 +143,34 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       setBusy(false);
     }
   }
+  // L27: ülevaatuse leiust avatud jagamine/ühendamine. Pärast vormis kinnitamist märgitakse leid rakendatuks;
+  // kui see ei õnnestu, jääb leid ülevaatuses avatuks (backlog'i muudatus on siiski tehtud).
+  const withFinding = (call) => async () => {
+    const findingId = mode?.findingId;
+    const data = await call();
+    if (findingId) await applyFinding(projectId, findingId).catch(() => {});
+    return data;
+  };
+  const showForm = () => requestAnimationFrame(() => document.querySelector('.backlog .split-form, .backlog .merge-form')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  const openFromReview = async (load) => {
+    setManageError(null);
+    try {
+      const next = await load();
+      setMode(next);
+      showForm();
+    } catch (e) {
+      setError(e.message);
+      await refresh();
+    }
+  };
+  const review = (
+    <ReviewPanel projectId={projectId} stories={stories ?? []}
+      onSplit={(id, initial, findingId) => openFromReview(async () => ({ type: 'split', id, info: await getSplitInfo(projectId, id), initial, findingId }))}
+      onMerge={(keepId, removeId, findingId) => openFromReview(async () => ({
+        type: 'merge', id: keepId, info: removeId ? await getMergeInfo(projectId, keepId, removeId) : null, findingId,
+      }))} />
+  );
+
   const manage = {
     mode,
     roles,
@@ -167,7 +198,7 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
         await refresh();
       }
     },
-    onConfirmSplit: (id, body) => runManage(() => splitStoryInTwo(projectId, id, body), (d) => {
+    onConfirmSplit: (id, body) => runManage(withFinding(() => splitStoryInTwo(projectId, id, body)), (d) => {
       const at = d.stories.findIndex((x) => x.id === d.split.secondId) + 1;
       return `Lugu jagati kaheks: osa 2 on kohal ${at}.${d.split.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.split.rejectedProposals}.` : ''}`;
     }),
@@ -175,12 +206,12 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
     onMergePick: async (id, keepId, removeId) => {
       setManageError(null);
       try {
-        setMode({ type: 'merge', id, info: await getMergeInfo(projectId, keepId, removeId) });
+        setMode({ type: 'merge', id, info: await getMergeInfo(projectId, keepId, removeId), findingId: mode?.findingId });
       } catch (e) {
         setManageError({ message: e.message });
       }
     },
-    onConfirmMerge: (keepId, body) => runManage(() => mergeStoriesInto(projectId, keepId, body), (d) => {
+    onConfirmMerge: (keepId, body) => runManage(withFinding(() => mergeStoriesInto(projectId, keepId, body)), (d) => {
       const at = d.stories.findIndex((x) => x.id === d.merge.keepId) + 1;
       return `Lood ühendati: ühendatud lugu on kohal ${at}.${d.merge.removedCriteria ? ` Eemaldatud kriteeriume: ${d.merge.removedCriteria}.` : ''}${d.merge.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.merge.rejectedProposals}.` : ''}`;
     }),
@@ -253,6 +284,7 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       mvpCount={mvpCount}
       onMvp={changeMvp}
       manage={manage}
+      review={review}
     />
   );
 }

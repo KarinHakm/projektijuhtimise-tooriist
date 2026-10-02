@@ -82,7 +82,7 @@ export default function BacklogList({
                   submitLabel="Salvesta muudatus" onSubmit={(value) => manage.onSave(s.id, value)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'split' && manage.mode.id === s.id && (
-                <SplitStoryForm story={s} info={manage.mode.info} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
+                <SplitStoryForm story={s} info={manage.mode.info} initial={manage.mode.initial ?? null} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
                   onSubmit={(body) => manage.onConfirmSplit(s.id, body)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'merge' && manage.mode.id === s.id && (

@@ -14,11 +14,12 @@ function conversationState(db, projectId) {
 }
 
 // Projekti uusim AI väljund: vestluse AI sõnum või mis tahes AI ettepanek (ka rakendatud või tagasi lükatud).
+// Backlog'i ülevaatus (L27) ei ole eraldi kaardi väljund – selle leiud on backlog'is –, seega seda ei arvestata.
 function latestAiOutput(db, projectId) {
   return db.prepare(`SELECT kind, at FROM (
       SELECT kind, created_at AS at, id AS ord FROM conversation_messages WHERE project_id = ? AND role = 'assistant'
       UNION ALL
-      SELECT kind, created_at AS at, 0 AS ord FROM ai_proposals WHERE project_id = ?
+      SELECT kind, created_at AS at, 0 AS ord FROM ai_proposals WHERE project_id = ? AND kind != 'review'
     ) ORDER BY at DESC, ord DESC LIMIT 1`).get(projectId, projectId) ?? null;
 }
 

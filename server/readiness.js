@@ -21,3 +21,10 @@ export function withReadiness(db, stories) {
     return { ...s, questions, readiness: { ...dor, ready: s.status === READY && dor.ok, expired: s.status === READY && !dor.ok } };
   });
 }
+
+// Avatud küsimuse lisamine: lugu saab staatuse „Vajab täpsustamist“ (ka siis, kui see oli valmis).
+// Kutsuda transaktsiooni sees.
+export function insertStoryQuestion(db, storyId, text) {
+  db.prepare('INSERT INTO story_questions (story_id, text) VALUES (?, ?)').run(storyId, text);
+  db.prepare("UPDATE stories SET status = 'vajab_tapsustamist', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(storyId);
+}

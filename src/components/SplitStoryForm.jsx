@@ -4,12 +4,12 @@ import StoryFields from './StoryFields.jsx';
 
 // Loo käsitsi jagamine kaheks (L25). Enne kinnitust on näha mõlema osa pealkiri ja täpne loetelu, mis algse
 // looga juhtub. Algne lugu jääb osaks 1 (mockup'i versioonid, alustamise valik); osa 2 lisatakse kohe selle järele.
-// info = serveri split-info; error = { message, field }.
-export default function SplitStoryForm({ story, info, roles = [], stories = [], busy = false, error = null, onSubmit, onCancel }) {
+// info = serveri split-info; error = { message, field }. initial = { first, second } ({ want, soThat }) – L27 ülevaatuse ettepanek.
+export default function SplitStoryForm({ story, info, initial = null, roles = [], stories = [], busy = false, error = null, onSubmit, onCancel }) {
   const isLast = stories.length > 0 && stories[stories.length - 1].id === story.id;
   const base = { role: story.role, rolePhrase: story.rolePhrase, size: story.size, touchesView: story.touchesView };
-  const [first, setFirst] = useState({ ...base, want: story.want, soThat: story.soThat });
-  const [second, setSecond] = useState({ ...base, want: '', soThat: '' });
+  const [first, setFirst] = useState({ ...base, want: initial?.first.want ?? story.want, soThat: initial?.first.soThat ?? story.soThat });
+  const [second, setSecond] = useState({ ...base, want: initial?.second.want ?? '', soThat: initial?.second.soThat ?? '' });
   const [criteriaToSecond, setCriteria] = useState([]);
   const [questionsToSecond, setQuestions] = useState([]);
   const toggle = (setter) => (id, toSecond) => setter((all) => (toSecond ? [...new Set([...all, id])] : all.filter((x) => x !== id)));

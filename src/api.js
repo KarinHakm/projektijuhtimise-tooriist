@@ -126,3 +126,10 @@ export const splitStoryInTwo = (projectId, storyId, body) => postJson(`${stories
 // L26: kahe loo käsitsi ühendamine (keepId säilib, removeId andmed viiakse üle).
 export const getMergeInfo = (projectId, keepId, removeId) => request(`${storiesPath(projectId)}/${encodeURIComponent(keepId)}/merge-info?with=${encodeURIComponent(removeId)}`);
 export const mergeStoriesInto = (projectId, keepId, body) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(keepId)}/merge`, body);
+// L27: backlog'i ülevaatus. value (valikuline) = „Muuda“ järel kasutaja muudetud väärtus.
+const reviewPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/review`;
+export const getReview = (projectId) => request(reviewPath(projectId));
+export const runReview = (projectId) => postJson(`${reviewPath(projectId)}/run`, {});
+export const applyFinding = (projectId, findingId, value) =>
+  postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/apply`, value === undefined ? {} : { value });
+export const ignoreFinding = (projectId, findingId) => postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/ignore`, {});

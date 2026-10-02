@@ -454,3 +454,16 @@ button.danger { background: var(--error); }
 .tag--dup { color: #8a5a00; background: #fff4c2; border-color: #e0c060; }
 .merge-preview__removed { color: var(--error); }
 .merge-blocked { margin-top: 0.75rem; }
+
+/* L27: backlog'i ülevaatus ja leiud */
+.review { margin: 0.5rem 0 0.75rem; }
+.review__summary { margin: 0.5rem 0 0.25rem; font-weight: 600; }
+.review__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.review-finding { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.5rem 0.75rem; background: var(--card); font-size: 0.9rem; }
+.review-finding p { margin: 0.25rem 0; }
+.review-finding ol { margin: 0.25rem 0; padding-left: 1.25rem; }
+.review-finding--decided { border-left-color: var(--border); color: var(--muted); }
+.review-finding__stories { font-weight: 600; }
+.review-edit { margin: 0.5rem 0 0; }
+.review-edit input:not([type="radio"]), .review-edit textarea { width: 100%; box-sizing: border-box; }
+.review-edit__choice { display: block; margin: 0.25rem 0; }

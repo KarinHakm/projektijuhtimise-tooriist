@@ -48,7 +48,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Plaanitud |
 | L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Pooleli |
 | L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Pooleli |
-| L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Plaanitud |
+| L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Tehtud (brauseris kontrollimata) |
 | L28 | AI jagamisettepanek eelvaatega | M | Kohustuslik | 6 | Plaanitud |
 | L29 | AI ühendamisettepanek eelvaatega | M | Kohustuslik | 6 | Plaanitud |
 | L30 | Esitatavad dokumendid ja demo | M | Kohustuslik | – | Plaanitud |
@@ -653,6 +653,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Pärast „Ignoreeri“ vajutamist on backlog muutumata.
 - Iga viie leiutüübi kohta on automaattest, milles on meelega vigane lugu.
 - Meelega lisatud liiga suur lugu tuleb leiuna välja.
+
+**Seis 02.10.2026:** backlog'is on nupp „Vaata backlog üle“. Kood leiab tüübid 1–4 (vorm, kriteeriumid puuduvad, mittekontrollitav kriteerium, vaatelool pole mockup'i) ka ilma AI-ta; AI annab neile parandused ning leiab liiga suured ja kattuvad lood. Ülevaatus salvestatakse `ai_proposals` tabelisse (`kind = 'review'`), migratsiooni pole. **Rakenda / Muuda:** vorm → uus sõnastus; kriteeriumid puuduvad → kriteeriumide lisamine; mittekontrollitav → kriteeriumi asendamine; mockup puudub → AI soovitus „märgi mitte-vaatelooks“ või „lisa küsimus „Vajab mockup'i““ on kaardil enne rakendamist näha (AI-ta otsust ei tehta, kasutaja valib „Muuda“ all); liiga suur → olemasolev jagamisvorm (L25) AI osadega; kattuvad → olemasolev ühendamisvorm (L26). Leid märgitakse rakendatuks alles pärast vormis kinnitamist. Pärast ülevaatust muutunud loo leid on aegunud ja seda ei rakendata. AI-le saadetakse projekti nimi, vestlus, rollid, lood koos staatuse, suuruse, kriteeriumide, avatud küsimuste ja mockup'i olemasoluga ning koodi leiud; mockup'i sisu ja pooleli ettepanekuid ei saadeta. AI tõrke korral kuvatakse koodi leiud ja märge, et liiga suuri ja kattuvaid lugusid ei kontrollitud. **Automaattestid:** kõik kuus leiutüüpi meelega vigastest lugudest (võlts-AI), backlog muutumata pärast käivitamist ja „Ignoreeri“, Rakenda/Muuda, vigase AI viite väljajätmine, AI-ta režiim, aegunud leid, jagamise järel märkimine, paneeli renderdus. **Pooleli:** päris AI-ga katsetamata; brauseris kontrollimata; `npm run demo` näidisülevaatust pole (AI-ta ülevaatus töötab koodi leidudega).
 
 ### L28 · AI jagamisettepanek eelvaatega (M)
 *Projektijuhina soovin näha AI jagamisettepanekut koos jaotatud kriteeriumidega, et saaksin selle enne rakendamist üle vaadata.*
