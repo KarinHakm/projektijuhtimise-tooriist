@@ -489,3 +489,7 @@ button.danger { background: var(--error); }
 /* Kustutamise kinnitus: tekst ja nupud paindlikult – nupud jäävad kõrvuti (pika teksti korral koos järgmisele reale). */
 .story-criteria__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin-top: 0.25rem; }
 .story-criteria .warning { margin: 0.15rem 0; }
+/* L18: AI enesekontrolli märge */
+.selfcheck { margin: 0.2rem 0; font-size: 0.9em; }
+.selfcheck--fixed { color: var(--muted); }
+.tag--selfcheck { color: #1d6b35; background: #eef8f0; border-color: #8cc29b; font-weight: 600; }

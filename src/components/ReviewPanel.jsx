@@ -4,6 +4,7 @@ import { composeTitle } from '../../shared/story-format.js';
 import { findOverlaps } from '../../shared/overlap.js';
 import AiWait from './AiWait.jsx';
 import DemoTag from './DemoTag.jsx';
+import { SelfCheckNote } from './Consistency.jsx';
 
 // Backlog'i ülevaatus (L27). Ülevaatuse käivitamine ei muuda backlog'i. Iga leiu juures [Rakenda] [Muuda] [Ignoreeri]:
 // tüübid 1–4, AI jagamine (5, L28) ja ühendamine (6, L29) rakendatakse siin; jagamise ja ühendamise „Muuda“ avab olemasoleva vormi backlog'is.
@@ -25,8 +26,8 @@ function Suggestion({ f, stories }) {
   const why = s.reason ? <span className="muted"> ({s.reason})</span> : null;
   switch (f.type) {
     case 'connextra': return <p><strong>Ettepanek:</strong> {composeTitle(s)}{why}</p>;
-    case 'no_criteria': return <><p><strong>Ettepanek:</strong> lisa kriteeriumid{why}</p><ol>{s.criteria.map((c) => <li key={c}>{c}</li>)}</ol></>;
-    case 'untestable': return <p><strong>Ettepanek:</strong> asenda tekstiga „{s.text}“{why}</p>;
+    case 'no_criteria': return <><p><strong>Ettepanek:</strong> lisa kriteeriumid{why}</p><ol>{s.criteria.map((c, i) => <li key={c}>{c}<SelfCheckNote mark={s.selfCheck?.[i] ?? null} /></li>)}</ol></>;
+    case 'untestable': return <><p><strong>Ettepanek:</strong> asenda tekstiga „{s.text}“{why}</p><SelfCheckNote mark={s.selfCheck ?? null} /></>;
     case 'no_mockup': return <p><strong>AI soovitab:</strong> {DECISION_LABELS[s.decision]}{why}</p>;
     case 'too_large': return <SplitPreview f={f} stories={stories} />;
     case 'overlap': return s.merge ? <MergePreview f={f} stories={stories} /> : <><p><strong>Ettepanek:</strong> {s.text}</p><p>AI ühendamisettepanek oli vigane – vajuta „Muuda“ ja ühenda ise.</p></>;

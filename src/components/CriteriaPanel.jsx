@@ -3,7 +3,8 @@ import {
   acceptMockup, applyCriteria, getCriteria, linkCriterion, proposeCriteria, proposeMockup, rejectMockup, restoreMockupVersion, reviewConsistency,
 } from '../api.js';
 import { componentLabel } from '../../shared/consistency.js';
-import { CheckWarnings, LinkLine, ReviewBox } from './Consistency.jsx';
+import { CheckWarnings, LinkLine, ReviewBox, SelfCheckNote } from './Consistency.jsx';
+import DemoTag from './DemoTag.jsx';
 import {
   accept, addManual, buildSave, CRITERIA_ORIGIN_LABELS, edit, fromProposal, remove, visible, warningsFor,
 } from '../criteria/selection.js';
@@ -51,6 +52,7 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
           <>
             <p className="criterion__text">{item.text}</p>
             <p className="muted criterion__state">{label}</p>
+            {item.text === item.original && <SelfCheckNote mark={item.selfCheck} />}
             <Warnings text={item.text} />
             <div className="actions">
               <button type="button" className="icon-button" aria-pressed={item.state === 'accepted'} onClick={() => onAccept(item.key)} disabled={busy}>✓ Nõus</button>
@@ -115,7 +117,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           {linkError && <p className="error" role="alert">{linkError}</p>}
           {criteriaProposal && (
             <div className="criteria-proposal">
-              <p className="muted">AI ettepanek – ei ole veel loo juures. Salvestatakse ainult ✓ kinnitatud ja ✎ muudetud kriteeriumid.</p>
+              <p className="muted">{criteriaProposal.demo && <><DemoTag />{' '}</>}AI ettepanek – ei ole veel loo juures. Salvestatakse ainult ✓ kinnitatud ja ✎ muudetud kriteeriumid.</p>
               <ol className="criteria-list">
                 {shown.map((item, i) => (
                   <CriterionRow key={item.key} item={item} number={i + 1} busy={disabled} onAccept={onAccept} onEdit={onEdit} onRemove={onRemove} />

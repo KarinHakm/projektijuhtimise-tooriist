@@ -210,3 +210,17 @@ test('kui lool on juba kriteeriumid, uut ettepanekut ei tehta (409) – neid muu
   assert.equal((await res.json()).code, 'already_has_criteria');
   assert.equal(ai.calls.length, 1);
 });
+
+// L18: AI enesekontroll – mittekontrollitav kriteerium sõnastatakse ühe lisapäringuga ümber; seos jääb samaks.
+test('mittekontrollitav AI kriteerium: üks lisapäring, ettepanekus parandatud tekst, märge ja sama seos', async () => {
+  const data = structuredClone(AI_DATA);
+  data.criteria[0].text = 'Paketid on selgelt näha.';
+  ai.push(aiOk(data), aiOk({ criteria: [{ key: '0', text: 'Iga paketi juures on näha selle hind eurodes.' }] }));
+  assert.equal((await post(projectId, '/propose')).status, 200);
+  assert.equal(ai.calls.length, 2);
+  const { criteriaProposal: p } = await (await fetch(url(projectId))).json();
+  assert.equal(p.criteria[0].text, 'Iga paketi juures on näha selle hind eurodes.');
+  assert.deepEqual([p.criteria[0].selfCheck.status, p.criteria[0].selfCheck.from], ['rewritten', 'Paketid on selgelt näha.']);
+  assert.equal(p.criteria[0].ref, 1); // seos sama elemendiga („Paketid“)
+  assert.equal(p.criteria[1].selfCheck, null); // kontrollitav kriteerium jäi puutumata
+});

@@ -39,7 +39,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Tehtud |
 | L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
 | L17 | MVP joon | S | Kohustuslik | – | Valmis |
-| L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Pooleli |
+| L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Tehtud |
 | L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
 | L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Pooleli |
 | L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Plaanitud |
@@ -515,7 +515,9 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Õpetaja tabeli neli mittekontrollitavat näidet saavad automaattestis hoiatuse.
 - Õpetaja tabeli neli kontrollitavat näidet ei saa automaattestis hoiatust.
 
-**Seis 01.10.2026 (L18 osaliselt):** hinnangusõnade ja „ja/ning/või“ hoiatus on olemas (`shared/criteria-check.js`, server ja brauser kasutavad sama reeglit; õpetaja tabeli 4 + 4 näidet on automaattestis). **Pooleli:** reeglit mitte läbivat AI kriteeriumi ei saadeta AI-le ümbersõnastamiseks – see saab ainult hoiatuse.
+**Seis 01.10.2026 (L18 osaliselt):** hinnangusõnade ja „ja/ning/või“ hoiatus on olemas (`shared/criteria-check.js`, server ja brauser kasutavad sama reeglit; õpetaja tabeli 4 + 4 näidet on automaattestis). 
+
+**Seis 02.10.2026 – AI enesekontroll (L18 lõpetatud):** kui AI vastus on muus mõttes juba kontrollitud ja jõuaks kasutajani, kuid sisaldab `checkCriterion` järgi mittekontrollitavaid kriteeriume, saadab server need **ühe** automaatse päringuga ümbersõnastamiseks (`server/ai/tasks/criteria-fix.js`, `maxAttempts: 1` – kordust ei tehta). Päringus on loo pealkiri, kriteerium, täpne hoiatus ja vajadusel mockup'i element. Server kontrollib uue teksti uuesti: kontrollitav ja mittekorduv tekst asendab algse (märge „AI parandas“ koos algse tekstiga); endiselt vigane tekst jääb algsel kujul nähtavaks hoiatusega „AI ei suutnud kriteeriumi kontrollitavaks sõnastada – muuda või eemalda see“; AI tõrke korral „Automaatne kontroll jäi tegemata“. Tõrge põhiettepanekut ei katkesta. Kaetud on kõik kriteeriume pakkuvad AI ülesanded: kriteeriumide ettepanek (L09), kliendi täpsustus (L11) ja ülevaatuse „kriteeriumid puuduvad“ / „mittekontrollitav“ ettepanekud (L27). Käsitsi muudetud kriteeriumi juures märget ei näidata. Märge on ettepaneku payload'is, migratsiooni pole. **Automaattestid:** AI-kutset pole, kui kõik on kontrollitavad; parandus asendab, vigane või korduv parandus jätab algse; tõrke ja vigase vastuse korral täpselt üks päring; kriteeriumide, täpsustuse ja ülevaatuse route'id; märgete renderdus. **Arendaja nägi brauseris (demobaasi koopia, käsitsi koostatud näidisettepanek, AI väljas):** „AI parandas“ koos algse tekstiga, parandamata kriteeriumi hoiatus koos Muuda/Eemalda, märke kadumine käsitsi muutmisel. **Pooleli:** päris AI-ga katsetamata; hoiatuste erinev taane on teadlik kujunduspisiasi.
 
 ### L19 · Staatused ja Definition of Ready (M)
 *Projektijuhina soovin, et lugu saaks staatuse „Valmis arenduseks“ ainult siis, kui see vastab valmisoleku definitsioonile, et arendajad saaksid ainult valmis lugusid.*

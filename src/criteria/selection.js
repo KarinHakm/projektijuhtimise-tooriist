@@ -8,7 +8,7 @@ import { CRITERION_MAX, checkCriterion, cleanCriterion } from '../../shared/crit
 // Käsitsi lisatud kriteerium on kohe accepted ja ilma indeksita (päritolu "Käsitsi lisatud").
 
 export const fromProposal = (proposal) =>
-  proposal.criteria.map((c) => ({ key: `ai-${c.index}`, index: c.index, original: c.text, text: c.text, state: 'pending' }));
+  proposal.criteria.map((c) => ({ key: `ai-${c.index}`, index: c.index, original: c.text, text: c.text, state: 'pending', selfCheck: c.selfCheck ?? null }));
 
 const update = (items, key, patch) => items.map((i) => (i.key === key ? { ...i, ...patch } : i));
 

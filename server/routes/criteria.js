@@ -3,6 +3,7 @@ import { checkCriterion } from '../../shared/criteria-check.js';
 import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
+import { selfCheckCriteria } from '../ai/tasks/criteria-fix.js';
 import {
   buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, resolveRef,
 } from '../ai/tasks/criteria.js';
@@ -43,7 +44,14 @@ export function criteriaRouter({ db, ai }) {
       mockup: latestMockup(db, story.id),
       mockupVersions: listMockupVersions(db, story.id).slice(1), // L22: varasemad versioonid (uusim on "mockup")
       criteriaProposal: cp
-        ? { id: cp.id, message: cp.payload.message, criteria: cp.payload.criteria.map((text, index) => ({ index, text, ref: cp.payload.refs?.[index] ?? null, warnings: checkCriterion(text).map((w) => w.message) })) }
+        ? {
+          id: cp.id,
+          demo: cp.payload.demo === true, // käsitsi koostatud näidisettepanek, mitte AI vastus
+          message: cp.payload.message,
+          criteria: cp.payload.criteria.map((text, index) => ({
+            index, text, ref: cp.payload.refs?.[index] ?? null, warnings: checkCriterion(text).map((w) => w.message), selfCheck: cp.payload.selfCheck?.[index] ?? null,
+          })),
+        }
         : null,
       consistency: consistencyFor(db, story.id),
       mockupProposal: mp ? { id: mp.id, message: mp.payload.message, mockup: mp.payload.mockup } : null,
@@ -91,6 +99,12 @@ export function criteriaRouter({ db, ai }) {
         schema: CRITERIA_SCHEMA,
         check: checkCriteria,
       }));
+      // L18: kehtiva vastuse mittekontrollitavad kriteeriumid – üks ümbersõnastuse päring; tõrge ei katkesta ettepanekut.
+      const check = await selfCheckCriteria(ai, {
+        storyTitle: story.title,
+        items: data.criteria.map((c, i) => ({ key: String(i), text: c.text, element: c.ref || null })),
+      });
+      data = { ...data, criteria: data.criteria.map((c, i) => ({ ...c, text: check.texts.get(String(i)) })), selfCheck: check.marks };
     } catch (err) {
       const { status, body } = toHttpError(err);
       return res.status(status).json(body);
@@ -102,7 +116,10 @@ export function criteriaRouter({ db, ai }) {
     const criteriaProposal = createProposal(db, {
       projectId,
       kind: CRITERIA,
-      payload: { storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => resolveRef(c.ref, data.mockup)) },
+      payload: {
+        storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => resolveRef(c.ref, data.mockup)),
+        selfCheck: data.selfCheck, // L18: { indeks: { status, from?, warnings } }
+      },
     });
     if (!latestMockup(db, story.id) && !pendingFor(projectId, MOCKUP, story.id)) {
       // Kriteeriumide viited (L23) käivad selle mockup'i komponentide kohta.

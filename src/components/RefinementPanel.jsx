@@ -5,7 +5,7 @@ import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import MockupView from './MockupView.jsx';
 import DemoTag from './DemoTag.jsx';
-import { CheckWarnings, LinkLine } from './Consistency.jsx';
+import { CheckWarnings, LinkLine, SelfCheckNote } from './Consistency.jsx';
 
 const POLL_MS = 3000;
 const STATUS_LABELS = { added: 'Lisandub', modified: 'Muutub', unchanged: 'Muutmata' };
@@ -14,7 +14,7 @@ const STATUS_LABELS = { added: 'Lisandub', modified: 'Muutub', unchanged: 'Muutm
 function EditForm({ proposal, rolePhrase, busy, onApply, onCancel }) {
   const [want, setWant] = useState(proposal.after.want);
   const [soThat, setSoThat] = useState(proposal.after.soThat);
-  const [criteria, setCriteria] = useState(proposal.after.criteria);
+  const [criteria, setCriteria] = useState(() => proposal.after.criteria.map(({ from, text, ref }) => ({ from, text, ref })));
   const setText = (i, text) => setCriteria((all) => all.map((c, j) => (j === i ? { ...c, text } : c)));
   return (
     <div className="refine-edit">
@@ -91,6 +91,7 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
                   <li key={i} className={`diff--${c.status}`}>
                     <span className="diff__label">{STATUS_LABELS[c.status]}</span> K{i + 1}. {c.text}
                     {c.oldText && <span className="diff__old">Enne: {c.oldText}</span>}
+                    <SelfCheckNote mark={proposal.after.criteria[i]?.selfCheck ?? null} />
                     {proposal.preview.consistency && (
                       <>
                         <LinkLine link={proposal.preview.consistency.criteria[i].link} />

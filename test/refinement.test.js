@@ -242,3 +242,16 @@ test('pooleli ettepaneku korral uut täpsustust samale loole ei tehta (409)', as
   assert.equal((await res.json()).code, 'pending_exists');
   assert.equal(ai.calls.length, 1);
 });
+
+// L18: täpsustuse uus kriteerium, mida AI ei suuda kontrollitavaks sõnastada, jääb nähtavaks märkega; rakendamine töötab.
+test('enesekontroll: endiselt vigane parandus jätab algse teksti märkega; muutmata rakendamine ei ebaõnnestu', async () => {
+  const data = refineData();
+  data.criteria[2].text = 'Hinnakiri on kiire lugeda.';
+  ai.push(aiOk(data), aiOk({ criteria: [{ key: '2', text: 'Hinnakiri on lihtne lugeda.' }] }));
+  const res = await post(projectId, '/propose', { storyId: target, clarification: 'Paketi hinnas peab olema näha, kas see sisaldab käibemaksu.' });
+  assert.equal(res.status, 200);
+  assert.equal(ai.calls.length, 2);
+  const p = (await res.json()).proposal;
+  assert.deepEqual([p.after.criteria[2].text, p.after.criteria[2].selfCheck.status], ['Hinnakiri on kiire lugeda.', 'still_untestable']);
+  assert.equal((await post(projectId, '/apply', { proposalId: p.id, storyId: target })).status, 200);
+});

@@ -5,7 +5,7 @@ import { buildProjectContext } from '../ai/context.js';
 import { buildReviewMessages, REVIEW_SCHEMA } from '../ai/tasks/review.js';
 import { createProposal, findPendingProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
-import { applyFinding, codeFindings, findingIsCurrent, KIND, mergeAiReview, ReviewError, undoFinding } from '../review.js';
+import { applyFinding, codeFindings, findingIsCurrent, KIND, mergeAiReview, ReviewError, selfCheckReview, undoFinding } from '../review.js';
 import { mergeInfo, splitInfo } from '../stories.js';
 import { listCriteria } from '../criteria.js';
 
@@ -74,6 +74,7 @@ export function reviewRouter({ db, ai }) {
         schema: REVIEW_SCHEMA,
       });
       findings = mergeAiReview(db, projectId, findings, data);
+      findings = await selfCheckReview(ai, db, projectId, findings); // L18: enesekontroll ei katkesta ülevaatust
       message = data.message;
       aiDone = true;
     } catch (err) {

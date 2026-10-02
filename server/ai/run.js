@@ -8,11 +8,12 @@ const MIN_RETRY_BUDGET_MS = 5_000;
 // Vigase vastuse (katkenud, tühi, mitte-JSON, skeemile või reeglitele mittevastav) korral proovitakse
 // üks kord uuesti. Ajalimiidi, päringupiiri ja teenuse vigade korral ei korrata (kasutaja otsustab ise).
 // Tagastab { data, meta: { durationMs, outputTokens, attempts } }. Midagi ei salvestata.
-export async function runAiTask(client, { task, messages, schema, check, maxTokens, log = logAiMetrics }) {
+// maxAttempts: vaikimisi 2 (üks kordus); 1 = kordust ei tehta (nt kriteeriumide enesekontroll L18).
+export async function runAiTask(client, { task, messages, schema, check, maxTokens, maxAttempts = 2, log = logAiMetrics }) {
   const started = Date.now();
   let outputTokens = 0;
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const attemptStarted = Date.now();
     let result;
     try {

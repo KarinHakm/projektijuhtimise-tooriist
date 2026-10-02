@@ -6,6 +6,7 @@ import { validateStoryText } from '../../shared/story-format.js';
 import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
+import { selfCheckCriteria } from '../ai/tasks/criteria-fix.js';
 import { buildRefineMessages, buildRefineSchema, checkRefine, CLARIFICATION_MAX } from '../ai/tasks/refine.js';
 import { checkMockup, resolveRef } from '../ai/tasks/criteria.js';
 import { aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, saveMockup } from '../criteria.js';
@@ -130,6 +131,12 @@ export function refinementRouter({ db, ai }) {
         schema: buildRefineSchema(before.criteria.length, otherStoryIds),
         check: (d) => checkRefine(d, { rolePhrase: story.rolePhrase, criteriaCount: before.criteria.length, otherStoryIds }),
       }));
+      // L18: kehtiva ettepaneku mittekontrollitavad kriteeriumid – üks ümbersõnastuse päring; tõrge ei katkesta ettepanekut.
+      const check = await selfCheckCriteria(ai, {
+        storyTitle: story.title,
+        items: data.criteria.map((c, i) => ({ key: String(i), text: c.text, element: c.ref || null })),
+      });
+      data = { ...data, criteria: data.criteria.map((c, i) => ({ ...c, text: check.texts.get(String(i)) })), selfCheck: check.marks };
     } catch (err) {
       const { status, body } = toHttpError(err);
       return res.status(status).json(body);
@@ -148,7 +155,7 @@ export function refinementRouter({ db, ai }) {
         after: {
           want: story2.want,
           soThat: story2.soThat,
-          criteria: data.criteria.map((c) => ({ from: c.from, text: cleanCriterion(c.text), ref: resolveRef(c.ref, data.mockup) })),
+          criteria: data.criteria.map((c, i) => ({ from: c.from, text: cleanCriterion(c.text), ref: resolveRef(c.ref, data.mockup), selfCheck: data.selfCheck[String(i)] ?? null })),
           mockup: mockupSpec(data.mockup),
         },
         otherStories: data.otherStories,
@@ -178,7 +185,7 @@ export function refinementRouter({ db, ai }) {
       return reject(400, 'other_story', 'Päring sisaldab muid andmeid peale valitud loo muudatuse; muudatust ei salvestatud.');
     }
     const { before, after } = proposal.payload;
-    const criteriaIn = changes.criteria ?? after.criteria;
+    const criteriaIn = changes.criteria ?? after.criteria.map(({ from, text, ref }) => ({ from, text, ref })); // L18 selfCheck märge ei ole muudatus
     if (!Array.isArray(criteriaIn)) return reject(400, 'invalid_changes', 'Kriteeriumid on vigased.');
     if (criteriaIn.some((c) => c && typeof c === 'object' && Object.keys(c).some((k) => !['from', 'text', 'ref'].includes(k)))) {
       return reject(400, 'other_story', 'Päring sisaldab muid andmeid peale valitud loo muudatuse; muudatust ei salvestatud.');

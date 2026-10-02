@@ -39,3 +39,19 @@ export function ReviewBox({ consistency, mockupVersion, busy, onReview }) {
     </section>
   );
 }
+
+// L18: AI enesekontrolli märge kriteeriumi juures. mark = { status, from?, warnings } või null.
+// rewritten = AI sõnastas mittekontrollitava kriteeriumi ümber; still_untestable / not_checked = algne tekst jäi.
+export function SelfCheckNote({ mark }) {
+  if (!mark) return null;
+  if (mark.status === 'rewritten') {
+    return (
+      <p className="selfcheck selfcheck--fixed">
+        <span className="tag tag--selfcheck">AI parandas</span> Algne: „{mark.from}“{mark.warnings?.length ? ` – ${mark.warnings.join(' ')}` : ''}
+      </p>
+    );
+  }
+  if (mark.status === 'still_untestable') return <p className="warning selfcheck">⚠ AI ei suutnud kriteeriumi kontrollitavaks sõnastada – muuda või eemalda see.</p>;
+  if (mark.status === 'not_checked') return <p className="warning selfcheck">⚠ Automaatne kontroll jäi tegemata (AI tõrge) – kontrolli kriteerium ise üle.</p>;
+  return null;
+}

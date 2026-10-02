@@ -8,6 +8,7 @@ import { CRITERIA_MAX_COUNT, appendCriteria, latestMockup, listCriteria } from '
 import { insertStoryQuestion } from './readiness.js';
 import { listStories, mergeInfo, mergeStoriesInTx, splitInfo, splitStoryInTx, updateManualStory, validateMerge, validateSplit } from './stories.js';
 import { VIEW_DECISIONS } from './ai/tasks/review.js';
+import { selfCheckCriteria } from './ai/tasks/criteria-fix.js';
 
 export const KIND = 'review';
 export const NEEDS_MOCKUP_QUESTION = "Vajab mockup'i";
@@ -149,6 +150,33 @@ export function mergeAiReview(db, projectId, findings, data) {
     });
   }
   return [...findings, ...extra];
+}
+
+// L18: AI enesekontroll ülevaatuse kriteeriumide ettepanekutele. Ainult juba kontrollitud ettepanekud (mergeAiReview
+// järel alles jäänud): „kriteeriumid puuduvad“ lisatavad kriteeriumid ja „mittekontrollitav“ asendustekst.
+// Üks päring kõigi vigaste jaoks; parandamata või kontrollimata tekst jääb ettepanekusse koos märkega (selfCheck).
+export async function selfCheckReview(ai, db, projectId, findings) {
+  const titles = new Map(listStories(db, projectId).map((st) => [st.id, st.title]));
+  const items = [];
+  for (const f of findings) {
+    if (!f.suggestion) continue;
+    const base = { story: titles.get(f.storyIds[0]), group: f.storyIds[0], element: null };
+    if (f.type === 'no_criteria') f.suggestion.criteria.forEach((text, i) => items.push({ ...base, key: `${f.id}#${i}`, text }));
+    if (f.type === 'untestable') items.push({ ...base, key: f.id, text: f.suggestion.text });
+  }
+  const { texts, marks } = await selfCheckCriteria(ai, { storyTitle: null, items });
+  for (const f of findings) {
+    if (f.type === 'no_criteria' && f.suggestion) {
+      f.suggestion.criteria = f.suggestion.criteria.map((_, i) => texts.get(`${f.id}#${i}`));
+      const own = f.suggestion.criteria.map((_, i) => marks[`${f.id}#${i}`] ?? null);
+      if (own.some(Boolean)) f.suggestion.selfCheck = own;
+    }
+    if (f.type === 'untestable' && f.suggestion) {
+      f.suggestion.text = texts.get(f.id);
+      if (marks[f.id]) f.suggestion.selfCheck = marks[f.id];
+    }
+  }
+  return findings;
 }
 
 // Kas leiu aluseks olnud seis kehtib veel. Ainult lugemine.

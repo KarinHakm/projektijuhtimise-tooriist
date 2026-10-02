@@ -96,3 +96,14 @@ test('koodis ei ole innerHTML-i ega dangerouslySetInnerHTML-i', () => {
     assert.doesNotMatch(code, /innerHTML|dangerouslySetInnerHTML/, file);
   }
 });
+
+// L18: AI enesekontrolli märked kriteeriumi ettepanekus.
+test('AI enesekontroll: „AI parandas“ koos algse tekstiga; parandamata kriteeriumil hoiatus', () => {
+  const base = { key: 'ai-0', index: 0, state: 'pending' };
+  const fixed = { ...base, original: 'Hinnad on näha eurodes.', text: 'Hinnad on näha eurodes.', selfCheck: { status: 'rewritten', from: 'Hinnad on selgelt näha.', warnings: ['Hinnanguline sõna „selgelt“.'] } };
+  const stuck = { ...base, original: 'Vorm on lihtne.', text: 'Vorm on lihtne.', selfCheck: { status: 'still_untestable', warnings: [] } };
+  const row = (item) => renderToStaticMarkup(createElement(CriterionRow, { item, number: 1, busy: false, onAccept: noop, onEdit: noop, onRemove: noop })).replace(/<!-- -->/g, '');
+  assert.match(row(fixed), /<span class="tag tag--selfcheck">AI parandas<\/span> Algne: „Hinnad on selgelt näha\.“ – Hinnanguline sõna „selgelt“\./);
+  assert.match(row(stuck), /⚠ AI ei suutnud kriteeriumi kontrollitavaks sõnastada – muuda või eemalda see\./);
+  assert.doesNotMatch(row({ ...fixed, text: 'Kasutaja muutis.' }), /AI parandas/); // pärast käsitsi muutmist märget ei näidata
+});

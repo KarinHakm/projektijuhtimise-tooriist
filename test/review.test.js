@@ -276,3 +276,14 @@ test('vigane ühendamisjaotus jäetakse välja; mõlema mockupi korral keeldutak
   assert.match((await res.json()).error, /Ühendamist ei saa tagasi võtta.*Osalist taastamist ei tehta/);
   assert.deepEqual(withMockups(), after);
 });
+
+// L18: ülevaatuse asendustekst, mis on ise mittekontrollitav – üks lisapäring; parandamata tekst jääb märkega.
+test('enesekontroll ülevaatusel: mittekontrollitav asendustekst saab ühe ümbersõnastuse, parandamata jääb märkega', async () => {
+  const data = AI_REVIEW();
+  data.criterionFixes[0].text = 'Hinnakiri on selge.';
+  ai.push(aiOk(data), aiOk({ criteria: [{ key: `untestable-${ids.vague}`, text: 'Hinnakiri on lihtne.' }] }));
+  const res = await post('/run');
+  assert.equal(ai.calls.length, 2);
+  const s = finding((await res.json()).review, `untestable-${ids.vague}`).suggestion;
+  assert.deepEqual([s.text, s.selfCheck.status], ['Hinnakiri on selge.', 'still_untestable']);
+});
