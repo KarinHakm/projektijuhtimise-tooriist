@@ -44,3 +44,20 @@ test('valmisolek aegunud: hoiatus lahtris ja backlog’i real', () => {
   assert.match(list, /aria-expanded="true"[^>]*>Peida \(DoR puudu: 1\)<\/button>/);
   assert.match(list, /class="story-ready"/);
 });
+
+// L15: kriteeriumide käsitsi halduse plokk (read, Muuda/Kustuta, lisamise väli). Klõpsamist ei testita.
+test('kriteeriumide plokk: read päritolu, hoiatuse ja seosega, Muuda/Kustuta ning lisamise väli', () => {
+  const criteria = [
+    { id: 11, text: "Vormil on väli 'E-post'.", origin: 'ai', warnings: [], linkLabel: 'Sisestusväli „E-post“ (mockup v1)' },
+    { id: 12, text: 'Vorm on lihtne.', origin: 'manual', warnings: ['Hinnanguline sõna „lihtne“ – seda ei saa jah/ei vastusega kontrollida.'], linkLabel: null },
+  ];
+  const story = { ...withDor('idee', {}), criteria };
+  const html = renderToStaticMarkup(createElement(StoryReadiness, { story, onStatus: noop, onAddQuestion: noop, onResolve: noop, onAddCriterion: noop, onUpdateCriterion: noop, onDeleteCriterion: noop })).replace(/<!-- -->/g, '').replace(/&#x27;/g, "'");
+  assert.match(html, /<p class="story-ready__heading">Vastuvõtukriteeriumid<\/p><ol class="story-criteria"><li><span><strong>K1\.<\/strong> Vormil on väli 'E-post'\. <span class="tag">AI<\/span><\/span>/);
+  assert.match(html, /Seos: Sisestusväli „E-post“ \(mockup v1\)/);
+  assert.match(html, /<strong>K2\.<\/strong> Vorm on lihtne\. <span class="tag">käsitsi<\/span><\/span><p class="warning">⚠ Hinnanguline sõna „lihtne“/);
+  assert.match(html, /Seos mockup'iga puudub/);
+  assert.match(html, /aria-label="Muuda kriteeriumi K1">✎ Muuda<\/button>.*aria-label="Kustuta kriteerium K1">Kustuta<\/button>/);
+  assert.match(html, /<label for="loo-3-k-uus">Lisa kriteerium<\/label>/);
+  assert.doesNotMatch(render(withDor('idee', {})), /Vastuvõtukriteeriumid/); // ilma halduse tegevusteta plokki pole
+});

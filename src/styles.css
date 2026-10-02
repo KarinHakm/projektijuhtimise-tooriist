@@ -481,3 +481,11 @@ button.danger { background: var(--error); }
 .stage--passed .stage__button { border-style: dashed; }
 .stage--passed .stage__mark { color: var(--muted); }
 .stage-summary__skip { margin-left: 0.5rem; }
+/* L15: kriteeriumide käsitsi haldus loo paneelis */
+.story-criteria { margin: 0.25rem 0; padding-left: 1.25rem; }
+.story-criteria li { margin: 0.35rem 0; }
+.story-criteria input { width: 100%; box-sizing: border-box; }
+.story-criteria__link { display: block; font-size: 0.85em; }
+/* Kustutamise kinnitus: tekst ja nupud paindlikult – nupud jäävad kõrvuti (pika teksti korral koos järgmisele reale). */
+.story-criteria__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin-top: 0.25rem; }
+.story-criteria .warning { margin: 0.15rem 0; }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addStoryQuestion, createStory, deleteStory, getDeleteImpact, getSplitInfo, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus,
-  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding,
+  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding, addCriterion, updateCriterion, deleteCriterion,
 } from '../api.js';
 import ReviewPanel from './ReviewPanel.jsx';
 import StoryForm from './StoryForm.jsx';
@@ -231,6 +231,10 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
     onStatus: (id, value) => runReadiness(id, () => setStoryStatus(projectId, id, value)),
     onAddQuestion: (id, text) => runReadiness(id, () => addStoryQuestion(projectId, id, text)),
     onResolve: (id, questionId) => runReadiness(id, () => resolveStoryQuestion(projectId, id, questionId)),
+    // L15: kriteeriumide muutus mõjutab ka alustamise loo kaarti ja täpsustust – need laaditakse uuesti.
+    onAddCriterion: (id, text) => runReadiness(id, () => addCriterion(projectId, id, text)).then((ok) => { if (ok) onBacklogChanged?.(); return ok; }),
+    onUpdateCriterion: (id, criterionId, text) => runReadiness(id, () => updateCriterion(projectId, id, criterionId, text)).then((ok) => { if (ok) onBacklogChanged?.(); return ok; }),
+    onDeleteCriterion: (id, criterionId) => runReadiness(id, () => deleteCriterion(projectId, id, criterionId)).then((ok) => { if (ok) onBacklogChanged?.(); return ok; }),
   };
 
   useEffect(() => {

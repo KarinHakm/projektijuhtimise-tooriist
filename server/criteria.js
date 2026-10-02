@@ -103,3 +103,42 @@ export function saveMockup(db, storyId, mockup) {
   db.prepare('INSERT INTO mockups (story_id, version, spec) VALUES (?, ?, ?)').run(storyId, next, JSON.stringify(mockup));
   return next;
 }
+
+// --- L15: kriteeriumide käsitsi lisamine, muutmine ja kustutamine (ilma AI-ta) ---
+// Seos mockup'iga on kriteeriumi enda väli: muutmisel jääb alles (kooskõla hoiatused arvutatakse uue teksti järgi
+// uuesti, ülevaatus aegub sõrmejälje kaudu), kustutamisel kaob ainult selle kriteeriumi seos.
+
+// Kontrollib käsitsi kriteeriumi teksti. exceptId = muudetav kriteerium (iseendaga kordust ei loeta).
+// Tagastab { text } või { status, code, error }.
+export function validateManualCriterion(db, storyId, raw, exceptId = null) {
+  const text = cleanCriterion(raw?.text);
+  if (!text) return { status: 400, code: 'invalid_criterion', error: 'Kriteerium ei tohi olla tühi.' };
+  if (text.length > CRITERION_MAX) return { status: 400, code: 'invalid_criterion', error: `Kriteerium võib olla kuni ${CRITERION_MAX} märki.` };
+  const key = text.toLocaleLowerCase('et');
+  if (listCriteria(db, storyId).some((c) => c.id !== exceptId && c.text.toLocaleLowerCase('et') === key)) {
+    return { status: 400, code: 'duplicate_criterion', error: 'Sama kriteerium on selles loos juba olemas.' };
+  }
+  return { text };
+}
+
+// Kutsuda transaktsiooni sees. Tagastab { id } või { status, code, error } (10 kriteeriumi piir).
+export function addManualCriterion(db, storyId, text) {
+  if (listCriteria(db, storyId).length >= CRITERIA_MAX_COUNT) {
+    return { status: 409, code: 'too_many_criteria', error: `Loos võib olla kuni ${CRITERIA_MAX_COUNT} kriteeriumi.` };
+  }
+  appendCriteria(db, storyId, [{ text, origin: 'manual' }]);
+  return { id: db.prepare('SELECT id FROM criteria WHERE story_id = ? ORDER BY position DESC LIMIT 1').get(storyId).id };
+}
+
+// Kutsuda transaktsiooni sees. AI kriteeriumi muutmisel päritolu "ai_edited"; seos jääb alles.
+export function updateCriterionText(db, criterionId, text) {
+  db.prepare(`UPDATE criteria SET text = ?, origin = CASE WHEN origin = 'ai' THEN 'ai_edited' ELSE origin END,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND text <> ?`).run(text, criterionId, text);
+}
+
+// Kutsuda transaktsiooni sees. Kustutab kriteeriumi (koos selle seosega) ja nummerdab järjekorra ümber.
+export function deleteCriterion(db, storyId, criterionId) {
+  db.prepare('DELETE FROM criteria WHERE id = ? AND story_id = ?').run(criterionId, storyId);
+  const renumber = db.prepare('UPDATE criteria SET position = ? WHERE id = ?');
+  db.prepare('SELECT id FROM criteria WHERE story_id = ? ORDER BY position, id').all(storyId).forEach((c, i) => renumber.run(i + 1, c.id));
+}

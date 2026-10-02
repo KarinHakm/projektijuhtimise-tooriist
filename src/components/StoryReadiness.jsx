@@ -1,10 +1,90 @@
 import { useState } from 'react';
 import { READY, STORY_STATUSES } from '../../shared/dor.js';
 import { STATUS_LABELS } from '../stories/selection.js';
+import { checkCriterion, CRITERION_MAX } from '../../shared/criteria-check.js';
+
+const ORIGIN = { ai: 'AI', ai_edited: 'AI, muudetud', manual: 'käsitsi' };
+const MAX_CRITERIA = 10;
+
+// L15: vastuvõtukriteeriumide käsitsi lisamine, muutmine ja kinnitusega kustutamine. Hoiatus uueneb kirjutamise ajal
+// (sama checkCriterion reegel mis serveris); salvestamist see ei keela. Seos mockup'iga on kriteeriumi enda väli.
+function StoryCriteria({ story, busy, onAdd, onUpdate, onDelete }) {
+  const [mode, setMode] = useState(null); // null | { type: 'edit' | 'delete', id }
+  const [draft, setDraft] = useState('');
+  const [text, setText] = useState('');
+  const idBase = `loo-${story.id}-k`;
+  const warnings = (t) => (t.trim() ? checkCriterion(t).map((w) => w.message) : []);
+  const startEdit = (c) => { setMode({ type: 'edit', id: c.id }); setDraft(c.text); };
+  const link = (c) => (c.linkLabel ? `Seos: ${c.linkLabel}` : "Seos mockup'iga puudub");
+
+  async function add(e) {
+    e.preventDefault();
+    if (text.trim() && await onAdd(text)) setText('');
+  }
+  async function save(e, c) {
+    e.preventDefault();
+    if (await onUpdate(c.id, draft)) setMode(null);
+  }
+
+  return (
+    <>
+      <p className="story-ready__heading">Vastuvõtukriteeriumid</p>
+      {story.criteria.length === 0 && <p className="muted">Kriteeriume pole.</p>}
+      {story.criteria.length > 0 && (
+        <ol className="story-criteria">
+          {story.criteria.map((c, i) => (
+            <li key={c.id}>
+              {mode?.type === 'edit' && mode.id === c.id ? (
+                <form onSubmit={(e) => save(e, c)} noValidate>
+                  <label htmlFor={`${idBase}-${c.id}`}>K{i + 1} tekst</label>
+                  <input id={`${idBase}-${c.id}`} value={draft} maxLength={CRITERION_MAX} disabled={busy} onChange={(e) => setDraft(e.target.value)} />
+                  {warnings(draft).map((w) => <p key={w} className="warning">⚠ {w}</p>)}
+                  {c.linkLabel && <p className="muted">Seos mockup'iga („{c.linkLabel}“) jääb alles – kontrolli pärast muutmist kooskõla.</p>}
+                  <span className="actions">
+                    <button type="submit" disabled={busy || !draft.trim()}>Salvesta</button>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setMode(null)}>Tühista</button>
+                  </span>
+                </form>
+              ) : (
+                <>
+                  <span><strong>K{i + 1}.</strong> {c.text} <span className="tag">{ORIGIN[c.origin] ?? c.origin}</span></span>
+                  {c.warnings.map((w) => <p key={w} className="warning">⚠ {w}</p>)}
+                  <span className="muted story-criteria__link">{link(c)}</span>
+                  {mode?.type === 'delete' && mode.id === c.id ? (
+                    <span className="story-criteria__confirm" role="alert">
+                      Kustuta K{i + 1} „{c.text}“?{c.linkLabel ? ` Koos sellega kaob seos „${c.linkLabel}“.` : ''}{' '}
+                      <button type="button" disabled={busy} onClick={async () => { if (await onDelete(c.id)) setMode(null); }}>Kustuta</button>{' '}
+                      <button type="button" className="secondary" disabled={busy} onClick={() => setMode(null)}>Tühista</button>
+                    </span>
+                  ) : (
+                    <span className="story-manage">
+                      <button type="button" className="link-button" disabled={busy || mode !== null} onClick={() => startEdit(c)} aria-label={`Muuda kriteeriumi K${i + 1}`}>✎ Muuda</button>
+                      <button type="button" className="link-button story-manage__delete" disabled={busy || mode !== null}
+                        onClick={() => setMode({ type: 'delete', id: c.id })} aria-label={`Kustuta kriteerium K${i + 1}`}>Kustuta</button>
+                    </span>
+                  )}
+                </>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      <form className="story-questions__add" onSubmit={add} noValidate>
+        <label htmlFor={`${idBase}-uus`}>Lisa kriteerium</label>
+        <input id={`${idBase}-uus`} value={text} maxLength={CRITERION_MAX} disabled={busy || story.criteria.length >= MAX_CRITERIA}
+          onChange={(e) => setText(e.target.value)} placeholder="Nt: Paketi hinna juures on märge, kas hind sisaldab käibemaksu." />
+        {warnings(text).map((w) => <p key={w} className="warning">⚠ {w}</p>)}
+        <button type="submit" className="secondary" disabled={busy || !text.trim() || story.criteria.length >= MAX_CRITERIA}>Lisa kriteerium</button>
+        {story.criteria.length >= MAX_CRITERIA && <p className="muted">Loos võib olla kuni {MAX_CRITERIA} kriteeriumi.</p>}
+      </form>
+    </>
+  );
+}
 
 // Loo staatus, valmisoleku definitsioon (DoR) ja avatud küsimused (L19, L20). Kõik on käsitsi tegevused.
 // „Valmis arenduseks“ on valikus keelatud, kui DoR pole täidetud; küsimuse vastamine staatust ei muuda.
-export default function StoryReadiness({ story, busy = false, error = '', onStatus, onAddQuestion, onResolve }) {
+// onAddCriterion / onUpdateCriterion / onDeleteCriterion (L15) tagastavad õnnestumisel true.
+export default function StoryReadiness({ story, busy = false, error = '', onStatus, onAddQuestion, onResolve, onAddCriterion = null, onUpdateCriterion = null, onDeleteCriterion = null }) {
   const [text, setText] = useState('');
   const { readiness, questions } = story;
   const idBase = `loo-${story.id}`;
@@ -17,6 +97,10 @@ export default function StoryReadiness({ story, busy = false, error = '', onStat
 
   return (
     <div className="story-ready" id={`${idBase}-valmisolek`}>
+      {story.criteria && onAddCriterion && (
+        <StoryCriteria story={story} busy={busy} onAdd={onAddCriterion} onUpdate={onUpdateCriterion} onDelete={onDeleteCriterion} />
+      )}
+
       <label htmlFor={`${idBase}-staatus`}>Staatus</label>
       <select id={`${idBase}-staatus`} value={story.status} disabled={busy} onChange={(e) => onStatus(e.target.value)}>
         {STORY_STATUSES.map((s) => (

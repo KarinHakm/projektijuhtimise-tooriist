@@ -7,7 +7,7 @@ import {
   buildCriteriaMessages, buildMockupMessages, checkCriteria, checkMockup, CRITERIA_SCHEMA, MOCKUP_ONLY_SCHEMA, resolveRef,
 } from '../ai/tasks/criteria.js';
 import {
-  aiRef, appendCriteria, consistencyFor, latestMockup, listCriteria, listMockupVersions, restoreMockup, saveMockup, validateCriteriaSave,
+  aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, listMockupVersions, restoreMockup, saveMockup, validateCriteriaSave,
 } from '../criteria.js';
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
@@ -120,6 +120,17 @@ export function criteriaRouter({ db, ai }) {
     }
     const selection = validateCriteriaSave(req.body?.criteria, proposal.payload.criteria);
     if (selection.error) return res.status(400).json({ error: selection.error, code: 'invalid_criteria' });
+    // L15: loole võis vahepeal käsitsi kriteeriume lisanduda – kordust ega 10 piiri ületamist ei lisata.
+    // Ettepanek jääb ootele (kasutaja saab valikut muuta).
+    const existing = listCriteria(db, proposal.payload.storyId);
+    const dup = selection.criteria.find((c) => existing.some((e) => e.text.toLocaleLowerCase('et') === c.text.toLocaleLowerCase('et')));
+    if (dup) return res.status(400).json({ error: `Kriteerium „${dup.text}“ on selles loos juba olemas. Eemalda see valikust.`, code: 'duplicate_criterion' });
+    if (existing.length + selection.criteria.length > CRITERIA_MAX_COUNT) {
+      return res.status(400).json({
+        error: `Loos on juba ${existing.length} kriteeriumi; kokku võib olla kuni ${CRITERIA_MAX_COUNT}. Vali kuni ${Math.max(0, CRITERIA_MAX_COUNT - existing.length)}.`,
+        code: 'too_many_criteria',
+      });
+    }
     try {
       applyProposal(db, proposal.id, (tx) => {
         const exists = tx.prepare('SELECT 1 FROM stories WHERE id = ? AND project_id = ?').get(proposal.payload.storyId, projectId);

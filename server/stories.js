@@ -271,7 +271,8 @@ export function splitStoryInTx(db, projectId, storyId, split) {
 
 const MERGE_REJECTED_KINDS = ['criteria', 'mockup', 'refinement'];
 
-function linkLabel(db, storyId, c) {
+// Kriteeriumi mockup'i seose silt (c = kriteeriumi rida ref_kind/ref_index/ref_version väljadega). Ainult lugemine.
+export function linkLabel(db, storyId, c) {
   if (c.ref_kind === 'no_view') return 'ei puuduta vaadet';
   if (c.ref_kind !== 'element') return null;
   const row = db.prepare('SELECT spec FROM mockups WHERE story_id = ? AND version = ?').get(storyId, c.ref_version);

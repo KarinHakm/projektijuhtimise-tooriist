@@ -13,6 +13,7 @@ import {
   updateManualStory, validateApply, validateManualStory, validateMerge, validateSplit,
 } from '../stories.js';
 import { insertStoryQuestion, withReadiness } from '../readiness.js';
+import { addManualCriterion, deleteCriterion, updateCriterionText, validateManualCriterion } from '../criteria.js';
 import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
 
 const QUESTION_MAX = 300;
@@ -291,6 +292,52 @@ export function storiesRouter({ db, ai }) {
     if (question.resolvedAt) return res.status(409).json({ error: 'Küsimus on juba vastatud.', code: 'already_resolved' });
     db.prepare("UPDATE story_questions SET resolved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND resolved_at IS NULL").run(question.id);
     res.json(snapshot(req.projectId));
+  });
+
+  // L15: vastuvõtukriteeriumide käsitsi lisamine, muutmine ja kustutamine (ilma AI-ta). Vastuses on lugude seis koos
+  // uue DoR-iga. Kooskõla ülevaatus, kliendi täpsustuse ootel ettepanek ja ülevaatuse leiud aeguvad olemasoleva loogikaga.
+  const inTx = (fn) => {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const result = fn();
+      db.exec(result?.error ? 'ROLLBACK' : 'COMMIT');
+      return result;
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  };
+  const criterionOf = (story, raw) => story.criteria.find((c) => c.id === Number(raw)) ?? null;
+  const reply = (req, res, result) => (result?.error
+    ? res.status(result.status).json({ error: result.error, code: result.code, field: 'text' })
+    : res.json(snapshot(req.projectId)));
+
+  router.post('/:storyId/criteria', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
+    reply(req, res, inTx(() => {
+      const checked = validateManualCriterion(db, story.id, req.body);
+      return checked.error ? checked : addManualCriterion(db, story.id, checked.text);
+    }));
+  });
+
+  router.put('/:storyId/criteria/:criterionId', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    const criterion = story && criterionOf(story, req.params.criterionId);
+    if (!criterion) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
+    reply(req, res, inTx(() => {
+      const checked = validateManualCriterion(db, story.id, req.body, criterion.id);
+      if (checked.error) return checked;
+      updateCriterionText(db, criterion.id, checked.text);
+      return null;
+    }));
+  });
+
+  router.delete('/:storyId/criteria/:criterionId', (req, res) => {
+    const story = storyIn(req.projectId, req.params.storyId);
+    const criterion = story && criterionOf(story, req.params.criterionId);
+    if (!criterion) return res.status(404).json({ error: 'Kriteeriumit ei leitud.', code: 'not_found' });
+    reply(req, res, inTx(() => { deleteCriterion(db, story.id, criterion.id); return null; }));
   });
 
   return router;

@@ -9,7 +9,7 @@ import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
 // buttonRef(id, direction) annab nupu viite, et fookus jääks pärast tõstet samale nupule.
-// L19/L20: loo all on avatav lahter „Valmisolek ja küsimused“ (kui andmetes on readiness).
+// L19/L20, L15: loo all on avatav lahter „Kriteeriumid, valmisolek ja küsimused“ (kui andmetes on readiness).
 // L17: mvpCount = mitu lugu on MVP joonest ülalpool (null = joont pole); onMvp(count, kind) muudab joont.
 export default function BacklogList({
   stories, busy = false, highlightId = null, focusStoryId = null, onMove, buttonRef, readiness = null, initialOpenId = null,
@@ -98,7 +98,7 @@ export default function BacklogList({
               {s.readiness && readiness && (
                 <button type="button" className="link-button" aria-expanded={openId === s.id} aria-controls={`loo-${s.id}-valmisolek`}
                   onClick={() => setOpenId(openId === s.id ? null : s.id)}>
-                  {openId === s.id ? 'Peida' : 'Valmisolek ja küsimused'}
+                  {openId === s.id ? 'Peida' : 'Kriteeriumid, valmisolek ja küsimused'}
                   {s.readiness.ok ? ' (DoR ✓)' : ` (DoR puudu: ${s.readiness.checks.filter((c) => !c.ok).length})`}
                 </button>
               )}
@@ -110,6 +110,9 @@ export default function BacklogList({
                   onStatus={(status) => readiness.onStatus(s.id, status)}
                   onAddQuestion={(text) => readiness.onAddQuestion(s.id, text)}
                   onResolve={(questionId) => readiness.onResolve(s.id, questionId)}
+                  onAddCriterion={readiness.onAddCriterion ? (text) => readiness.onAddCriterion(s.id, text) : null}
+                  onUpdateCriterion={readiness.onUpdateCriterion ? (id, text) => readiness.onUpdateCriterion(s.id, id, text) : null}
+                  onDeleteCriterion={readiness.onDeleteCriterion ? (id) => readiness.onDeleteCriterion(s.id, id) : null}
                 />
               )}
             </div>

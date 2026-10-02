@@ -137,3 +137,10 @@ export const applyFinding = (projectId, findingId, value) =>
   postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/apply`, value === undefined ? {} : { value });
 export const ignoreFinding = (projectId, findingId) => postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/ignore`, {});
 export const undoFinding = (projectId, findingId) => postJson(`${reviewPath(projectId)}/findings/${encodeURIComponent(findingId)}/undo`, {});
+// L15: vastuvõtukriteeriumide käsitsi haldus backlog'is (vastuses lugude seis koos DoR-iga).
+const storyCriteriaPath = (projectId, storyId) => `${storiesPath(projectId)}/${encodeURIComponent(storyId)}/criteria`;
+export const addCriterion = (projectId, storyId, text) => postJson(storyCriteriaPath(projectId, storyId), { text });
+export const updateCriterion = (projectId, storyId, criterionId, text) =>
+  sendJson('PUT')(`${storyCriteriaPath(projectId, storyId)}/${encodeURIComponent(criterionId)}`, { text });
+export const deleteCriterion = (projectId, storyId, criterionId) =>
+  request(`${storyCriteriaPath(projectId, storyId)}/${encodeURIComponent(criterionId)}`, { method: 'DELETE' });
