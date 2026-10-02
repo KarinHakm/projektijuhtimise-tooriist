@@ -1,7 +1,7 @@
 // Loo staatus, avatud küsimused ja valmisolek (L19, L20).
 import { evaluateDor, READY } from '../shared/dor.js';
 import { hasAnyMockup, listCriteria } from './criteria.js';
-import { linkLabel } from './stories.js';
+import { linkLabel, listOverlaps } from './stories.js';
 
 export function listQuestions(db, storyId) {
   return db.prepare('SELECT id, text, created_at AS createdAt, resolved_at AS resolvedAt FROM story_questions WHERE story_id = ? ORDER BY id').all(storyId)
@@ -24,7 +24,7 @@ export function withReadiness(db, stories) {
       hasMockup: hasAnyMockup(db, s.id), // L22: ükskõik milline vaade
       openQuestions: questions.filter((q) => !q.resolvedAt).length,
     });
-    return { ...s, criteria, questions, readiness: { ...dor, ready: s.status === READY && dor.ok, expired: s.status === READY && !dor.ok } };
+    return { ...s, criteria, questions, overlaps: listOverlaps(db, s.id), readiness: { ...dor, ready: s.status === READY && dor.ok, expired: s.status === READY && !dor.ok } };
   });
 }
 

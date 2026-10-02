@@ -509,3 +509,9 @@ button.danger { background: var(--error); }
 /* L24: raadionupp valiku ees (üldine input-reegel venitaks selle üle rea) */
 .new-view__target input[type="radio"] { width: auto; margin: 0 0.4rem 0 0; vertical-align: middle; }
 .new-view__target select { width: auto; max-width: 100%; margin-top: 0.25rem; }
+/* L26: kattuvaks märgitud lood */
+.overlap-mark { margin: 0.2rem 0; font-size: 0.9rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; }
+.tag--overlap { color: #8a5a00; background: #fff4c2; border-color: #e0c060; font-weight: 600; }
+.overlap-form select { max-width: 100%; }
+/* L26: backlog'i tegevusnuppude tekst ei murdu (rida murdub nuppude vahelt) */
+.story-manage .link-button { white-space: nowrap; }

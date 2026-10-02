@@ -113,6 +113,18 @@ export const MIGRATIONS = [
   // ühiseks (UNIQUE(story_id, version) ei muutu), seega kriteeriumi ref_version määrab ühemõtteliselt ka vaate.
   // Senised mockup'id on vaade 1.
   `ALTER TABLE mockups ADD COLUMN view_no INTEGER NOT NULL DEFAULT 1 CHECK (view_no >= 1)`,
+  // Kattuvaks märgitud lood (L26): kasutaja märge enne otsust (ühenda / eemalda üks). Paar on normaliseeritud (a < b).
+  // Märge kaob kaskaadiga, kui üks lugudest kustutatakse või ühendamisel eemaldatakse (openDb lülitab foreign_keys sisse).
+  `CREATE TABLE story_overlaps (
+     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     story_a    INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+     story_b    INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+     created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+     CHECK (story_a < story_b),
+     UNIQUE (story_a, story_b)
+   );
+   CREATE INDEX story_overlaps_project ON story_overlaps(project_id)`,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

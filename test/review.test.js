@@ -287,3 +287,15 @@ test('enesekontroll ülevaatusel: mittekontrollitav asendustekst saab ühe ümbe
   const s = finding((await res.json()).review, `untestable-${ids.vague}`).suggestion;
   assert.deepEqual([s.text, s.selfCheck.status], ['Hinnakiri on selge.', 'still_untestable']);
 });
+
+// L26: L29 ühendamise tagasivõtmine taastab ka eemaldatud loo kattuvusmärke.
+test('AI ühendamise tagasivõtmine taastab kaskaadiga kadunud kattuvusmärke', async () => {
+  db.prepare('INSERT INTO story_overlaps (project_id, story_a, story_b) VALUES (?, ?, ?)').run(projectId, Math.min(ids.dupA, ids.dupB), Math.max(ids.dupA, ids.dupB));
+  const marks = () => db.prepare('SELECT * FROM story_overlaps ORDER BY id').all().map((r) => ({ ...r }));
+  const before = marks();
+  await runReview();
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/apply`)).status, 200);
+  assert.deepEqual(marks(), []); // eemaldatud loo märge kadus
+  assert.equal((await post(`/findings/overlap-${ids.dupA}-${ids.dupB}/undo`)).status, 200);
+  assert.deepEqual(marks(), before);
+});

@@ -118,6 +118,34 @@ export function updateManualStory(db, projectId, storyId, value) {
   return true;
 }
 
+// --- L26: kattuvaks märgitud lood (kasutaja märge enne otsust ühendada või üks eemaldada) ---
+// Loo märked: teiste lugude id-d, millega lugu on kattuvaks märgitud.
+export function listOverlaps(db, storyId) {
+  return db.prepare('SELECT CASE WHEN story_a = ? THEN story_b ELSE story_a END AS id FROM story_overlaps WHERE story_a = ? OR story_b = ? ORDER BY id')
+    .all(storyId, storyId, storyId).map((r) => r.id);
+}
+
+const storyExists = (db, projectId, id) => Number.isInteger(id) && Boolean(db.prepare('SELECT 1 FROM stories WHERE id = ? AND project_id = ?').get(id, projectId));
+
+// Märgib paari kattuvaks. Tagastab { ok: true } või { status, code, error }.
+export function markOverlap(db, projectId, storyId, withId) {
+  if (!storyExists(db, projectId, storyId) || !storyExists(db, projectId, withId)) return { status: 404, code: 'not_found', error: 'Lugu ei leitud selle projekti backlog\'ist.' };
+  if (storyId === withId) return { status: 400, code: 'same_story', error: 'Lugu ei saa märkida kattuvaks iseendaga.' };
+  const [a, b] = storyId < withId ? [storyId, withId] : [withId, storyId];
+  if (db.prepare('SELECT 1 FROM story_overlaps WHERE story_a = ? AND story_b = ?').get(a, b)) {
+    return { status: 409, code: 'already_marked', error: 'Need lood on juba kattuvaks märgitud.' };
+  }
+  db.prepare('INSERT INTO story_overlaps (project_id, story_a, story_b) VALUES (?, ?, ?)').run(projectId, a, b);
+  return { ok: true };
+}
+
+// „Pole kattuv“: eemaldab ainult märke. Tagastab { ok: true } või { status, code, error }.
+export function unmarkOverlap(db, projectId, storyId, withId) {
+  const [a, b] = storyId < withId ? [storyId, withId] : [withId, storyId];
+  const { changes } = db.prepare('DELETE FROM story_overlaps WHERE project_id = ? AND story_a = ? AND story_b = ?').run(projectId, a, b);
+  return changes === 1 ? { ok: true } : { status: 404, code: 'not_found', error: 'Sellist kattuvusmärget ei leitud.' };
+}
+
 // Ootel ettepanekud, mis puudutavad seda lugu (prioriteedisoovitus sellele loole, kriteeriumid, mockup, täpsustus).
 const pendingForStory = (db, projectId, storyId) => db
   .prepare("SELECT id, kind, payload FROM ai_proposals WHERE project_id = ? AND status = 'pending' AND kind IN ('priority', 'criteria', 'mockup', 'refinement')")
@@ -138,6 +166,7 @@ export function deletionImpact(db, projectId, storyId) {
     mockupVersions: n('SELECT COUNT(*) AS n FROM mockups WHERE story_id = ?'),
     questions: n('SELECT COUNT(*) AS n FROM story_questions WHERE story_id = ?'),
     pendingProposals: pendingForStory(db, projectId, storyId).length,
+    overlaps: listOverlaps(db, storyId), // L26: need kattuvusmärked kaovad koos looga
   };
 }
 

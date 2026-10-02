@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addStoryQuestion, createStory, deleteStory, getDeleteImpact, getSplitInfo, getStories, moveStory, resolveStoryQuestion, setMvpLine, setStoryStatus,
-  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding, addCriterion, updateCriterion, deleteCriterion,
+  getMergeInfo, mergeStoriesInto, splitStoryInTwo, updateStory, applyFinding, addCriterion, updateCriterion, deleteCriterion, markOverlap, unmarkOverlap,
 } from '../api.js';
 import ReviewPanel from './ReviewPanel.jsx';
 import StoryForm from './StoryForm.jsx';
@@ -178,6 +178,8 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       setManageError(null);
       try {
         setMode({ type: 'delete', id, impact: await getDeleteImpact(projectId, id) });
+        // L26: „Eemalda lugu N“ kattuvusmärke juurest – kinnitus on selle loo real, keri sinna.
+        requestAnimationFrame(() => document.querySelector('.backlog .delete-confirm')?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
       } catch (e) {
         setError(e.message);
         await refresh();
@@ -203,6 +205,25 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       return `Lugu jagati kaheks: osa 2 on kohal ${at}.${d.split.rejectedProposals ? ` Ootel ettepanekuid lükati tagasi: ${d.split.rejectedProposals}.` : ''}`;
     })),
     onMerge: (id) => { setManageError(null); setMode({ type: 'merge', id, info: null }); },
+    // L26: kattuvaks märkimine, „Pole kattuv“ ja märke juurest ühendamine (olemasolev L26 vorm valitud paariga).
+    onMarkOverlapStart: (id) => { setManageError(null); setMode({ type: 'overlap', id }); },
+    onMarkOverlap: (id, withId) => runManage(() => markOverlap(projectId, id, withId), (d) => {
+      const n = (x) => d.stories.findIndex((st) => st.id === x) + 1;
+      return `Lood ${n(id)} ja ${n(withId)} märgiti kattuvaks. Otsusta hiljem: ühenda või eemalda üks.`;
+    }),
+    onUnmarkOverlap: (id, otherId) => runManage(() => unmarkOverlap(projectId, id, otherId), () => 'Kattuvusmärge eemaldati. Lood jäid muutmata.'),
+    onOverlapMerge: async (id, otherId) => {
+      setManageError(null);
+      const order = (stories ?? []).map((st) => st.id);
+      const [keep, remove] = order.indexOf(id) < order.indexOf(otherId) ? [id, otherId] : [otherId, id];
+      try {
+        setMode({ type: 'merge', id: keep, info: await getMergeInfo(projectId, keep, remove) });
+        requestAnimationFrame(() => document.querySelector('.backlog .merge-form')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+      } catch (e) {
+        setError(e.message);
+        await refresh();
+      }
+    },
     onMergePick: async (id, keepId, removeId) => {
       setManageError(null);
       try {

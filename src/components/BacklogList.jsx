@@ -11,12 +11,34 @@ import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
 // buttonRef(id, direction) annab nupu viite, et fookus jääks pärast tõstet samale nupule.
 // L19/L20, L15: loo all on avatav lahter „Kriteeriumid, valmisolek ja küsimused“ (kui andmetes on readiness).
 // L17: mvpCount = mitu lugu on MVP joonest ülalpool (null = joont pole); onMvp(count, kind) muudab joont.
+// L26: teise loo valik kattuvaks märkimiseks (ainult märge – otsus ühendada või eemaldada tehakse hiljem).
+function OverlapPicker({ story, number, stories, busy, error, onSubmit, onCancel }) {
+  const [other, setOther] = useState('');
+  const options = stories.map((x, i) => ({ ...x, n: i + 1 })).filter((x) => x.id !== story.id && !(story.overlaps ?? []).includes(x.id));
+  return (
+    <form className="story-form overlap-form" onSubmit={(e) => { e.preventDefault(); if (other) onSubmit(Number(other)); }} noValidate>
+      <label htmlFor={`kattuv-${story.id}`}>Lugu {number} kattub looga</label>
+      <select id={`kattuv-${story.id}`} value={other} disabled={busy} onChange={(e) => setOther(e.target.value)}>
+        <option value="">— vali lugu —</option>
+        {options.map((x) => <option key={x.id} value={x.id}>{x.n}. {x.title}</option>)}
+      </select>
+      <p className="muted">Märge ei muuda lugusid. Otsuse – ühenda või eemalda üks – saad teha hiljem märke juures.</p>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="actions">
+        <button type="submit" disabled={busy || !other}>Märgi kattuvaks</button>
+        <button type="button" className="secondary" disabled={busy} onClick={onCancel}>Tühista</button>
+      </div>
+    </form>
+  );
+}
+
 export default function BacklogList({
   stories, busy = false, highlightId = null, focusStoryId = null, onMove, buttonRef, readiness = null, initialOpenId = null,
   mvpCount = null, onMvp = null, manage = null,
 }) {
   const [openId, setOpenId] = useState(initialOpenId);
   if (stories.length === 0) return <p className="muted">Backlog on tühi.</p>;
+  const numberOf = (id) => { const i = stories.findIndex((x) => x.id === id); return i < 0 ? null : i + 1; };
   const hasLine = mvpCount !== null && mvpCount !== undefined;
   const mvpLine = hasLine && (
     <li key="mvp-line" className="mvp-line">
@@ -65,6 +87,20 @@ export default function BacklogList({
                   : STATUS_LABELS[s.status] ?? s.status} · Suurus: {s.size} · Päritolu: {ORIGIN_LABELS[s.origin] ?? s.origin}
                 {s.questions?.some((q) => !q.resolvedAt) && <> · Avatud küsimusi: {s.questions.filter((q) => !q.resolvedAt).length}</>}
               </p>
+              {/* L26: kattuvaks märgitud lood – otsus hiljem: ühenda, eemalda üks või „Pole kattuv“. */}
+              {manage && (s.overlaps ?? []).map((otherId) => {
+                const otherNo = numberOf(otherId);
+                if (!otherNo) return null;
+                return (
+                  <p key={otherId} className="overlap-mark">
+                    <span className="tag tag--overlap">≈ Kattub: lugu {otherNo}</span>{' '}
+                    <button type="button" className="link-button" disabled={busy || manage.mode !== null} onClick={() => manage.onOverlapMerge(s.id, otherId)}>Ühenda</button>
+                    <button type="button" className="link-button story-manage__delete" disabled={busy || manage.mode !== null}
+                      onClick={() => manage.onDelete(otherId)} aria-label={`Eemalda lugu ${otherNo}`}>Eemalda lugu {otherNo}</button>
+                    <button type="button" className="link-button" disabled={busy || manage.mode !== null} onClick={() => manage.onUnmarkOverlap(s.id, otherId)}>Pole kattuv</button>
+                  </p>
+                );
+              })}
               {manage && manage.mode?.id !== s.id && (
                 <span className="story-manage">
                   <button type="button" className="link-button" disabled={busy} onClick={() => manage.onEdit(s.id)} aria-label={`Muuda lugu ${number}: ${s.title}`}>✎ Muuda</button>
@@ -74,8 +110,15 @@ export default function BacklogList({
                   {manage.onMerge && stories.length > 1 && (
                     <button type="button" className="link-button" disabled={busy} onClick={() => manage.onMerge(s.id)} aria-label={`Ühenda lugu ${number} teise looga: ${s.title}`}>⇄ Ühenda</button>
                   )}
+                  {manage.onMarkOverlap && stories.length > 1 && (
+                    <button type="button" className="link-button" disabled={busy} onClick={() => manage.onMarkOverlapStart(s.id)} aria-label={`Märgi lugu ${number} kattuvaks: ${s.title}`}>≈ Märgi kattuvaks</button>
+                  )}
                   <button type="button" className="link-button story-manage__delete" disabled={busy} onClick={() => manage.onDelete(s.id)} aria-label={`Kustuta lugu ${number}: ${s.title}`}>Kustuta</button>
                 </span>
+              )}
+              {manage?.mode?.type === 'overlap' && manage.mode.id === s.id && (
+                <OverlapPicker story={s} number={number} stories={stories} busy={busy} error={manage.error?.message ?? ''}
+                  onSubmit={(withId) => manage.onMarkOverlap(s.id, withId)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'edit' && manage.mode.id === s.id && (
                 <StoryForm idBase={`muuda-${s.id}`} initial={s} roles={manage.roles} stories={stories} busy={busy} error={manage.error}
@@ -92,7 +135,8 @@ export default function BacklogList({
                   onSubmit={(body) => manage.onConfirmMerge(manage.mode.info.keepId, body)} onCancel={manage.onCancel} />
               )}
               {manage?.mode?.type === 'delete' && manage.mode.id === s.id && (
-                <DeleteStoryConfirm story={s} impact={manage.mode.impact} busy={busy} error={manage.error?.message ?? ''}
+                <DeleteStoryConfirm story={s} impact={manage.mode.impact} number={number}
+                  overlapStories={(manage.mode.impact.overlaps ?? []).map((id) => ({ id, number: numberOf(id) })).filter((o) => o.number)} busy={busy} error={manage.error?.message ?? ''}
                   onConfirm={() => manage.onConfirmDelete(s.id)} onCancel={manage.onCancel} />
               )}
               {s.readiness && readiness && (

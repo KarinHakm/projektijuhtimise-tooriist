@@ -9,7 +9,7 @@ import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectP
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
 import {
-  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, mergeInfo, mergeStories, moveStory, splitInfo, splitStory,
+  appendStories, createManualStory, deleteManualStory, deletionImpact, listStories, markOverlap, mergeInfo, mergeStories, moveStory, splitInfo, splitStory, unmarkOverlap,
   updateManualStory, validateApply, validateManualStory, validateMerge, validateSplit,
 } from '../stories.js';
 import { insertStoryQuestion, withReadiness } from '../readiness.js';
@@ -291,6 +291,18 @@ export function storiesRouter({ db, ai }) {
     if (!question) return res.status(404).json({ error: 'Küsimust ei leitud.', code: 'not_found' });
     if (question.resolvedAt) return res.status(409).json({ error: 'Küsimus on juba vastatud.', code: 'already_resolved' });
     db.prepare("UPDATE story_questions SET resolved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND resolved_at IS NULL").run(question.id);
+    res.json(snapshot(req.projectId));
+  });
+
+  // L26: kahe loo märkimine kattuvaks ja „Pole kattuv“. Muudavad ainult märke; otsus (ühenda / eemalda) on eraldi.
+  router.post('/:storyId/overlaps', (req, res) => {
+    const result = markOverlap(db, req.projectId, Number(req.params.storyId), req.body?.withId);
+    if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
+    res.json(snapshot(req.projectId));
+  });
+  router.delete('/:storyId/overlaps/:otherId', (req, res) => {
+    const result = unmarkOverlap(db, req.projectId, Number(req.params.storyId), Number(req.params.otherId));
+    if (result.error) return res.status(result.status).json({ error: result.error, code: result.code });
     res.json(snapshot(req.projectId));
   });
 

@@ -389,6 +389,7 @@ function applyMerge(db, projectId, f, raw) {
     criteria: rows('SELECT * FROM criteria WHERE story_id IN (?, ?)'),
     questions: rows('SELECT id, story_id FROM story_questions WHERE story_id IN (?, ?)'),
     mockups: rows('SELECT id, story_id FROM mockups WHERE story_id IN (?, ?)'),
+    overlaps: db.prepare('SELECT * FROM story_overlaps WHERE story_a = ? OR story_b = ?').all(removeId, removeId).map((r) => ({ ...r })), // L26
     backlog: backlogState(db, projectId),
   };
   const result = mergeStoriesInTx(db, projectId, keepId, removeId, merge);
@@ -431,6 +432,11 @@ function undoMerge(db, projectId, f) {
   for (const q of before.questions) setQuestion.run(q.story_id, q.id);
   const setMockup = db.prepare('UPDATE mockups SET story_id = ? WHERE id = ?');
   for (const m of before.mockups) setMockup.run(m.story_id, m.id);
+  // L26: eemaldatud loo kattuvusmärked kadusid ühendamisel kaskaadiga – taasta need (kui teine lugu on veel alles).
+  for (const o of before.overlaps ?? []) {
+    db.prepare('INSERT OR IGNORE INTO story_overlaps (id, project_id, story_a, story_b, created_at) SELECT ?, ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM stories WHERE id IN (?, ?)) = 2')
+      .run(o.id, o.project_id, o.story_a, o.story_b, o.created_at, o.story_a, o.story_b);
+  }
   const setPosition = db.prepare('UPDATE stories SET position = ? WHERE id = ? AND project_id = ?');
   for (const o of before.backlog.order) setPosition.run(o.position, o.id, projectId);
   const p = before.backlog.project;

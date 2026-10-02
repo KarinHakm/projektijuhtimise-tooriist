@@ -150,3 +150,7 @@ export const getNewView = (projectId) => request(viewsPath(projectId));
 export const proposeNewView = (projectId, description) => postJson(`${viewsPath(projectId)}/propose`, { description });
 export const applyNewView = (projectId, body) => postJson(`${viewsPath(projectId)}/apply`, body);
 export const rejectNewView = (projectId, proposalId) => postJson(`${viewsPath(projectId)}/reject`, { proposalId });
+// L26: kattuvaks märkimine ja „Pole kattuv“ (ainult märge – lugusid ei muudeta).
+export const markOverlap = (projectId, storyId, withId) => postJson(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/overlaps`, { withId });
+export const unmarkOverlap = (projectId, storyId, otherId) =>
+  request(`${storiesPath(projectId)}/${encodeURIComponent(storyId)}/overlaps/${encodeURIComponent(otherId)}`, { method: 'DELETE' });

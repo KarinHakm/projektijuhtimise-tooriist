@@ -110,7 +110,7 @@ test('alustamise loo kustutamine: mõju on enne näha; seotud andmed kustuvad, o
   } }).id;
 
   const impact = await (await call('GET', `/${target}/delete-impact`)).json();
-  assert.deepEqual(impact, { isFocus: true, aboveMvpLine: true, criteria: 1, mockupVersions: 2, questions: 1, pendingProposals: 4 });
+  assert.deepEqual(impact, { isFocus: true, aboveMvpLine: true, criteria: 1, mockupVersions: 2, questions: 1, pendingProposals: 4, overlaps: [] });
 
   const res = await call('DELETE', `/${target}`);
   assert.equal(res.status, 200);
