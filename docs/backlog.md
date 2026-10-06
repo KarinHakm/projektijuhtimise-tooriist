@@ -2,8 +2,12 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 01.10.2026:** valmis on L01–L06, L09 ja L17. **Pooleli** on L07, L08, L10, L11, L12, L13, L14, L15, L18, L19, L20, L22, L23, L25 ja L26 (mis on proovitud ja mis puudu, on kirjas iga loo all). Ülejäänud lugude staatus on **Plaanitud**.
-> Lugu märgitakse **Valmis** alles siis, kui selle kõik kriteeriumid on brauseris läbi proovitud, reeglipõhise loogika kohta on olemas automaattest ja muudatus on commit'itud.
+> **Seis 06.10.2026:** kohustuslikest lugudest on **Pooleli** L11, L23 ja L30 ning **Plaanitud** L35 (vastuvõtukatse läbimäng ja ajamõõtmine päris AI-ga); ülejäänud on **Valmis** või **Tehtud** (vt tabel). Mis on brauseris proovitud, mis ainult automaattestiga kaetud ja mis puudu, on kirjas iga loo all.
+>
+> **Staatuste tähendus** (täpsustatud 06.10.2026 – varasem sõnastus nõudis iga kriteeriumi proovimist brauseris, kuid nii ei ole seda ka varem rakendatud, nt L09):
+> - **Valmis** – kõik vastuvõtukriteeriumid on täidetud, põhivoog on brauseris läbi proovitud, reeglipõhine loogika on automaattestiga kaetud ja muudatus on commit'itud. Alamjuhud, mis on kaetud ainult automaattestiga, on loo all eraldi kirjas.
+> - **Tehtud** – kõik kriteeriumid on teostatud, automaattestitud ja commit'itud, kuid osa on päris AI-ga või brauseris veel proovimata (kirjas loo all).
+> - **Pooleli** – vähemalt üks vastuvõtukriteerium ei ole täidetud.
 
 ## Arhitektuur (kavandatud, esialgne)
 
@@ -26,12 +30,12 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L04 | Vestluse algus ühest promptist ja täpsustavad küsimused | M | Kohustuslik | 1, 9 | Valmis |
 | L05 | Rollid | S | Kohustuslik | 9 | Valmis |
 | L06 | Lood happy path'i järjekorras | L | Kohustuslik | 2, 9 | Valmis |
-| L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Pooleli |
-| L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Pooleli |
+| L07 | Backlog'i vaade ja lihtne järjestamine | S | Kohustuslik | 2, 3 | Valmis |
+| L08 | Prioriteedisoovitus | S | Kohustuslik | 3 | Valmis |
 | L09 | Vastuvõtukriteeriumid valitud loole | M | Kohustuslik | 4, 9 | Valmis |
-| L10 | Turvaliselt kuvatav mockup | L | Kohustuslik | 4, 9 | Pooleli |
+| L10 | Turvaliselt kuvatav mockup | L | Kohustuslik | 4, 9 | Valmis |
 | L11 | Kliendi täpsustus enne/pärast eelvaatega | L | Kohustuslik | 5, 9 | Pooleli |
-| L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Pooleli |
+| L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Valmis |
 | L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Tehtud |
 | | **═══ MVP JOON ═══** | | | | |
 | L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
@@ -40,18 +44,18 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L16 | Järjestamine lohistades | S | Valikuline | – | Plaanitud, kui aega jääb |
 | L17 | MVP joon | S | Kohustuslik | – | Valmis |
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Tehtud |
-| L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
-| L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Pooleli |
+| L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Valmis |
+| L20 | Täpsustamist vajav lugu ja avatud küsimused | S | Kohustuslik | 7 | Valmis |
 | L21 | Viimase muudatuse tagasivõtmine | M | Kohustuslik | – | Tehtud |
 | L22 | Mockup'i versioonid ja mitu mockup'i loo kohta | S | Kohustuslik | – | Tehtud |
 | L23 | Kriteeriumide ja mockup'i kooskõla | M | Kohustuslik | – | Pooleli |
 | L24 | Uue vaate loomine promptist | M | Kohustuslik | – | Tehtud |
-| L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Pooleli |
+| L25 | Loo käsitsi jagamine | M | Kohustuslik | – | Valmis |
 | L26 | Kattuvate lugude märkimine ja ühendamine käsitsi | M | Kohustuslik | – | Tehtud |
 | L27 | AI ülevaatus ja leiud | L | Kohustuslik | 6 | Tehtud |
 | L28 | AI jagamisettepanek eelvaatega | M | Kohustuslik | 6 | Tehtud |
 | L29 | AI ühendamisettepanek eelvaatega | M | Kohustuslik | 6 | Tehtud (brauseris kontrollitud) |
-| L30 | Esitatavad dokumendid ja demo | M | Kohustuslik | – | Plaanitud |
+| L30 | Esitatavad dokumendid ja demo | M | Kohustuslik | – | Pooleli |
 | L31 | Eksport Markdowni ja CSV-sse | – | Valikuline | – | Plaanitud, kui aega jääb |
 | L32 | Kliendile jagatav vaatamislink | – | Valikuline | – | Plaanitud, kui aega jääb |
 | L33 | Story map mitme rolli kaupa | – | Valikuline | – | Plaanitud, kui aega jääb |
@@ -297,6 +301,8 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - **Ainult automaattestiga kaetud:** nuppude keelamine päringu ajal ja veateade (`role="alert"`); server: piirid, teise projekti lugu, `updated_at` ei muutu.
 - **Brauseris proovimata:** backlog'i uuenemine ilma lehte värskendamata pärast lugude lisamist; kitsa ekraani paigutus; fookuse säilimine klaviatuuriga.
 
+
+**Seis 06.10.2026 – Valmis:** kõik kriteeriumid on täidetud. Varem proovimata „backlog uueneb pärast lugude lisamist ilma lehte värskendamata“ on nüüd brauseris nähtud (L21 kontroll: „Lisa valitud“ järel 4 → 7 lugu ilma värskendamata). Kitsa ekraani paigutus ja klaviatuurifookus on endiselt ainult osaliselt proovitud (vt L14).
 ### L08 · Prioriteedisoovitus (S)
 *Projektijuhina soovin AI põhjendatud soovitust, millisest loost alustada, et kliendiga kiiresti kokku leppida.*
 - Pärast lugude lisamist küsib AI, milline lugu on kõige olulisem.
@@ -311,6 +317,8 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - **Ainult automaattestiga kaetud (brauseris proovimata):** „Valin ise teise“ ja lugude valik; teise projekti loo soovituse tagasilükkamine; topeltkinnituse keeld (409); tühja backlog'i korral AI-d ei kutsuta.
 - **Sisuline märkus:** AI põhjendus oli loogiliselt nõrk (vt [ai-piirangud.md](ai-piirangud.md)); otsuse teeb inimene.
 
+
+**Seis 06.10.2026 – Valmis:** kõik kriteeriumid on täidetud. „Pärast lugude lisamist küsib AI“ toimib nii, et järgmise sammuna pakutakse „Küsi AI-lt prioriteedisoovitus“ ja AI päring käivitub kasutaja nupuvajutusega (mitte automaatselt). „Valin ise teise“, teise projekti loo tagasilükkamine ja topeltkinnituse keeld on endiselt ainult automaattestiga kaetud. Põhjenduse sisuline kvaliteet on AI piirang (vt [ai-piirangud.md](ai-piirangud.md)).
 ### L09 · Vastuvõtukriteeriumid valitud loole (M)
 *Projektijuhina soovin, et AI pakuks valitud loole kriteeriumid ja et saaksin igaühe kinnitada, muuta või eemaldada, et kriteeriumid oleksid kliendiga kokku lepitud.*
 - AI pakub valitud loole 3–6 kriteeriumi.
@@ -347,6 +355,8 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - **Andmebaas (ainult lugedes):** kinnitatud mockup on looga seotud versioonina 1; kriteeriumide salvestamine mockup'i ei kinnitanud.
 - **Ainult automaattestiga kaetud (brauseris proovimata):** „Paku uus“, „Loobu“, tundmatu komponenditüübi tagasilükkamine, `<script>` kuvamine tavatekstina, `innerHTML`-i ja `dangerouslySetInnerHTML`-i puudumine koodis.
 
+
+**Seis 06.10.2026 – Valmis:** kõik kriteeriumid on täidetud ja põhivoog (ettepanek → „Kinnita mockup“ → versioon 1) on brauseris proovitud. „Paku uus“, „Loobu“, tundmatu komponenditüübi tagasilükkamine ja `<script>` tavatekstina on ainult automaattestiga kaetud.
 ### L11 · Kliendi täpsustus enne/pärast eelvaatega (L)
 *Projektijuhina soovin sisestada kliendi täpsustuse ja näha enne rakendamist, mis muutub, et klient saaks muudatuse kinnitada.*
 - Valitud loo juures on vabatekstiline väli „Kliendi täpsustus“.
@@ -386,6 +396,13 @@ Suurus: S = kuni pool päeva, M = umbes päev, L = kaks päeva või rohkem.
 - **Pooleli:** mockup'i lühivorm (kasutusel täismockup'i vorm); komponentide id-d ja `parentId` (mockup on lame loend); kriteeriumi mockup'i viite muutuse kuvamine (viiteid veel ei ole, vt L23); mockup'i käsitsi muutmine „Muuda“ all; hoiatus „muudetud, aga tekst sama“ – praegu kuvatakse sellist kriteeriumi lihtsalt „Muutmata“.
 - **AI vastus oli poolik:** AI kirjutas, et lisas kinnitusteate, kuid uues mockup'is seda ei olnud. Eelvaade näitas seda õigesti (koodis arvutatud), vt L23.
 
+
+**Seis 06.10.2026 – jääb Pooleli.** Täitmata kriteeriumid (kontrollitud koodist):
+- mockup on lame komponentide loend – komponentide id-sid ega `parentId`-d ei ole, seega nende kahe kriteeriumi kontrolli pole;
+- eelvaade ei näita kriteeriumi mockup'i seose muutust, kui tekst jäi samaks (`shared/refine-diff.js` võrdleb ainult teksti);
+- eelvaade ei hoiata, kui „muudetud“ kriteeriumi tekst ei muutunud (kuvatakse „Muutmata“);
+- „Muuda“ lubab muuta loo sõnastust ja kriteeriumide teksti, kuid mitte mockup'i.
+Lühivormi ei võetud kasutusele (kriteeriumi järgi jääb siis kehtima täismockup'i vorm). Täidetud on: väli, AI ettepanek sõnastusele/kriteeriumidele/mockup'ile, serveri kontroll ja tervikuna tagasilükkamine, enne/pärast eelvaade koodis arvutatuna, Rakenda/Muuda/Loobu, uus mockup'i versioon koos vana alleshoidmisega. Rakendamise tagasivõtmine on brauseris proovitud 06.10.2026 (L21).
 ### L12 · Server muudab ainult valitud lugu (M)
 *Projektijuhina soovin, et kliendi täpsustus muudaks ainult valitud lugu, et teised kokkulepped ei muutuks kogemata.*
 Siin on kaks eri asja, mida ei tohi segi ajada:
@@ -409,6 +426,8 @@ Kriteeriumid:
 - **Brauseris:** katses AI teisi lugusid ei maininud (plokk „Soovitused teistele lugudele“: „Teisi lugusid see täpsustus ei mõjuta“); andmebaasis jäid projekti 101 teiste lugude ja projekti 102 lugude `updated_at` muutmata.
 - **Ainult automaattestiga kaetud (brauseris proovimata):** teise loo tunnusega või teise loo andmeid sisaldav rakendamise päring lükatakse tervikuna tagasi (`other_story`) ja midagi ei salvestata; soovituste kuvamine ei muuda ühtegi rida; teiste lugude read, kriteeriumid ja mockup'id on pärast rakendamist baithaaval samad; „Täpsusta seda lugu“ avab eraldi täpsustusvoo ega muuda alustamise lugu.
 
+
+**Seis 06.10.2026 – Valmis:** kõik kriteeriumid on täidetud; serveri keeldumine (`other_story`) ja „teised lood baithaaval samad“ on automaattestiga kaetud, brauseris on proovitud tavaline rakendamine (teiste lugude `updated_at` muutumata).
 ### L13 · Järgmise sammu pakkumine ja jätkamine samast kohast (M)
 *Projektijuhina soovin, et iga vastus pakuks järgmist sammu ja et projekt jätkuks pärast taasavamist samast kohast, et ma ei jääks kunagi hätta.*
 - Iga AI vastus lõpeb 1–4 järgmise sammu nupuga.
@@ -455,6 +474,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Automaattestid** (võlts-AI, näidisbaasi koopia): märkus jõuab nelja sammu päringusse, uus ettepanek asendab vana ja backlog ning rollid ei muutu; AI tõrke korral jääb vana ettepanek; liiga pikk tekst lükatakse tagasi ilma AI-kutseta; „Mida teeme edasi?“ tagastab lubatud sammu ja märkuse, lubamatu samm lükatakse tagasi ja andmed ei muutu; väljade ja tulemuse renderdus.
 - **Pooleli:** päris AI-ga proovimata (kas Sonnet tõlgendab teksti õigesti).
 
+
+**Seis 06.10.2026 – Plaanitud:** server logib iga AI päringu etapi (`task`), kestuse ja väljundtokenite arvu (`[ai] {…}` read). Vastuvõtukatse sammude 1–5 läbimine päris AI-ga, ooteaja dokumenteerimine ja demo sobivuse otsus on tegemata.
 ### L14 · Sammude riba (S)
 *Projektijuhina soovin näha protsessi etappe ja nende vahel liikuda, et saaksin etappe vahele jätta või varasema juurde tagasi minna.*
 - Ribal on etapid Idee → Rollid → Lood → Prioriteedid → Kriteeriumid ja mockup → Täpsustused → Groomimine.
@@ -548,6 +569,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Ainult automaattestiga kaetud:** iga DoR tingimus eraldi, serveri 409 keeldumine otse API kaudu, aegumine pärast kriteeriumi muutmist („valmisolek aegunud“), vigased päringud.
 - **Pooleli:** „puudutab vaadet“ väärtust ei saa muuta (kõik lood on praegu vaadet puudutavad).
 
+
+**Seis 06.10.2026 – Valmis:** „Pooleli“ märge on aegunud – „Puudutab vaadet“ on loo lisamise ja muutmise vormis märkeruut (`src/components/StoryFields.jsx`) ja AI pakub väärtuse lugude ettepanekus. DoR-is on rolli/tegevuse/kasu tingimus teostatud Connextra kontrollina (`shared/dor.js`). Ainult automaattestiga kaetud: iga DoR tingimus eraldi, API 409, aegumine, „Puudutab vaadet“ muutmise mõju DoR-ile.
 ### L20 · Täpsustamist vajav lugu ja avatud küsimused (S)
 *Projektijuhina soovin märkida ebaselge loo täpsustamist vajavaks ja lisada sellele küsimuse, et kliendile esitatavad küsimused ei ununeks.*
 - Loole saab määrata staatuse „Vajab täpsustamist“.
@@ -558,6 +581,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 
 **Seis 01.10.2026 (L20 osaliselt):** „Vajab täpsustamist“ saab määrata käsitsi ka ilma küsimuseta; küsimuse lisamine määrab selle staatuse automaatselt; küsimuse saab märkida vastatuks (jääb läbikriipsutatult alles). Vastatuks märkimine staatust ei muuda – „Valmis arenduseks“ määrab kasutaja ise. Andmebaasi migratsioon v9 (tabel `story_questions`). Brauseris nähtud: küsimuse lisamine → „Vajab täpsustamist“, „Vastatud“ → küsimus jääb läbikriipsutatult alles, staatus ei muutu. **Pooleli:** avatud küsimused ei ole veel AI päringu kontekstis; „Vajab täpsustamist“ käsitsi määramine ilma küsimuseta on ainult automaattestiga kaetud.
 
+
+**Seis 06.10.2026 – Valmis:** avatud küsimused on AI päringu kontekstis (`server/ai/context.js` → `openQuestions`, prompti rida „Avatud küsimused: …“ failis `server/ai/tasks/clarify.js`). „Vajab täpsustamist“ käsitsi määramine ilma küsimuseta on endiselt ainult automaattestiga kaetud.
 ### L21 · Viimase muudatuse tagasivõtmine (M)
 *Projektijuhina soovin viimase muudatuse tagasi võtta, et eksimus kliendi ees ei oleks lõplik.*
 - Backlog'is on nupp „Võta tagasi“.
@@ -621,6 +646,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
   - kasutaja enda seos kõrvaldab hoiatuse ka siis, kui seos on vale – see on inimese otsus;
   - mockup'i elemendi esiletõst kriteeriumile osutades (valikuline lisavõimalus) ei ole tehtud.
 
+
+**Seis 06.10.2026 – jääb Pooleli:** esimene kriteerium „iga vaadet puudutav kriteerium viitab ühele mockup'i elemendile“ ei ole tagatud – seoseta kriteerium on lubatud ja saab ainult hoiatuse („pole vastet“); DoR seost ei nõua. Ülejäänud kriteeriumid on täidetud ülal kirjeldatud piirangutega (sõnapõhine kontroll, mitte tähenduse kontroll).
 ### L24 · Uue vaate loomine promptist (M)
 *Projektijuhina soovin kirjeldada uue vaate ühe lausega ja saada korraga mockup'i, loo ja kriteeriumid, et klient näeks ideed kohe.*
 - Rakenduses on väli „Kirjelda uut vaadet“.
@@ -643,6 +670,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Automaattestid:** jagamise eelvaate andmed, järjekord, teiste lugude muutumatus, kriteeriumide/küsimuste jaotus ja seosed, mockup ja alustamise lugu, ootel ettepanekud, MVP joon, vigased päringud. **Arendaja nägi brauseris (demobaas):** tühja osa 2 keeld (midagi ei salvestatud), eelvaade, alustamise loo jagamine (osa 2 kohal 5, K4 osale 2, mockup ja alustamise valik jäid osale 1, ülevaatus aegus), F5 järel sama seis. **Leitud ja parandatud:** kitsas veerus aeti osa 1 ja osa 2 väljad segi – osad on nüüd eraldi kastides („1 · Algne lugu“ hall, „2 · Uus lugu“ sinine).
 - **Pooleli:** jagamine rohkem kui kaheks; algne lugu jääb osaks 1 (kriteerium „uued lood tulevad algse asemele“ on täidetud selles mõttes, et osa 1 + osa 2 on algse kohal); jagamise tagasivõtmine (L21).
 
+
+**Seis 06.10.2026 – Valmis:** kõik kriteeriumid on täidetud. „Kaks või rohkem“: üks jagamine teeb kaks lugu, kolmeks jagamiseks jagatakse osa uuesti. Jagamise tagasivõtmine on nüüd olemas (L21) ja kaetud automaattestiga (`test/undo.test.js`), brauseris proovimata.
 ### L26 · Kattuvate lugude märkimine ja ühendamine käsitsi (M)
 *Projektijuhina soovin märkida kattuvad lood ning need ühendada või ühe eemaldada, et backlog'is ei oleks kordusi.*
 - Kaks lugu saab märkida kattuvaks.
@@ -716,6 +745,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Demo stsenaarium läbib ülesandes nõutud sammud kuni 10 minutiga.
 - Git'i ajaloos on iga valmis loo kohta vähemalt üks commit.
 
+
+**Seis 06.10.2026 – Pooleli:** README on lõplik (aegunud „minimaalne README“ märge eemaldatud; käivitusjuhis, keskkonnamuutujad koos `PORT` ja `DATABASE_PATH`-iga, testide juhis ja lõppseis koos teadaolevate piirangutega). Kasutusstsenaarium (`docs/kasutusstsenaarium.md`, 473 sõna), backlog koos järjestuse põhjenduse ja MVP joonega ning AI piirangud ([ai-piirangud.md](ai-piirangud.md)) on repositooriumis. **Tegemata:** demo stsenaariumi läbimine kuni 10 minutiga (sõltub L35-st) ja README järgi käivitamine puhtast kloonist teises arvutis.
 ### L31–L34, L36 · Valikulised lisad, kui aega jääb
 Õpetaja loetelu „Lisavõimalused (ei ole kohustuslikud)“. Neid alustatakse alles pärast L30. Vastuvõtukriteeriumid kirjutatakse enne alustamist.
 - **L31:** eksport Markdowni ja CSV-sse.

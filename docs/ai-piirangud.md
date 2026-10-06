@@ -1,11 +1,11 @@
 # AI-teenus ja teadaolevad piirangud
 
-## Kasutusel olev teenus: Claude Code CLI (Sonnet), alates 01.10.2026
+## Kasutusel olev teenus: Claude Code CLI, alates 01.10.2026
 
 | | |
 |---|---|
 | Teenus | Claude Code CLI (`claude -p`), mille server käivitab ilma shellita |
-| Mudel | `sonnet` (`CLAUDE_MODEL`) |
+| Mudel | seadistatud `sonnet` (`CLAUDE_MODEL`); täpset mudeli versiooni rakendus ei logi |
 | Autentimine | serveri arvutis **sisse logitud kasutaja Claude'i tellimus**; API-võtit ei kasutata (`ANTHROPIC_API_KEY` ei anta CLI-le edasi) |
 | Õigused | tööriistad keelatud (failid, käsud, veeb), MCP-serverid ja kohandused välja lülitatud, sessiooni ei salvestata, töökaust on tühi ajutine kaust; projekti kontekst saadetakse päringus |
 | Kontroll | vastus peab vastama etapi JSON-skeemile ja reeglitele; vigase vastuse korral üks kordus |
@@ -25,11 +25,28 @@ Põhjus: õpetaja soovitusel ei pea õpilased AI eest eraldi maksma ja õpetajal
 | Väljundtokeneid | 230 |
 | Tulemus | vastus läbis JSON-skeemi ja reeglite kontrolli; rakendus kuvas soovituse koos põhjendusega ning valikutega „Nõus, alustame sellest“ ja „Valin ise teise“ |
 
-Serveri logis oli ainult ohutu rida (ülesanne, tulemus, kestus, tokenid); päringu sisu ega AI vastust ei logitud. Teisi etappe (küsimused, lood, kriteeriumid ja mockup, täpsustus) Sonnetiga veel proovitud ei ole; kogu töövoo aeg mõõdetakse loos L35.
+Serveri logis oli ainult ohutu rida (ülesanne, tulemus, kestus, tokenid); päringu sisu ega AI vastust ei logitud.
+
+### Vabateksti katsed rakenduses (06.10.2026)
+
+`npm run demo:ai` näidisandmebaas (`data/demo.db`); `data/app.db` jäi puutumata. Arendaja tegi sammud brauseris, kestus on serveri logist.
+
+| Voog | Sisend | AI-kutseid | Kestus | Tulemus |
+|---|---|---|---|---|
+| Vabatekst lugude juures | „lisa lood proovitreeningu kohta“ | 1 (õnnestus esimesel katsel) | 9,1 s | uus ootel ettepanek (8 lugu) asendas näidisettepaneku; nähtavad lood käsitlesid proovitreeningut töövoo järjekorras ja saatetekst kirjeldas tõlgendust; backlog jäi muutmata kuni kinnituseni |
+| „Mida teeme edasi?“ vabatekst | „tahan rollidesse treeneri“ | 1 (õnnestus esimesel katsel) | 5,8 s | AI valis sammu „Ava etapp „Rollid““ ja märkuse „Lisa rollide hulka treener.“; nupp viis rollide kaardile ja kirjutas märkuse välja; rollid ja muud andmed jäid muutmata |
+
+**Praeguse teenusega proovimata:** täpsustavad küsimused, rollide ettepanek, kriteeriumid ja mockup, kliendi täpsustus, backlog'i ülevaatus, uus vaade promptist ning rollide, prioriteedi ja kriteeriumide vabatekst. Kolm katset ei ole piisav, et hinnata kvaliteeti ega kiirust; kogu vastuvõtukatse töövoo aeg mõõdetakse loos L35.
 
 ## Teadaolevad AI piirangud
 
-> Allolevad piirangud on täheldatud **varasema mudeliga (`Qwen3.8-27B`)**. Claude Sonnetiga on rakenduses tehtud üks katse (vt ülal); need piirangud võivad Sonnetil olla teistsugused ja tuleb uuesti kontrollida.
+### Praeguse teenusega (Claude Code CLI)
+
+Kolmes dokumenteeritud katses (vt ülal) vastus läbis skeemi ja reeglite kontrolli esimesel katsel ning uusi sisulisi vigu ei täheldatud. Sellest ei saa järeldada, et allolevaid piiranguid praegusel mudelil ei ole – need on kontrollimata. Mudelist sõltumata kehtib: kood kontrollib vastuse struktuuri ja reegleid (skeem, Connextra vorm, kontrollitavuse sõnad, lubatud lood ja sammud), mitte tähendust; iga ettepanek vajab inimese kinnitust.
+
+### Varasema mudeliga täheldatud (`Qwen3.8-27B`, kuni 01.10.2026)
+
+> Allolevad tähelepanekud on tehtud **varasema mudeliga**. Kas need kehtivad ka praegusele teenusele, on kontrollimata.
 
 1. **Vastamisaeg kõigub palju.** Proovides kestis üks päring 16–110 sekundit. Õpetaja demo vajab vähemalt viit AI päringut, mis tähendab mõõdetud aegadega kokku umbes 2,5–4 minutit ootamist.
 2. **(Ainult varasem teenus.) Mõtlemisrežiim pidi olema välja lülitatud.** Sisselülitatud mõtlemine kulutas lugude päringus kogu 4096-tokenise piiri ja vastus jäi tühjaks. Hetzneri dokumentatsioon ei maini `enable_thinking` sätet. Mõju on näha vaid kaudselt: `reasoning_content` puudus ja väljundtokeneid oli vähem.
