@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 06.10.2026:** kohustuslikest lugudest on **Pooleli** L11, L23 ja L30 ning **Plaanitud** L35 (vastuvõtukatse läbimäng ja ajamõõtmine päris AI-ga); ülejäänud on **Valmis** või **Tehtud** (vt tabel). Mis on brauseris proovitud, mis ainult automaattestiga kaetud ja mis puudu, on kirjas iga loo all.
+> **Seis 06.10.2026:** kohustuslikest lugudest on **Pooleli** L11, L23 ja L30 ning L35 (päev 1 mõõdetud, päev 2 ja otsus tegemata); ülejäänud on **Valmis** või **Tehtud** (vt tabel). Mis on brauseris proovitud, mis ainult automaattestiga kaetud ja mis puudu, on kirjas iga loo all.
 >
 > **Staatuste tähendus** (täpsustatud 06.10.2026 – varasem sõnastus nõudis iga kriteeriumi proovimist brauseris, kuid nii ei ole seda ka varem rakendatud, nt L09):
 > - **Valmis** – kõik vastuvõtukriteeriumid on täidetud, põhivoog on brauseris läbi proovitud, reeglipõhine loogika on automaattestiga kaetud ja muudatus on commit'itud. Alamjuhud, mis on kaetud ainult automaattestiga, on loo all eraldi kirjas.
@@ -38,7 +38,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Valmis |
 | L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Tehtud |
 | | **═══ MVP JOON ═══** | | | | |
-| L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
+| L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Pooleli |
 | L14 | Sammude riba | S | Kohustuslik | – | Tehtud |
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Tehtud |
 | L16 | Järjestamine lohistades | S | Valikuline | – | Plaanitud, kui aega jääb |
@@ -475,7 +475,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Pooleli:** päris AI-ga proovimata (kas Sonnet tõlgendab teksti õigesti).
 
 
-**Seis 06.10.2026 – Plaanitud:** server logib iga AI päringu etapi (`task`), kestuse ja väljundtokenite arvu (`[ai] {…}` read). Vastuvõtukatse sammude 1–5 läbimine päris AI-ga, ooteaja dokumenteerimine ja demo sobivuse otsus on tegemata.
+**Seis 06.10.2026 – Pooleli:** server logib iga AI päringu etapi (`task`), kestuse ja väljundtokenite arvu (`[ai] {…}` read). **Päev 1 (06.10.2026) tehtud:** sammud 1–5 päris AI-ga, 8 AI päringut, kordusi ja vigu 0, kogu AI ooteaeg 59,3 s (tabel: [ai-piirangud.md](ai-piirangud.md), „L35“). **Tegemata:** teine päev ja demo sobivuse otsus.
 ### L14 · Sammude riba (S)
 *Projektijuhina soovin näha protsessi etappe ja nende vahel liikuda, et saaksin etappe vahele jätta või varasema juurde tagasi minna.*
 - Ribal on etapid Idee → Rollid → Lood → Prioriteedid → Kriteeriumid ja mockup → Täpsustused → Groomimine.

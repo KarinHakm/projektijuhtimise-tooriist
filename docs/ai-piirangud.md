@@ -38,6 +38,28 @@ Serveri logis oli ainult ohutu rida (ülesanne, tulemus, kestus, tokenid); päri
 
 **Praeguse teenusega proovimata:** täpsustavad küsimused, rollide ettepanek, kriteeriumid ja mockup, kliendi täpsustus, backlog'i ülevaatus, uus vaade promptist ning rollide, prioriteedi ja kriteeriumide vabatekst. Kolm katset ei ole piisav, et hinnata kvaliteeti ega kiirust; kogu vastuvõtukatse töövoo aeg mõõdetakse loos L35.
 
+### L35: vastuvõtukatse sammude 1–5 AI ooteaeg
+
+Mõõdetakse ainult serveri logi `[ai]` ridadest: etapp (`task`), katse, tulemus, kestus (`durationMs`) ja väljundtokenid; kogu AI ooteaeg on kestuste summa. Iga päev algab uue tühja andmebaasiga (`data/l35-paevN.db`, mitte `data/app.db`); sammud teeb arendaja brauseris nuppudega (vastuvõtukatse punkt 9). Teenus: Claude Code CLI, seadistatud mudel `sonnet`.
+
+**Päev 1 – 06.10.2026** (idee: „Tahame portaali, kus turist leiab Eesti sihtkohti ja broneerib ekskursiooni.“)
+
+| # | Vastuvõtukatse samm | Etapp (`task`) | Katse | Tulemus | Kestus | Väljundtokeneid |
+|---|---|---|---|---|---|---|
+| 1 | 1 – täpsustavad küsimused | `clarify` | 1 | ok | 8,0 s | 403 |
+| 2 | 1 – vastused → kokkuvõte | `clarify` | 1 | ok | 5,3 s | 270 |
+| 3 | 2 – rollid | `roles` | 1 | ok | 6,2 s | 278 |
+| 4 | 2 – lood | `stories` | 1 | ok | 9,0 s | 862 |
+| 5 | 3 – prioriteedisoovitus | `priority` | 1 | ok | 5,7 s | 240 |
+| 6 | 4 – kriteeriumid ja mockup | `criteria` | 1 | ok | 8,6 s | 795 |
+| 7 | 4 – kriteeriumide enesekontroll | `criteria_selfcheck` | 1 | ok | 7,0 s | 399 |
+| 8 | 5 – kliendi täpsustus | `refine` | 1 | ok | 9,5 s | 1156 |
+| | **Kokku** | 8 päringut | kordusi 0 | vigu 0 | **59,3 s** | 4403 |
+
+Läbimise käigus nähtud (ei mõjuta mõõtmist): lugude ettepaneku esimene lugu oli keelevahetus, mitte põhitöövoo algus; enesekontroll sõnastas ühe kriteeriumi ümber („AI parandas“); kuni mockup oli ootel, näitasid salvestatud kriteeriumid hoiatust „viide on mõne teise mockup'i versiooni elemendile“, mis kadus mockup'i kinnitamisel; pärast kinnitamist oli igal seotud kriteeriumil sõnapõhine „pole vastet“ vihje (L23 piirang); täpsustus muutis ainult valitud lugu ja pakkus kolmele teisele loole tekstisoovituse.
+
+**Päev 2:** tegemata. **Otsus demo sobivuse kohta:** kirjutatakse pärast teist päeva.
+
 ## Teadaolevad AI piirangud
 
 ### Praeguse teenusega (Claude Code CLI)
