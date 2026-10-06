@@ -1,13 +1,31 @@
 :root {
-  --text: #1c1f23;
-  --muted: #5f6670;
-  --border: #d5d9de;
-  --accent: #2458b3;
-  --accent-hover: #1c4690;
-  --accent-soft: #eef3fc;
-  --error: #b3261e;
-  --bg: #f7f8fa;
-  --card: #ffffff;
+  /* Tume teema (Explore Estonia): süsinikhall taust, rohekassinine rõhuvärv. */
+  color-scheme: dark;
+  --bg: #15181c;
+  --card: #1e2227;
+  --card-raised: #262b31;
+  --border: #343a42;
+  --border-strong: #56606b;
+  --text: #e6e9ec;
+  --muted: #9aa3ad;
+  --accent: #2bb3a3;
+  --accent-hover: #3fcab9;
+  --accent-soft: #16332f;
+  --accent-border: #2b6f67;
+  --on-accent: #0e1a19;
+  --success: #4cc38a;
+  --success-soft: #173327;
+  --success-border: #2f6b4c;
+  --warning: #e0b44c;
+  --warning-text: #f0c96a;
+  --warning-soft: #3a3016;
+  --warning-border: #6e5a24;
+  --error: #f07167;
+  --error-soft: #3a1f1e;
+  --mvp: #b9a3f0;
+  --mvp-soft: #28223b;
+  --mvp-border: #5a4b8a;
+  --radius: 8px;
 }
 
 * { box-sizing: border-box; }
@@ -43,12 +61,14 @@ body {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-h2 { margin-top: 0; font-size: 1.1rem; }
+h2 { margin-top: 0; font-size: 1.1rem; letter-spacing: 0.01em; }
+body { line-height: 1.45; }
 
 label { display: block; font-weight: 500; margin: 0.75rem 0 0.25rem; }
 
@@ -59,6 +79,13 @@ input, textarea {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
+/* Tume teema: väljad, valikud ja lingid */
+input, textarea, select { color: var(--text); background: var(--card-raised); border-color: var(--border); }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.8; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
 
 input[aria-invalid='true'] { border-color: var(--error); }
 
@@ -66,14 +93,23 @@ button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   font: inherit;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
   border: 0;
   border-radius: 6px;
   cursor: pointer;
 }
 
-button:disabled { opacity: 0.6; cursor: default; }
+button:disabled { opacity: 0.45; cursor: default; }
+button:not(:disabled):hover { background: var(--accent-hover); }
+button.secondary:not(:disabled):hover, .choice:not(:disabled):hover { background: var(--accent-soft); }
+.icon-button:not(:disabled):hover, .link-button:not(:disabled):hover { background: transparent; color: var(--accent-hover); border-color: var(--accent); }
+button.danger:not(:disabled):hover { background: var(--error); filter: brightness(1.1); }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage__button--off:hover { background: var(--card-raised) !important; }
+button.stage__button:not(:disabled):hover { background: var(--card-raised); }
+.choice[aria-pressed='true']:not(:disabled):hover { background: var(--accent-hover); }
+.icon-button[aria-pressed='true']:not(:disabled):hover { color: var(--on-accent); background: var(--success); border-color: var(--success); }
 
 .error { color: var(--error); margin: 0.25rem 0 0; }
 .muted { color: var(--muted); margin: 0.25rem 0 0; }
@@ -95,7 +131,7 @@ button:disabled { opacity: 0.6; cursor: default; }
   border-radius: 6px;
   padding: 0.75rem;
   color: var(--error);
-  background: #fdf3f2;
+  background: var(--error-soft);
 }
 .ai-error p { margin: 0; }
 .ai-error button { margin-top: 0.5rem; }
@@ -112,7 +148,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 .conversation { display: flex; flex-direction: column; gap: 0.75rem; }
 .msg { border-radius: 8px; padding: 0.5rem 0.75rem; max-width: 90%; }
 .msg p { margin: 0.25rem 0; }
-.msg--user { align-self: flex-end; background: #e8effb; }
+.msg--user { align-self: flex-end; background: var(--accent-soft); }
 .msg--ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); }
 .msg__who { font-size: 0.8rem; color: var(--muted); }
 .msg__list { margin: 0.25rem 0; padding-left: 1.25rem; }
@@ -129,9 +165,9 @@ button:disabled { opacity: 0.6; cursor: default; }
   border: 1px solid var(--accent);
   border-radius: 999px;
 }
-.choice[aria-pressed='true'] { color: #fff; background: var(--accent); }
+.choice[aria-pressed='true'] { color: var(--on-accent); background: var(--accent); }
 .choice--skip { color: var(--muted); border-color: var(--border); }
-.choice--skip[aria-pressed='true'] { color: #fff; background: var(--muted); border-color: var(--muted); }
+.choice--skip[aria-pressed='true'] { color: var(--bg); background: var(--muted); border-color: var(--muted); }
 .other-input { margin-top: 0.5rem; }
 
 .roles h3 { font-size: 1rem; margin: 0 0 0.5rem; }
@@ -179,10 +215,10 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .backlog__summary { margin: 0; }
 .backlog__status { min-height: 1.25rem; margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--muted); }
 .backlog__item--moved { animation: backlog-moved 1.5s ease-out; }
-@keyframes backlog-moved { from { background: #fff4c2; } to { background: transparent; } }
-@media (prefers-reduced-motion: reduce) { .backlog__item--moved { animation: none; background: #fff4c2; } }
-.tag--demo { color: #5b3e8f; background: #f3effa; border-color: #c9b8e6; font-weight: 600; }
-.tag--focus { margin: 0 0.25rem 0 0; color: #7a4b00; background: #fff4c2; border-color: #e0c060; font-weight: 600; }
+@keyframes backlog-moved { from { background: var(--warning-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .backlog__item--moved { animation: none; background: var(--warning-soft); } }
+.tag--demo { color: var(--mvp); background: var(--mvp-soft); border-color: var(--mvp-border); font-weight: 600; }
+.tag--focus { margin: 0 0.25rem 0 0; color: var(--warning-text); background: var(--warning-soft); border-color: var(--warning-border); font-weight: 600; }
 .priority h3 { font-size: 1rem; margin: 0 0 0.5rem; }
 .priority__focus { margin: 0 0 0.75rem; }
 .priority-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
@@ -198,18 +234,18 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .criterion__number { font-weight: 600; color: var(--muted); }
 .criterion__text { margin: 0; }
 .criterion__state { font-size: 0.85rem; }
-.criterion--accepted .criterion__state, .criterion--edited .criterion__state { color: #1d6b35; }
+.criterion--accepted .criterion__state, .criterion--edited .criterion__state { color: var(--success); }
 .criterion .actions { flex-wrap: wrap; }
 .criterion .actions button { margin-top: 0.35rem; }
-.icon-button[aria-pressed='true'] { color: #fff; background: #1d6b35; border-color: #1d6b35; }
+.icon-button[aria-pressed='true'] { color: var(--on-accent); background: var(--success); border-color: var(--success); }
 .criteria-add { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .criteria-add button { margin-top: 0; white-space: nowrap; }
-.mockup { margin: 0.5rem 0; border: 2px solid var(--text); border-radius: 8px; overflow: hidden; background: var(--card); }
-.mockup__title { padding: 0.35rem 0.75rem; font-size: 0.85rem; color: #fff; background: var(--text); }
+.mockup { margin: 0.5rem 0; border: 2px solid var(--border-strong); border-radius: 8px; overflow: hidden; background: var(--card); }
+.mockup__title { padding: 0.35rem 0.75rem; font-size: 0.85rem; color: var(--text); background: var(--card-raised); border-bottom: 1px solid var(--border); }
 .mockup__body { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; }
 .mock-heading { margin: 0; font-size: 1.1rem; font-weight: 700; }
 .mock-text { margin: 0; }
-.mock-button { display: inline-block; align-self: flex-start; padding: 0.3rem 0.8rem; border: 2px solid var(--text); border-radius: 6px; font-weight: 600; }
+.mock-button { display: inline-block; align-self: flex-start; padding: 0.3rem 0.8rem; border: 2px solid var(--muted); border-radius: 6px; font-weight: 600; }
 .mock-input { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.9rem; }
 .mock-input__box { height: 1.8rem; border: 1px solid var(--muted); border-radius: 4px; }
 .mock-list ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
@@ -227,13 +263,13 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .diff-list li { padding: 0.35rem 0.5rem; margin: 0.25rem 0; border-left: 4px solid var(--border); border-radius: 4px; }
 .diff__label { display: inline-block; min-width: 5.5rem; font-size: 0.8rem; font-weight: 700; }
 .diff__old { display: block; font-size: 0.85rem; color: var(--muted); text-decoration: line-through; }
-.diff--added { background: #e8f5ec; border-left-color: #1d6b35 !important; }
-.diff--modified { background: #fff4c2; border-left-color: #b88700 !important; }
-.diff--removed { background: #fdecea; border-left-color: var(--error) !important; text-decoration: line-through; }
+.diff--added { background: var(--success-soft); border-left-color: var(--success) !important; }
+.diff--modified { background: var(--warning-soft); border-left-color: var(--warning) !important; }
+.diff--removed { background: var(--error-soft); border-left-color: var(--error) !important; text-decoration: line-through; }
 .diff--unchanged { color: var(--muted); }
 .mock-mark { position: relative; padding: 0.25rem; border-radius: 4px; }
-.mock-mark--added { outline: 2px solid #1d6b35; background: #e8f5ec; }
-.mock-mark--removed { outline: 2px solid var(--error); background: #fdecea; opacity: 0.8; }
+.mock-mark--added { outline: 2px solid var(--success); background: var(--success-soft); }
+.mock-mark--removed { outline: 2px solid var(--error); background: var(--error-soft); opacity: 0.8; }
 .mock-mark__label { display: block; margin-bottom: 0.2rem; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
 .other-stories { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
 .other-stories ul { list-style: none; padding: 0; margin: 0; }
@@ -242,21 +278,21 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .refine-edit__criteria { padding-left: 1.25rem; }
 .refine-edit__criteria li { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.35rem 0; }
 .refine-edit__criteria .icon-button { white-space: nowrap; }
-.notice { color: #1d6b35; margin: 0.5rem 0; }
+.notice { color: var(--success); margin: 0.5rem 0; }
 .coverage { margin-top: 0.5rem; }
 .consistency-link { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--muted); }
 .consistency-link--none { font-style: italic; }
-.consistency-warning { margin: 0.2rem 0 0; padding: 0.2rem 0.4rem; font-size: 0.85rem; color: #6b4a00; background: #fff4c2; border-left: 3px solid #b88700; border-radius: 3px; }
+.consistency-warning { margin: 0.2rem 0 0; padding: 0.2rem 0.4rem; font-size: 0.85rem; color: var(--warning-text); background: var(--warning-soft); border-left: 3px solid var(--warning); border-radius: 3px; }
 .link-confirm { margin: 0.2rem 0 0; padding: 0.15rem 0.6rem; font-size: 0.85rem; }
 .link-select { display: flex; gap: 0.5rem; align-items: center; margin: 0.25rem 0 0.4rem; font-weight: normal; font-size: 0.85rem; }
 .link-select select { flex: 1; min-width: 0; padding: 0.2rem; font: inherit; }
 .review-box { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
 .review-box h4 { margin: 0 0 0.35rem; }
-.review-box__ok { color: #1d6b35; font-weight: 600; margin: 0.35rem 0 0; }
+.review-box__ok { color: var(--success); font-weight: 600; margin: 0.35rem 0 0; }
 .mock-item { display: flex; flex-direction: column; gap: 0.15rem; }
 .mock-notes { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.mock-badge { font-size: 0.7rem; padding: 0 0.35rem; color: #fff; background: var(--accent); border-radius: 999px; }
-.mock-flag { font-size: 0.75rem; color: #6b4a00; background: #fff4c2; padding: 0 0.3rem; border-radius: 3px; }
+.mock-badge { font-size: 0.7rem; padding: 0 0.35rem; color: var(--on-accent); background: var(--accent); border-radius: 999px; }
+.mock-flag { font-size: 0.75rem; color: var(--warning-text); background: var(--warning-soft); padding: 0 0.3rem; border-radius: 3px; }
 .stories-proposal {
   border: 1px dashed var(--accent);
   border-radius: 8px;
@@ -274,7 +310,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .story-card .actions button { margin-top: 0.5rem; }
 .story-edit { margin-left: 2rem; }
 .story-edit select { width: 100%; padding: 0.5rem; font: inherit; border: 1px solid var(--border); border-radius: 6px; }
-.warning { color: #8a5a00; margin: 0.25rem 0 0 2rem; }
+.warning { color: var(--warning-text); margin: 0.25rem 0 0 2rem; }
 
 /* Avaleht: pealkiri, selgitus, "+ Loo projekt" ja projektikaardid. Samm 0.5 / 1 / 1.5 / 2 rem. */
 .page--home { max-width: 960px; }
@@ -296,10 +332,10 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .project-card {
   display: flex; flex-direction: column; gap: 0.5rem; height: 100%; padding: 1rem 1.25rem;
   color: var(--text); text-decoration: none; background: var(--card);
-  border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(28, 31, 35, 0.06);
+  border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
-.project-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(36, 88, 179, 0.12); transform: translateY(-1px); }
+.project-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(43, 179, 163, 0.18); transform: translateY(-1px); }
 .project-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .project-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 .project-card__name { font-size: 1.1rem; font-weight: 600; }
@@ -313,10 +349,10 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .stage-dots { display: inline-flex; gap: 0.2rem; }
 .stage-dot {
   display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem;
-  font-size: 0.7rem; border-radius: 50%; border: 1px solid var(--border); background: #f0f1f3; color: var(--muted);
+  font-size: 0.7rem; border-radius: 50%; border: 1px solid var(--border); background: var(--card-raised); color: var(--muted);
 }
-.stage-dot--done { background: #eef8f0; border-color: #8cc29b; color: #1d6b35; }
-.stage-dot--next { background: #eef3fc; border-color: var(--accent); color: var(--accent); }
+.stage-dot--done { background: var(--success-soft); border-color: var(--success-border); color: var(--success); }
+.stage-dot--next { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .stage-dot--available { background: var(--card); }
 .stage-dot--skipped { border-style: dashed; background: var(--card); }
 .project-card__meta { font-size: 0.8rem; color: var(--muted); }
@@ -337,14 +373,19 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 }
 button.stage__button:hover { border-color: var(--accent); }
 .stage__mark { flex: none; width: 1.1em; text-align: center; }
-.stage__num { flex: none; font-weight: 600; }
+.stage__num {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.45rem; height: 1.45rem;
+  font-size: 0.75rem; font-weight: 700; border-radius: 50%; border: 1px solid var(--border-strong); color: var(--muted);
+}
+.stage--done .stage__num { border-color: var(--success); color: var(--success); }
+.stage--next .stage__num { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 .stage__label { min-width: 0; }
-.stage--done .stage__button { border-color: #8cc29b; background: #eef8f0; }
-.stage--done .stage__mark { color: #1d6b35; }
-.stage--next .stage__button { border: 2px solid var(--accent); background: #eef3fc; font-weight: 600; }
+.stage--done .stage__button { border-color: var(--success-border); background: var(--success-soft); }
+.stage--done .stage__mark { color: var(--success); }
+.stage--next .stage__button { border: 2px solid var(--accent); background: var(--accent-soft); font-weight: 600; }
 .stage--next .stage__mark { color: var(--accent); }
 .stage--skipped .stage__button { border-style: dashed; }
-.stage__button--off { color: var(--muted); background: #f0f1f3; cursor: default; }
+.stage__button--off { color: var(--muted); background: var(--card-raised); cursor: default; }
 .stage-summary { display: flex; flex-wrap: wrap; column-gap: 1.5rem; row-gap: 0.25rem; align-items: center; margin: 0.25rem 0; font-size: 0.9rem; }
 .stage-summary__go { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.85rem; }
 .stage-details { font-size: 0.85rem; }
@@ -374,7 +415,7 @@ button.stage__button:hover { border-color: var(--accent); }
 .next-steps .actions button { margin-top: 0.5rem; }
 .card:focus { outline: none; }
 .card--highlight { animation: card-highlight 1.6s ease-out; }
-@keyframes card-highlight { from { box-shadow: 0 0 0 4px #9bb8ea; } to { box-shadow: 0 0 0 4px transparent; } }
+@keyframes card-highlight { from { box-shadow: 0 0 0 4px var(--accent-border); } to { box-shadow: 0 0 0 4px transparent; } }
 
 /* L19/L20: valmisolek ja avatud küsimused backlog'i loo all */
 .link-button { margin: 0.25rem 0 0; padding: 0; background: none; color: var(--accent); font-size: 0.85rem; text-decoration: underline; }
@@ -385,21 +426,21 @@ button.stage__button:hover { border-color: var(--accent); }
 .story-ready__expired { margin: 0.5rem 0 0; }
 .dor-list, .story-questions { margin: 0; padding-left: 1.1rem; }
 .dor-list { list-style: none; padding-left: 0; }
-.dor-list__ok { color: #1d6b35; }
-.dor-list__missing { color: #8a5a00; }
+.dor-list__ok { color: var(--success); }
+.dor-list__missing { color: var(--warning-text); }
 .story-questions li { margin: 0.25rem 0; }
 .story-questions__resolved { text-decoration: line-through; color: var(--muted); }
 .story-questions .icon-button { margin: 0 0 0 0.25rem; }
 .story-questions__add button { margin-top: 0.5rem; }
-.backlog__expired { color: #8a5a00; font-weight: 600; }
+.backlog__expired { color: var(--warning-text); font-weight: 600; }
 
 /* L17: MVP joon backlog'is */
-.mvp-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin: 0.25rem 0; padding: 0.4rem 0.5rem; border-top: 3px double #5b3e8f; border-bottom: 3px double #5b3e8f; background: #f3effa; font-size: 0.85rem; list-style: none; }
-.mvp-line__label { font-weight: 700; color: #5b3e8f; letter-spacing: 0.05em; text-transform: uppercase; }
+.mvp-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin: 0.25rem 0; padding: 0.4rem 0.5rem; border-top: 3px double var(--mvp); border-bottom: 3px double var(--mvp); background: var(--mvp-soft); font-size: 0.85rem; list-style: none; }
+.mvp-line__label { font-weight: 700; color: var(--mvp); letter-spacing: 0.05em; text-transform: uppercase; }
 .mvp-line__hint { color: var(--muted); }
 .mvp-line__actions { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin-left: auto; }
 .mvp-line .icon-button { margin: 0; }
-.tag--mvp { margin: 0 0.25rem 0 0; color: #5b3e8f; background: #f3effa; border-color: #c9b8e6; font-weight: 700; }
+.tag--mvp { margin: 0 0.25rem 0 0; color: var(--mvp); background: var(--mvp-soft); border-color: var(--mvp-border); font-weight: 700; }
 .mvp-add { margin-top: 0.75rem; }
 
 /* L22: mockup'i varasemad versioonid */
@@ -414,6 +455,7 @@ button.stage__button:hover { border-color: var(--accent); }
 .backlog__add { margin: 0 0 0.5rem; }
 .story-manage { display: inline-flex; gap: 0.75rem; margin-right: 0.75rem; }
 .story-manage__delete { color: var(--error); }
+button.danger { color: var(--bg); }
 .story-form-box, .story-form, .delete-confirm { margin: 0.5rem 0; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 0.9rem; }
 .story-form-box .story-form { margin: 0; padding: 0; border: 0; }
 .story-form-box__title, .delete-confirm__title { margin: 0 0 0.25rem; font-weight: 600; }
@@ -423,7 +465,7 @@ button.stage__button:hover { border-color: var(--accent); }
 .story-form__check { display: flex; align-items: center; gap: 0.4rem; font-weight: 400; }
 .story-form__check input { width: auto; }
 .story-form__preview { margin-top: 0.5rem; }
-.delete-confirm { border-color: var(--error); background: #fdf3f2; }
+.delete-confirm { border-color: var(--error); background: var(--error-soft); }
 .delete-confirm ul { margin: 0.25rem 0; padding-left: 1.2rem; }
 button.danger { background: var(--error); }
 
@@ -442,7 +484,7 @@ button.danger { background: var(--error); }
 .split-preview ol, .split-preview ul { margin: 0.25rem 0; padding-left: 1.2rem; }
 .split-part { padding: 0.4rem 0.6rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
 .split-part--second { border: 2px solid var(--accent); background: var(--accent-soft); }
-.split-part__badge { display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; margin-right: 0.3rem; border-radius: 50%; background: var(--muted); color: #fff; font-size: 0.8rem; }
+.split-part__badge { display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; margin-right: 0.3rem; border-radius: 50%; background: var(--muted); color: var(--bg); font-size: 0.8rem; }
 .split-part--second .split-part__badge { background: var(--accent); }
 
 /* L26: kahe loo ühendamine */
@@ -451,7 +493,7 @@ button.danger { background: var(--error); }
 .merge-criterion { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.4rem 0; font-weight: 400; }
 .merge-criterion input { width: auto; margin-top: 0.25rem; }
 .merge-criterion__link { display: block; font-size: 0.85rem; color: var(--muted); }
-.tag--dup { color: #8a5a00; background: #fff4c2; border-color: #e0c060; }
+.tag--dup { color: var(--warning-text); background: var(--warning-soft); border-color: var(--warning-border); }
 .merge-preview__removed { color: var(--error); }
 .merge-blocked { margin-top: 0.75rem; }
 
@@ -476,7 +518,7 @@ button.danger { background: var(--error); }
 .review-dups { margin: 0.25rem 0; padding-left: 1.25rem; }
 .review-dups li { margin: 0.2rem 0; }
 .review-dups__removed { text-decoration: line-through; color: var(--muted); }
-.review-dups__kept { color: #1d6b35; }
+.review-dups__kept { color: var(--success); }
 /* L14: etapi vahelejätmine */
 .stage--passed .stage__button { border-style: dashed; }
 .stage--passed .stage__mark { color: var(--muted); }
@@ -492,7 +534,7 @@ button.danger { background: var(--error); }
 /* L18: AI enesekontrolli märge */
 .selfcheck { margin: 0.2rem 0; font-size: 0.9em; }
 .selfcheck--fixed { color: var(--muted); }
-.tag--selfcheck { color: #1d6b35; background: #eef8f0; border-color: #8cc29b; font-weight: 600; }
+.tag--selfcheck { color: var(--success); background: var(--success-soft); border-color: var(--success-border); font-weight: 600; }
 /* L22: mitu vaadet (mockup'i) loo kohta */
 .mockup-view { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
 .mockup-view__title { margin: 0.25rem 0; }
@@ -511,7 +553,7 @@ button.danger { background: var(--error); }
 .new-view__target select { width: auto; max-width: 100%; margin-top: 0.25rem; }
 /* L26: kattuvaks märgitud lood */
 .overlap-mark { margin: 0.2rem 0; font-size: 0.9rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; }
-.tag--overlap { color: #8a5a00; background: #fff4c2; border-color: #e0c060; font-weight: 600; }
+.tag--overlap { color: var(--warning-text); background: var(--warning-soft); border-color: var(--warning-border); font-weight: 600; }
 .overlap-form select { max-width: 100%; }
 /* L26: backlog'i tegevusnuppude tekst ei murdu (rida murdub nuppude vahelt) */
 .story-manage .link-button { white-space: nowrap; }
@@ -527,3 +569,15 @@ button.danger { background: var(--error); }
 .note-field .muted { margin: 0.25rem 0; }
 .next-steps__text button { margin-top: 0.5rem; }
 .next-steps__result { margin-top: 0.5rem; }
+
+/* DoR-ring backlog'i real: olemasoleva valmisoleku tulemuse täidetud tingimused / kõik tingimused */
+.dor-ring {
+  --dor: 0%;
+  display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; margin-right: 0.4rem; vertical-align: middle;
+  border-radius: 50%; background: conic-gradient(var(--warning) var(--dor), var(--border) 0);
+}
+.dor-ring--ok { background: conic-gradient(var(--success) var(--dor), var(--border) 0); }
+.dor-ring__value {
+  display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--card); color: var(--text); font-size: 0.62rem; font-weight: 700;
+}

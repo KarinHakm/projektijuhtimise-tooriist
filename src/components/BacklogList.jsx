@@ -6,6 +6,7 @@ import DeleteStoryConfirm from './DeleteStoryConfirm.jsx';
 import SplitStoryForm from './SplitStoryForm.jsx';
 import MergeStoryForm from './MergeStoryForm.jsx';
 import { ORIGIN_LABELS, STATUS_LABELS } from '../stories/selection.js';
+import DorRing from './DorRing.jsx';
 
 // Backlog'i loend (L06, L07): järjekorranumber, pealkiri, staatus, suurus, päritolu ja ↑/↓ nupud.
 // buttonRef(id, direction) annab nupu viite, et fookus jääks pärast tõstet samale nupule.
@@ -82,6 +83,7 @@ export default function BacklogList({
                 {s.id === focusStoryId && <><span className="tag tag--focus">Alustame sellest</span>{' '}</>}{s.title}
               </p>
               <p className="backlog__meta">
+                <DorRing checks={s.readiness?.checks} />
                 Staatus: {s.readiness?.expired
                   ? <span className="backlog__expired">{STATUS_LABELS[s.status]} – valmisolek aegunud</span>
                   : STATUS_LABELS[s.status] ?? s.status} · Suurus: {s.size} · Päritolu: {ORIGIN_LABELS[s.origin] ?? s.origin}

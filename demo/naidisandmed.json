@@ -2,79 +2,79 @@
   "markus": "NÄIDISANDMED – käsitsi koostatud, mitte AI vastused. Kasutab käsk npm run demo (scripts/demo-data.js); rakenduses on need märgitud sildiga „Näidis“.",
   "projects": [
     {
-      "name": "Näidis: Spordiklubi veeb",
-      "description": "Spordiklubi tahab veebi, kus saab treeningutega tutvuda ja liikmeks astuda.",
-      "roles": ["Külastaja", "Administraator"],
+      "name": "Näidis: Explore Estonia",
+      "description": "Turismiportaal, kus külastaja avastab Eesti sihtkohti, koostab reisiplaani ja broneerib ekskursiooni.",
+      "roles": ["Külastaja", "Reisikorraldaja"],
       "conversation": {
-        "idea": "Spordiklubi tahab veebi, kus saab treeningutega tutvuda ja liikmeks astuda.",
+        "idea": "Turismiportaal, kus külastaja avastab Eesti sihtkohti, koostab reisiplaani ja broneerib ekskursiooni.",
         "questions": {
           "message": "Enne lugude pakkumist täpsustan paari asja.",
           "questions": [
-            { "id": "k1", "text": "Kes on rakenduse kasutajad?", "multiSelect": true, "options": ["Külastaja", "Klubi liige", "Treener", "Administraator"] },
-            { "id": "k2", "text": "Kas liikmetasu makstakse rakenduses?", "multiSelect": false, "options": ["Jah, veebis", "Ei, kohapeal", "Otsustame hiljem"] }
+            { "id": "k1", "text": "Kes on rakenduse kasutajad?", "multiSelect": true, "options": ["Külastaja", "Giid", "Reisikorraldaja", "Administraator"] },
+            { "id": "k2", "text": "Kas ekskursiooni eest makstakse rakenduses?", "multiSelect": false, "options": ["Jah, veebis", "Ei, kohapeal", "Otsustame hiljem"] }
           ]
         },
         "answers": [
-          { "questionId": "k1", "selected": ["Külastaja", "Administraator"], "other": null, "skipped": false },
+          { "questionId": "k1", "selected": ["Külastaja", "Reisikorraldaja"], "other": null, "skipped": false },
           { "questionId": "k2", "selected": ["Otsustame hiljem"], "other": null, "skipped": false }
         ],
         "summary": {
           "message": "Aitäh, sellest piisab lugude koostamiseks.",
-          "summary": "Külastaja tutvub treeningute ja pakettidega ning esitab veebis liikmeks astumise taotluse. Administraator vaatab taotlused üle. Liikmetasu maksmine otsustatakse hiljem."
+          "summary": "Külastaja sirvib Eesti sihtkohti, koostab reisiplaani ja saadab ekskursioonile broneerimistaotluse; giid kinnitab koha hiljem e-postiga. Reisikorraldaja vaatab broneeringud üle. Tasumine otsustatakse hiljem."
         }
       },
       "backlog": [
-        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "näha treeningute nädalakava", "soThat": "saaksin valida endale sobiva treeningaja", "size": "M" },
-        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "näha liikmepakette koos hindadega", "soThat": "saaksin valida endale sobiva paketi", "size": "S" },
-        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "esitada veebis liikmeks astumise taotluse", "soThat": "saaksin klubiga liituda ilma kohale tulemata", "size": "M" },
-        { "role": "Administraator", "rolePhrase": "Administraatorina", "want": "näha uusi liitumistaotlusi ühes loendis", "soThat": "saaksin igale taotlejale samal päeval vastata", "size": "M" }
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "sirvida sihtkohti piirkonna järgi", "soThat": "leiaksin endale huvipakkuva reisisihi", "size": "M" },
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "lisada sihtkohti oma reisiplaani", "soThat": "saaksin reisi päevade kaupa läbi mõelda", "size": "S" },
+        { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "saata ekskursioonile broneerimistaotluse", "soThat": "giid saaks mulle tuuril koha kinnitada", "size": "M" },
+        { "role": "Reisikorraldaja", "rolePhrase": "Reisikorraldajana", "want": "näha uusi broneerimistaotlusi ühes loendis", "soThat": "saaksin igale külastajale samal päeval vastata", "size": "M" }
       ],
       "focus": 2,
       "mvp": 3,
       "criteria": [
-        "Taotlusvormil on sisestusväli 'E-posti aadress'.",
-        "Taotlusvormil on nupp 'Saada liitumistaotlus'.",
-        "Pärast nupu 'Saada liitumistaotlus' vajutamist kuvatakse kinnitusteade."
+        "Broneerimisvormil on sisestusväli 'E-posti aadress'.",
+        "Broneerimisvormil on nupp 'Broneeri koht'.",
+        "Pärast nupu 'Broneeri koht' vajutamist kuvatakse teade 'Broneerimistaotlus saadetud'."
       ],
       "mockup": {
-        "title": "Liikmeks astumine",
+        "title": "Ekskursiooni broneerimine",
         "components": [
-          { "type": "heading", "text": "Liikmeks astumise taotlus", "items": [] },
-          { "type": "text", "text": "Täida vorm – klubi võtab sinuga ühendust.", "items": [] },
+          { "type": "heading", "text": "Broneeri ekskursioon: Lahemaa rabamatk", "items": [] },
+          { "type": "text", "text": "Giid kinnitab koha hiljem e-postiga.", "items": [] },
           { "type": "input", "text": "E-posti aadress", "items": [] },
-          { "type": "button", "text": "Saada liitumistaotlus", "items": [] }
+          { "type": "button", "text": "Broneeri koht", "items": [] }
         ]
       },
       "proposal": {
         "message": "Kolm lugu, mis jätkavad külastaja töövoogu.",
         "primaryRole": "Külastaja",
         "stories": [
-          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "saada liitumise kinnitus e-postiga", "soThat": "teaksin, et klubi sai mu taotluse kätte", "size": "S" },
-          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "broneerida koha proovitreeningule", "soThat": "saaksin klubi enne liitumist proovida", "size": "M" },
-          { "role": "Administraator", "rolePhrase": "Administraatorina", "want": "muuta treeningute nädalakava", "soThat": "külastajad näeksid alati õigeid aegu", "size": "M" }
+          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "saada giidilt koha kinnituse e-postiga", "soThat": "teaksin, et mu koht ekskursioonil on hoitud", "size": "S" },
+          { "role": "Külastaja", "rolePhrase": "Külastajana", "want": "näha ekskursiooni marsruuti kaardil", "soThat": "saaksin hinnata matka pikkust", "size": "M" },
+          { "role": "Reisikorraldaja", "rolePhrase": "Reisikorraldajana", "want": "lisada ekskursioonile uue toimumisaja", "soThat": "külastajad näeksid ainult kehtivaid aegu", "size": "M" }
         ]
       },
       "refinement": {
-        "clarification": "Klient soovib, et taotluses oleks ka telefoninumber, sest uutele liikmetele helistatakse.",
-        "message": "Taotlusvormile lisandub telefoninumbri väli ja selle kohta üks kriteerium. Loo sõnastus ei muutu.",
+        "clarification": "Klient soovib, et broneeringus oleks ka osalejate arv, sest giidi kohtade arv on piiratud.",
+        "message": "Broneerimisvormile lisandub osalejate arvu väli ja selle kohta üks kriteerium. Loo sõnastus ei muutu.",
         "criteria": [
-          { "from": 0, "text": "Taotlusvormil on sisestusväli 'E-posti aadress'." },
-          { "from": -1, "text": "Taotlusvormil on sisestusväli 'Telefoninumber'." },
-          { "from": 1, "text": "Taotlusvormil on nupp 'Saada liitumistaotlus'." },
-          { "from": 2, "text": "Pärast nupu 'Saada liitumistaotlus' vajutamist kuvatakse kinnitusteade." }
+          { "from": 0, "text": "Broneerimisvormil on sisestusväli 'E-posti aadress'." },
+          { "from": -1, "text": "Broneerimisvormil on sisestusväli 'Osalejate arv'." },
+          { "from": 1, "text": "Broneerimisvormil on nupp 'Broneeri koht'." },
+          { "from": 2, "text": "Pärast nupu 'Broneeri koht' vajutamist kuvatakse teade 'Broneerimistaotlus saadetud'." }
         ],
         "mockup": {
-          "title": "Liikmeks astumine",
+          "title": "Ekskursiooni broneerimine",
           "components": [
-            { "type": "heading", "text": "Liikmeks astumise taotlus", "items": [] },
-            { "type": "text", "text": "Täida vorm – klubi võtab sinuga ühendust.", "items": [] },
+            { "type": "heading", "text": "Broneeri ekskursioon: Lahemaa rabamatk", "items": [] },
+            { "type": "text", "text": "Giid kinnitab koha hiljem e-postiga.", "items": [] },
             { "type": "input", "text": "E-posti aadress", "items": [] },
-            { "type": "input", "text": "Telefoninumber", "items": [] },
-            { "type": "button", "text": "Saada liitumistaotlus", "items": [] }
+            { "type": "input", "text": "Osalejate arv", "items": [] },
+            { "type": "button", "text": "Broneeri koht", "items": [] }
           ]
         },
         "otherStories": [
-          { "story": 3, "suggestion": "Taotluste loendis võiks näha ka taotleja telefoninumbrit. See on ainult soovitus – seda lugu ei muudeta." }
+          { "story": 3, "suggestion": "Broneerimistaotluste loendis võiks näha ka osalejate arvu. See on ainult soovitus – seda lugu ei muudeta." }
         ]
       }
     }

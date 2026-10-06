@@ -43,7 +43,7 @@ export function NewViewView({
         <form className="new-view__form" onSubmit={(e) => { e.preventDefault(); onPropose(); }} noValidate>
           <label htmlFor="uus-vaade">Kirjelda uut vaadet</label>
           <textarea id="uus-vaade" rows={3} maxLength={500} value={description} disabled={running} onChange={(e) => onDescription(e.target.value)}
-            placeholder="Nt: Tunniplaani vaade, kus külastaja näeb nädala trenne ja saab koha broneerida." />
+            placeholder="Nt: Sihtkoha vaade, kus külastaja näeb vaatamisväärsuse kirjeldust ja saab selle reisiplaani lisada." />
           <button type="submit" disabled={running || !description.trim()} data-step="new-view-propose">Paku vaade (AI)</button>
         </form>
       )}

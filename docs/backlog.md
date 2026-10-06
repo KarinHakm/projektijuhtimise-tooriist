@@ -746,7 +746,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Git'i ajaloos on iga valmis loo kohta vähemalt üks commit.
 
 
-**Seis 06.10.2026 – Pooleli:** README on lõplik (aegunud „minimaalne README“ märge eemaldatud; käivitusjuhis, keskkonnamuutujad koos `PORT` ja `DATABASE_PATH`-iga, testide juhis ja lõppseis koos teadaolevate piirangutega). Kasutusstsenaarium (`docs/kasutusstsenaarium.md`, 473 sõna), backlog koos järjestuse põhjenduse ja MVP joonega ning AI piirangud ([ai-piirangud.md](ai-piirangud.md)) on repositooriumis. **Tegemata:** demo stsenaariumi läbimine kuni 10 minutiga (sõltub L35-st) ja README järgi käivitamine puhtast kloonist teises arvutis.
+**Seis 06.10.2026 – Pooleli:** README on lõplik (aegunud „minimaalne README“ märge eemaldatud; käivitusjuhis, keskkonnamuutujad koos `PORT` ja `DATABASE_PATH`-iga, testide juhis ja lõppseis koos teadaolevate piirangutega). Kasutusstsenaarium (`docs/kasutusstsenaarium.md`, 377 sõna, näidisteema Explore Estonia), backlog koos järjestuse põhjenduse ja MVP joonega ning AI piirangud ([ai-piirangud.md](ai-piirangud.md)) on repositooriumis. **Tegemata:** demo stsenaariumi läbimine kuni 10 minutiga (sõltub L35-st) ja README järgi käivitamine puhtast kloonist teises arvutis.
 ### L31–L34, L36 · Valikulised lisad, kui aega jääb
 Õpetaja loetelu „Lisavõimalused (ei ole kohustuslikud)“. Neid alustatakse alles pärast L30. Vastuvõtukriteeriumid kirjutatakse enne alustamist.
 - **L31:** eksport Markdowni ja CSV-sse.

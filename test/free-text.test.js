@@ -37,14 +37,14 @@ const lastPrompt = () => ai.calls.at(-1).messages.map((m) => m.content).join('\n
 
 const story = (role, rolePhrase, want, soThat) => ({ role, rolePhrase, want, soThat, size: 'M', touchesView: true });
 const STORIES = {
-  message: 'Lisasin treeneri soovi järgi lood.',
+  message: 'Lisasin giidi soovi järgi lood.',
   primaryRole: 'Külastaja',
   stories: [
-    story('Külastaja', 'Külastajana', 'näha treenerite tutvustusi', 'saaksin valida endale sobiva treeneri'),
-    story('Külastaja', 'Külastajana', 'näha treeneri järgi treeninguid', 'saaksin käia sama treeneri tundides'),
-    story('Külastaja', 'Külastajana', 'saata treenerile küsimuse', 'saaksin enne liitumist nõu'),
-    story('Külastaja', 'Külastajana', 'näha proovitreeningu aegu', 'saaksin klubi enne liitumist proovida'),
-    story('Administraator', 'Administraatorina', 'lisada uue treeneri profiili', 'külastajad näeksid ajakohast treenerite loendit'),
+    story('Külastaja', 'Külastajana', 'näha giidide tutvustusi', 'saaksin valida endale sobiva giidi'),
+    story('Külastaja', 'Külastajana', 'näha giidi järgi ekskursioone', 'saaksin käia sama giidi tuuridel'),
+    story('Külastaja', 'Külastajana', 'saata giidile küsimuse', 'saaksin enne broneerimist nõu'),
+    story('Külastaja', 'Külastajana', 'näha giidi vabu aegu', 'saaksin tuuri endale sobivale päevale planeerida'),
+    story('Reisikorraldaja', 'Reisikorraldajana', 'lisada uue giidi profiili', 'külastajad näeksid ajakohast giidide loendit'),
   ],
 };
 
@@ -52,38 +52,38 @@ test('vabatekst jõuab AI päringusse, uus ettepanek asendab ootel ettepaneku ja
   const before = backlog();
   const oldStories = pendingOf('stories');
   ai.push(aiOk(STORIES));
-  assert.equal((await post('/stories/propose', { note: 'Lisa lugusid treeneri kohta' })).status, 200);
-  assert.match(lastPrompt(), /<kasutaja_soov>\nLisa lugusid treeneri kohta\n<\/kasutaja_soov>/);
+  assert.equal((await post('/stories/propose', { note: 'Lisa lugusid giidi kohta' })).status, 200);
+  assert.match(lastPrompt(), /<kasutaja_soov>\nLisa lugusid giidi kohta\n<\/kasutaja_soov>/);
   assert.equal(pendingOf('stories').length, 1);
   assert.notDeepEqual(pendingOf('stories'), oldStories); // vana lükati tagasi, uus on ootel
 
   const oldRoles = createProposal(db, { projectId, kind: 'roles', payload: { message: 'x', roles: [{ name: 'Külastaja', description: 'Vaatab.' }] } }).id;
-  ai.push(aiOk({ message: 'Lisasin treeneri.', roles: [{ name: 'Külastaja', description: 'Tutvub klubiga.' }, { name: 'Treener', description: 'Juhendab treeninguid.' }] }));
-  assert.equal((await post('/roles/propose', { note: 'lisa ka treener' })).status, 200);
-  assert.match(lastPrompt(), /lisa ka treener/);
+  ai.push(aiOk({ message: 'Lisasin giidi.', roles: [{ name: 'Külastaja', description: 'Avastab sihtkohti.' }, { name: 'Giid', description: 'Juhib ekskursioone.' }] }));
+  assert.equal((await post('/roles/propose', { note: 'lisa ka giid' })).status, 200);
+  assert.match(lastPrompt(), /lisa ka giid/);
   assert.equal(pendingOf('roles').length, 1);
   assert.notEqual(pendingOf('roles')[0], oldRoles);
 
-  ai.push(aiOk({ message: 'Alustame hindadest.', storyId: focusId, reason: 'Klient soovis alustada liitumisest, sest see toob tulu.' }));
-  assert.equal((await post('/priority/propose', { note: 'alustame liitumisest' })).status, 200);
-  assert.match(lastPrompt(), /alustame liitumisest/);
+  ai.push(aiOk({ message: 'Alustame broneerimisest.', storyId: focusId, reason: 'Klient soovis alustada broneerimisest, sest see toob tulu.' }));
+  assert.equal((await post('/priority/propose', { note: 'alustame broneerimisest' })).status, 200);
+  assert.match(lastPrompt(), /alustame broneerimisest/);
 
   db.prepare('DELETE FROM criteria WHERE story_id = ?').run(focusId);
   const beforeCriteria = backlog();
   ai.push(aiOk({
-    message: 'Lisasin telefoninumbri.',
+    message: 'Lisasin osalejate arvu.',
     criteria: [
-      { text: "Taotlusvormil on sisestusväli 'Telefoninumber'.", ref: 'Telefoninumber' },
-      { text: "Taotlusvormil on nupp 'Saada liitumistaotlus'.", ref: 'Saada liitumistaotlus' },
-      { text: 'Pärast taotluse saatmist kuvatakse kinnitusteade.', ref: '' },
+      { text: "Broneerimisvormil on sisestusväli 'Osalejate arv'.", ref: 'Osalejate arv' },
+      { text: "Broneerimisvormil on nupp 'Broneeri koht'.", ref: 'Broneeri koht' },
+      { text: "Pärast broneerimist kuvatakse teade 'Broneerimistaotlus saadetud'.", ref: '' },
     ],
-    mockup: { title: 'Taotlus', components: [{ type: 'input', text: 'Telefoninumber', items: [] }, { type: 'button', text: 'Saada liitumistaotlus', items: [] }] },
+    mockup: { title: 'Broneerimine', components: [{ type: 'input', text: 'Osalejate arv', items: [] }, { type: 'button', text: 'Broneeri koht', items: [] }] },
   }));
-  assert.equal((await post('/criteria/propose', { note: 'kriteeriumides peab olema telefoninumber' })).status, 200);
-  assert.match(lastPrompt(), /kriteeriumides peab olema telefoninumber/);
+  assert.equal((await post('/criteria/propose', { note: 'kriteeriumides peab olema osalejate arv' })).status, 200);
+  assert.match(lastPrompt(), /kriteeriumides peab olema osalejate arv/);
   assert.equal(pendingOf('criteria').length, 1);
 
-  assert.deepEqual(roles(), ['Külastaja', 'Administraator']);
+  assert.deepEqual(roles(), ['Külastaja', 'Reisikorraldaja']);
   assert.deepEqual(backlog(), beforeCriteria); // ükski ettepanek ei jõudnud backlog'i
   assert.notDeepEqual(before, beforeCriteria); // (ainult testi enda kriteeriumide kustutus)
 });
@@ -102,12 +102,12 @@ test('AI tõrke korral jääb vana ettepanek ootele; liiga pikk vabatekst lükat
 
 test('„Mida teeme edasi?“ vabatekst: AI valib lubatud sammu ja märkuse, andmed ei muutu; vale samm lükatakse tagasi', async () => {
   const before = captureProject(db, projectId);
-  ai.push(aiOk({ message: 'Lähme lugude juurde.', stepId: 'stage:lood', note: 'Lisa lugusid treeneri kohta.' }));
-  const res = await post('/stage/next', { text: 'tahaks treeneri lugusid juurde' });
+  ai.push(aiOk({ message: 'Lähme lugude juurde.', stepId: 'stage:lood', note: 'Lisa lugusid giidi kohta.' }));
+  const res = await post('/stage/next', { text: 'tahaks giidi lugusid juurde' });
   assert.equal(res.status, 200);
   const body = await res.json();
-  assert.deepEqual([body.step.id, body.step.card, body.note], ['stage:lood', 'stories', 'Lisa lugusid treeneri kohta.']);
-  assert.match(lastPrompt(), /tahaks treeneri lugusid juurde/);
+  assert.deepEqual([body.step.id, body.step.card, body.note], ['stage:lood', 'stories', 'Lisa lugusid giidi kohta.']);
+  assert.match(lastPrompt(), /tahaks giidi lugusid juurde/);
   assert.match(lastPrompt(), /- stage:lood: Ava etapp „Lood“ \(vabateksti väljaga\)/);
 
   ai.push(aiOk({ message: 'x', stepId: 'kustuta-koik', note: '' }), aiOk({ message: 'x', stepId: 'kustuta-koik', note: '' }));

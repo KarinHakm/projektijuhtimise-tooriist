@@ -84,7 +84,7 @@ export default function Conversation({ projectId, onPhaseChange }) {
             onChange={(e) => setIdea(e.target.value)}
             disabled={busy}
             aria-invalid={Boolean(ideaError || error?.field === 'text')}
-            placeholder="Nt: Spordiklubi tahab veebi, kus saab treeningutega tutvuda ja liikmeks astuda."
+            placeholder="Nt: Turismiportaal, kus külastaja avastab Eesti sihtkohti, koostab reisiplaani ja broneerib ekskursiooni."
           />
           {(ideaError || error?.field === 'text') && <p className="error">{ideaError || error.message}</p>}
           <button type="submit" disabled={busy}>Alusta</button>

@@ -23,9 +23,9 @@ export default function StoryFields({ idBase, value, onChange, roles = [], stori
         </div>
       </div>
       <label htmlFor={`${idBase}-want`}>soovin …</label>
-      <input id={`${idBase}-want`} value={value.want} onChange={set('want')} disabled={busy} placeholder="Nt: näha treeningute nädalakava" aria-invalid={invalid('want')} />
+      <input id={`${idBase}-want`} value={value.want} onChange={set('want')} disabled={busy} placeholder="Nt: sirvida sihtkohti piirkonna järgi" aria-invalid={invalid('want')} />
       <label htmlFor={`${idBase}-sothat`}>et …</label>
-      <input id={`${idBase}-sothat`} value={value.soThat} onChange={set('soThat')} disabled={busy} placeholder="Nt: saaksin valida sobiva aja" aria-invalid={invalid('soThat')} />
+      <input id={`${idBase}-sothat`} value={value.soThat} onChange={set('soThat')} disabled={busy} placeholder="Nt: leiaksin huvipakkuva reisisihi" aria-invalid={invalid('soThat')} />
       <div className="story-form__row">
         <div>
           <label htmlFor={`${idBase}-size`}>Suurus</label>

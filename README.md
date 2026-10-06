@@ -17,15 +17,15 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    npm run demo
    ```
    Ava brauseris http://localhost:5175. Peatamiseks vajuta terminalis Ctrl+C.
-   - Näidises on üks projekt **„Spordiklubi veeb“** (märk **„Näidis“**). Selles on valmis idee ja vestlus (2 täpsustavat küsimust, vastused, kokkuvõte), 2 rolli, 4 lugu backlog'is, valitud alustamise lugu „liikmeks astumise taotlus“, selle 3 vastuvõtukriteeriumi ja kinnitatud mockup (versioon 1).
+   - Näidises on üks projekt **„Explore Estonia“** (märk **„Näidis“**) – Eesti sihtkohtade avastamine, reisiplaan ja ekskursioonide broneerimine. Selles on valmis idee ja vestlus (2 täpsustavat küsimust, vastused, kokkuvõte), 2 rolli (Külastaja, Reisikorraldaja), 4 lugu backlog'is, valitud alustamise lugu „ekskursiooni broneerimistaotlus“, selle 3 vastuvõtukriteeriumi ja kinnitatud mockup (versioon 1).
    - **Ettevalmistatud, mitte AI vastus:** kogu näidise sisu on käsitsi koostatud. Rakenduses on see märgitud lühikese sildiga **„Näidis“** (projekti nimi, vestluse sõnumid, lugude ja täpsustuse ettepanek; sildi vihje „Käsitsi koostatud näidisandmed, mitte AI vastus“). Näidisest lisatud lugude ja kriteeriumide päritolu on „Käsitsi lisatud“.
    - **Mida saab päriselt teha (ilma AI-ta, salvestub):**
      1. lugude ootel ettepanekus lugu ✎ muuta, ✗ tagasi lükata, märkeruute muuta ja „Lisa valitud“ – lood lisanduvad backlog'i;
      2. backlog'i lugusid ↑/↓ järjestada, MVP joont liigutada (näidises on see kolme loo all) ja prioriteedi juures valida teine alustamise lugu („Vali teine lugu“);
      3. kriteeriume mockup'i elementidega siduda („Seo ise“) ja kooskõla üle vaadata („Kinnitan: vaatasin mockup'i versiooni … ja kriteeriumid üle“);
-     4. kliendi täpsustuse ootel ettepanekus („taotluses peab olema ka telefoninumber“) näha eelvaadet enne → pärast ning „Rakenda“, „Muuda“ või „Loobu“. Rakendamine muudab ainult alustamise lugu: lisandub kriteerium ja mockup'i versioon 2; soovitus teisele loole on ainult tekst;
+     4. kliendi täpsustuse ootel ettepanekus („broneeringus peab olema osalejate arv“) näha eelvaadet enne → pärast ning „Rakenda“, „Muuda“ või „Loobu“. Rakendamine muudab ainult alustamise lugu: lisandub kriteerium ja mockup'i versioon 2; soovitus teisele loole on ainult tekst;
      5. F5 või serveri taaskäivitus – kõik tehtu on alles; etappide riba ja „Mida teeme edasi?“ näitavad jätkamise kohta.
-   - **Teadlik kooskõlahoiatus:** 3. kriteerium nõuab kinnitusteadet, mida mockup'is ei ole. Rakendus näitab hoiatust „pole vastet“. See on kontrollimist vajav vihje, mitte automaatne otsus – kasutaja otsustab (lisab elemendi, seob ise või kinnitab ülevaatuse).
+   - **Teadlik kooskõlahoiatus:** 3. kriteerium nõuab teadet „Broneerimistaotlus saadetud“, mida mockup'is ei ole. Rakendus näitab hoiatust „pole vastet“. See on kontrollimist vajav vihje, mitte automaatne otsus – kasutaja otsustab (lisab elemendi, seob ise või kinnitab ülevaatuse).
    - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
    - `npm run demo` režiimis on AI välja lülitatud (AI-ga sama näidis: `npm run demo:ai`, vt samm 5): AI nupud (nt „Alusta“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
    - Kasutusstsenaarium: [docs/kasutusstsenaarium.md](docs/kasutusstsenaarium.md).
@@ -33,7 +33,7 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
    1. Kontrolli, et käsk on olemas: `claude --version` (näitab versiooni; AI päringut ei tehta).
    2. Kontrolli sisselogimist: käivita terminalis `claude`. Kui see küsib sisselogimist, logi sisse oma Claude'i kontoga (tellimuse sisselogimine, mitte API-võti). Sisselogitud sessioonis näitab `/status` kontot ja sisselogimise viisi. Välju käsuga `/exit`.
    3. Käivita rakendus:
-      - `npm run demo:ai` – sama „Spordiklubi veeb“ näidis, AI nupud töötavad (näidis taastatakse algseisu);
+      - `npm run demo:ai` – sama „Explore Estonia“ näidis, AI nupud töötavad (näidis taastatakse algseisu);
       - või `npm run dev` – oma tühi andmebaas `data/app.db`, alusta „+ Loo projekt“.
    4. Serveri logis peab olema rida `AI: Claude Code CLI, mudel sonnet (sisselogimist kontrollitakse esimese AI päringu ajal)`.
    5. Kui midagi on puudu, näitab rakendus AI nupu juures selget teadet ja käsitsi saab edasi töötada:

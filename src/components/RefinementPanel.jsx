@@ -62,7 +62,7 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
         <>
           <label htmlFor="kliendi-tapsustus">Kliendi täpsustus</label>
           <textarea id="kliendi-tapsustus" rows={3} value={text} onChange={(e) => onText(e.target.value)} disabled={disabled}
-            placeholder="Nt: Paketi hinnas peab olema näha, kas see sisaldab käibemaksu." />
+            placeholder="Nt: Broneeringus peab olema näha osalejate arv." />
           <button type="button" onClick={onPropose} disabled={disabled || !text.trim()}>Koosta muudatusettepanek</button>
           {data.consistency?.warningCount > 0 && (
             <p className="consistency-warning">⚠ Kontrolli: praeguses seisus on {data.consistency.warningCount} kooskõla hoiatust (vt „Kriteeriumid ja mockup“).</p>

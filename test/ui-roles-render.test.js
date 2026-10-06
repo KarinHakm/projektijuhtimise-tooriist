@@ -54,7 +54,7 @@ test('märkimata roll kuvatakse märkimata märkeruuduga', () => {
 test('käsitsi lisatud rollil on silt "käsitsi"; lisamise väli ja nupp on olemas', () => {
   const html = render({ items: addManualRole(fromProposal(PROPOSAL), 'Treener').items });
   assert.match(html, /Treener<\/strong><span class="tag">käsitsi<\/span>/);
-  assert.match(html, /placeholder="Lisa oma roll, nt Treener"/);
+  assert.match(html, /placeholder="Lisa oma roll, nt Giid"/);
   assert.ok(buttonByText(html, 'Lisa'));
 });
 

@@ -35,7 +35,7 @@ export default function StagePanel({ name, demo = false, stage, onGo, onActivate
           const content = (
             <>
               <span className="stage__mark" aria-hidden="true">{MARKS[s.status]}</span>
-              <span className="stage__num">{i + 1}.</span>
+              <span className="stage__num">{i + 1}</span>
               <span className="stage__label">{s.label}</span>
               <span className="visually-hidden"> – {STATUS_LABELS[s.status]}</span>
             </>

@@ -45,10 +45,10 @@ test('keeldub kirjutamast faili app.db või kaitstud faili; faili ei muudeta', (
   assert.equal(readFileSync(other, 'utf8'), 'KAITSTUD');
 });
 
-test('üks näidisprojekt „Spordiklubi veeb“; sisu on käsitsi kirjutatud, mitte kopeeritud testkoopiatest', () => {
+test('üks näidisprojekt „Explore Estonia“; sisu on käsitsi kirjutatud, mitte kopeeritud testkoopiatest', () => {
   const path = createDemoDb(join(dir, 'demo.db'));
   const projects = read(path, 'SELECT name, description FROM projects ORDER BY id');
-  assert.deepEqual(projects.map((p) => p.name), ['Näidis: Spordiklubi veeb']);
+  assert.deepEqual(projects.map((p) => p.name), ['Näidis: Explore Estonia']);
   assert.doesNotMatch(projects[0].description, /NÄIDISANDMED/); // näidise märk on rakenduses lühike silt „Näidis“
   const text = JSON.stringify(loadFixture());
   for (const own of ['TESTKOOPIA', 'VÕLTSANDMED', 'Potentsiaalne liige', 'raamatukogu', 'Lugeja']) assert.ok(!text.includes(own), own);
@@ -56,7 +56,7 @@ test('üks näidisprojekt „Spordiklubi veeb“; sisu on käsitsi kirjutatud, m
 
 test('läbiv näide: vestlus, 2 rolli, 4 lugu, alustamise lugu, 3 kriteeriumi ja kinnitatud mockup; kõik käsitsi', () => {
   const path = createDemoDb(join(dir, 'demo.db'));
-  assert.deepEqual(read(path, 'SELECT name, source FROM project_roles ORDER BY position').map((r) => [r.name, r.source]), [['Külastaja', 'manual'], ['Administraator', 'manual']]);
+  assert.deepEqual(read(path, 'SELECT name, source FROM project_roles ORDER BY position').map((r) => [r.name, r.source]), [['Külastaja', 'manual'], ['Reisikorraldaja', 'manual']]);
   const stories = read(path, 'SELECT id, origin FROM stories ORDER BY position');
   assert.equal(stories.length, 4);
   assert.ok(stories.every((s) => s.origin === 'manual'));
@@ -74,7 +74,7 @@ test('läbiv näide: vestlus, 2 rolli, 4 lugu, alustamise lugu, 3 kriteeriumi ja
   assert.ok(msgs.filter((m) => m.role === 'assistant').every((m) => JSON.parse(m.content).demo === true));
 });
 
-test('teadlik kooskõlahoiatus: täpselt üks („kinnitusteade“ puudub mockup’ist), kasutaja pole seda üle vaadanud', () => {
+test('teadlik kooskõlahoiatus: täpselt üks (teade „Broneerimistaotlus saadetud“ puudub mockup’ist), kasutaja pole seda üle vaadanud', () => {
   const path = createDemoDb(join(dir, 'demo.db'));
   const db = openDb(path);
   try {
@@ -82,7 +82,7 @@ test('teadlik kooskõlahoiatus: täpselt üks („kinnitusteade“ puudub mockup
     const c = consistencyFor(db, focus);
     assert.equal(c.warningCount, 1);
     assert.deepEqual(c.criteria.map((x) => x.warnings.map((w) => w.code)), [[], [], ['no_match']]);
-    assert.match(c.criteria[2].warnings[0].message, /„kinnitusteade“/);
+    assert.match(c.criteria[2].warnings[0].message, /„teade“, „saadetud“/);
     assert.equal(c.review, null);
   } finally {
     db.close();
@@ -95,7 +95,7 @@ test('ootel näidisettepanekud: lood ja kliendi täpsustus on märgitud demo nin
   assert.deepEqual(rows.map((r) => [r.kind, r.status]), [['stories', 'pending'], ['refinement', 'pending']]);
   const [stories, refinement] = rows.map((r) => JSON.parse(r.payload));
   assert.equal(stories.demo, true);
-  assert.deepEqual(checkStories(stories, ['Külastaja', 'Administraator']), []);
+  assert.deepEqual(checkStories(stories, ['Külastaja', 'Reisikorraldaja']), []);
   for (const s of stories.stories) assert.deepEqual(validateStoryText(s).errors, [], s.want);
   assert.equal(refinement.demo, true);
   assert.deepEqual(checkMockup(refinement.after.mockup), []);
@@ -121,7 +121,7 @@ async function withDemoServer(fn) {
   const server = createApp({ db, ai }).listen(0);
   await new Promise((r) => server.once('listening', r));
   try {
-    const projectId = db.prepare("SELECT id FROM projects WHERE name = 'Näidis: Spordiklubi veeb'").get().id;
+    const projectId = db.prepare("SELECT id FROM projects WHERE name = 'Näidis: Explore Estonia'").get().id;
     await fn({ db, base: `http://127.0.0.1:${server.address().port}/api/projects/${projectId}` });
     assert.equal(calls, 0);
   } finally {

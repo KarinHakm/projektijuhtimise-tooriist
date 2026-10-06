@@ -19,7 +19,7 @@ const P101 = computeStage(facts({ roles: 2, stories: 4, focus: true, criteria: 3
 const P102 = computeStage(facts({ roles: 2, stories: 3, latestAi: { kind: 'stories' } }));
 const render = (stage) => renderToStaticMarkup(createElement(StagePanel, { name: 'TESTKOOPIA A', stage, onGo: () => {} })).replace(/<!-- -->/g, '');
 const buttons = (html) => [...html.matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => m[1].replace(/<!-- -->/g, '').replace(/&#x27;/g, "'"));
-const stageItem = (html, n) => html.match(new RegExp(`<li class="stage [^"]*"[^>]*>(?:(?!</li>).)*<span class="stage__num">${n}\\.</span>(?:(?!</li>).)*</li>`))[0];
+const stageItem = (html, n) => html.match(new RegExp(`<li class="stage [^"]*"[^>]*>(?:(?!</li>).)*<span class="stage__num">${n}</span>(?:(?!</li>).)*</li>`))[0];
 
 test('päis: projekti nimi, link „Backlog (n)“ ja seitse etappi; iga etapi olek on ka tekstina', () => {
   const html = render(P101);

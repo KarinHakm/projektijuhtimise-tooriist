@@ -72,7 +72,7 @@ function StoryCriteria({ story, busy, onAdd, onUpdate, onDelete }) {
       <form className="story-questions__add" onSubmit={add} noValidate>
         <label htmlFor={`${idBase}-uus`}>Lisa kriteerium</label>
         <input id={`${idBase}-uus`} value={text} maxLength={CRITERION_MAX} disabled={busy || story.criteria.length >= MAX_CRITERIA}
-          onChange={(e) => setText(e.target.value)} placeholder="Nt: Paketi hinna juures on märge, kas hind sisaldab käibemaksu." />
+          onChange={(e) => setText(e.target.value)} placeholder="Nt: Iga sihtkoha kaardil on piirkonna nimi." />
         {warnings(text).map((w) => <p key={w} className="warning">⚠ {w}</p>)}
         <button type="submit" className="secondary" disabled={busy || !text.trim() || story.criteria.length >= MAX_CRITERIA}>Lisa kriteerium</button>
         {story.criteria.length >= MAX_CRITERIA && <p className="muted">Loos võib olla kuni {MAX_CRITERIA} kriteeriumi.</p>}

@@ -39,7 +39,7 @@ export default function RolesProposalCard({
         <label htmlFor="new-role" className="visually-hidden">Lisa oma roll</label>
         <input
           id="new-role"
-          placeholder="Lisa oma roll, nt Treener"
+          placeholder="Lisa oma roll, nt Giid"
           maxLength={ROLE_NAME_MAX}
           value={newRole}
           onChange={(e) => onNewRoleChange(e.target.value)}
