@@ -10,9 +10,12 @@ import {
 import {
   aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup, listCriteria, listMockupVersions, listViews, restoreMockup, saveMockup, validateCriteriaSave,
 } from '../criteria.js';
+import { readNote } from '../ai/note.js';
 import { getFocusStoryId } from '../priority.js';
-import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
+import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectPending, rejectProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
+import { txBegin, txCommit, txRollback } from '../db.js';
+import { storyNo, undoable } from '../undo.js';
 
 const CRITERIA = 'criteria';
 const MOCKUP = 'mockup';
@@ -22,6 +25,20 @@ const MOCKUP = 'mockup';
 export function criteriaRouter({ db, ai }) {
   const router = Router({ mergeParams: true });
   const running = new Set();
+
+  // L21: tagasivõetavate toimingute sildid (arvutatakse enne toimingut).
+  const proposalStoryNo = (req) => storyNo(db, req.projectId, getProposal(db, String(req.body?.proposalId ?? ''))?.payload.storyId);
+  const linkedStoryNo = (req) => {
+    const id = Number.isInteger(req.body?.criterionId) ? db.prepare('SELECT story_id AS s FROM criteria WHERE id = ?').get(req.body.criterionId)?.s : null;
+    return storyNo(db, req.projectId, id);
+  };
+  const L = {
+    apply: (req) => `Salvestasid loo ${proposalStoryNo(req)} kriteeriumid AI ettepanekust`,
+    accept: (req) => `Kinnitasid loo ${proposalStoryNo(req)} mockup'i`,
+    restore: (req) => `Taastasid loo ${storyNo(db, req.projectId, req.body?.storyId)} mockup'i versiooni ${req.body?.version}`,
+    link: (req) => `Muutsid loo ${linkedStoryNo(req)} kriteeriumi seost mockup'iga`,
+    review: (req) => `Kinnitasid loo ${storyNo(db, req.projectId, req.body?.storyId)} kooskõla ülevaatuse`,
+  };
 
   const focusStory = (projectId) => {
     const id = getFocusStoryId(db, projectId);
@@ -83,14 +100,17 @@ export function criteriaRouter({ db, ai }) {
   router.get('/', (req, res) => res.json(snapshot(req.projectId)));
 
   // Küsib AI-lt kriteeriumid ja mockup'i alustamise loole. Pooleli ettepanek tagastatakse ilma AI-kutseta.
+  // Vabatekstiga (note) küsitakse alati uus ettepanek; see asendab ootel kriteeriumid ja mockup'i alles AI vastuse õnnestumisel.
   router.post('/propose', async (req, res) => {
     const projectId = req.projectId;
+    const { note, error: noteError } = readNote(req.body);
+    if (noteError) return res.status(400).json({ error: noteError, field: 'note', code: 'invalid_note' });
     const story = focusStory(projectId);
     if (!story) return res.status(409).json({ error: 'Vali enne prioriteedi juures lugu, millest alustada.', code: 'no_focus' });
     if (listCriteria(db, story.id).length > 0) {
       return res.status(409).json({ error: 'Sellel lool on juba kinnitatud kriteeriumid. Neid muudab kliendi täpsustus.', code: 'already_has_criteria' });
     }
-    if (pendingFor(projectId, CRITERIA, story.id)) return res.json(snapshot(projectId));
+    if (!note && pendingFor(projectId, CRITERIA, story.id)) return res.json(snapshot(projectId));
     if (running.has(projectId)) return res.status(409).json({ error: 'AI juba koostab ettepanekut. Oota hetk.', code: 'in_progress' });
 
     running.add(projectId);
@@ -98,7 +118,7 @@ export function criteriaRouter({ db, ai }) {
     try {
       ({ data } = await runAiTask(ai, {
         task: 'criteria',
-        messages: buildCriteriaMessages(buildProjectContext(db, projectId), story),
+        messages: buildCriteriaMessages(buildProjectContext(db, projectId), story, note),
         schema: CRITERIA_SCHEMA,
         check: checkCriteria,
       }));
@@ -114,25 +134,36 @@ export function criteriaRouter({ db, ai }) {
     } finally {
       running.delete(projectId);
     }
-    rejectStale(projectId, CRITERIA, story.id);
-    rejectStale(projectId, MOCKUP, story.id);
-    const criteriaProposal = createProposal(db, {
-      projectId,
-      kind: CRITERIA,
-      payload: {
-        storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => resolveRef(c.ref, data.mockup)),
-        selfCheck: data.selfCheck, // L18: { indeks: { status, from?, warnings } }
-      },
-    });
-    if (!latestMockup(db, story.id) && !pendingFor(projectId, MOCKUP, story.id)) {
-      // Kriteeriumide viited (L23) käivad selle mockup'i komponentide kohta.
-      createProposal(db, { projectId, kind: MOCKUP, payload: { storyId: story.id, message: data.message, mockup: data.mockup, criteriaProposalId: criteriaProposal.id } });
+    const sp = txBegin(db);
+    try {
+      if (note) {
+        rejectPending(db, projectId, CRITERIA);
+        rejectPending(db, projectId, MOCKUP);
+      }
+      rejectStale(projectId, CRITERIA, story.id);
+      rejectStale(projectId, MOCKUP, story.id);
+      const criteriaProposal = createProposal(db, {
+        projectId,
+        kind: CRITERIA,
+        payload: {
+          storyId: story.id, message: data.message, criteria: data.criteria.map((c) => c.text), refs: data.criteria.map((c) => resolveRef(c.ref, data.mockup)),
+          selfCheck: data.selfCheck, // L18: { indeks: { status, from?, warnings } }
+        },
+      });
+      if (!latestMockup(db, story.id) && !pendingFor(projectId, MOCKUP, story.id)) {
+        // Kriteeriumide viited (L23) käivad selle mockup'i komponentide kohta.
+        createProposal(db, { projectId, kind: MOCKUP, payload: { storyId: story.id, message: data.message, mockup: data.mockup, criteriaProposalId: criteriaProposal.id } });
+      }
+      txCommit(db, sp);
+    } catch (err) {
+      txRollback(db, sp);
+      throw err;
     }
     res.json(snapshot(projectId));
   });
 
   // Salvestab ainult brauseri saadetud kinnitatud/muudetud/lisatud kriteeriumid (eemaldatuid ei saadeta).
-  router.post('/apply', (req, res) => {
+  router.post('/apply', undoable(db, L.apply, (req, res) => {
     const projectId = req.projectId;
     const proposal = getProposal(db, String(req.body?.proposalId ?? ''));
     if (!proposal || proposal.projectId !== projectId || proposal.kind !== CRITERIA) {
@@ -171,10 +202,10 @@ export function criteriaRouter({ db, ai }) {
       return fail(res, err);
     }
     res.json(snapshot(projectId));
-  });
+  }));
 
   // [Kinnita mockup]: seotakse looga uue versioonina (esimene = 1).
-  router.post('/mockup/accept', (req, res) => {
+  router.post('/mockup/accept', undoable(db, L.accept, (req, res) => {
     const projectId = req.projectId;
     const proposal = getProposal(db, String(req.body?.proposalId ?? ''));
     if (!proposal || proposal.projectId !== projectId || proposal.kind !== MOCKUP) {
@@ -199,11 +230,11 @@ export function criteriaRouter({ db, ai }) {
       return fail(res, err);
     }
     res.json(snapshot(projectId));
-  });
+  }));
 
   // L22: varasema versiooni taastamine. Luuakse uus versioon; vana ajalugu jääb alles ja kooskõla ülevaatus aegub
   // (ülevaatuse sõrmejälg sisaldab mockup'i versiooni). Ainult alustamise loole, AI-d ei kasutata.
-  router.post('/mockup/restore', (req, res) => {
+  router.post('/mockup/restore', undoable(db, L.restore, (req, res) => {
     const projectId = req.projectId;
     const story = focusStory(projectId);
     if (!story || req.body?.storyId !== story.id) {
@@ -217,17 +248,17 @@ export function criteriaRouter({ db, ai }) {
       return res.status(404).json({ error: 'Sellist mockup\'i versiooni ei leitud.', code: 'not_found' });
     }
     if (version === versions[0].version) return res.status(409).json({ error: 'See on juba praegune versioon.', code: 'already_current' });
-    db.exec('BEGIN IMMEDIATE');
+    const sp = txBegin(db);
     let created;
     try {
       created = restoreMockup(db, story.id, version);
-      db.exec('COMMIT');
+      txCommit(db, sp);
     } catch (err) {
-      db.exec('ROLLBACK');
+      txRollback(db, sp);
       throw err;
     }
     res.json({ ...snapshot(projectId), restored: { from: version, to: created } });
-  });
+  }));
 
   // [Loobu]: mockup'i ei salvestata.
   router.post('/mockup/reject', (req, res) => {
@@ -240,8 +271,11 @@ export function criteriaRouter({ db, ai }) {
   });
 
   // [Paku uus]: uus mockup'i ettepanek; senine jääb alles, kuni uus on edukalt kontrollitud.
+  // Vabatekst (note) läheb samasse päringusse; uus ettepanek asendab ootel mockup'i nagu ilma märkuseta.
   router.post('/mockup/propose', async (req, res) => {
     const projectId = req.projectId;
+    const { note, error: noteError } = readNote(req.body);
+    if (noteError) return res.status(400).json({ error: noteError, field: 'note', code: 'invalid_note' });
     const story = focusStory(projectId);
     if (!story) return res.status(409).json({ error: 'Vali enne prioriteedi juures lugu, millest alustada.', code: 'no_focus' });
     if (running.has(projectId)) return res.status(409).json({ error: 'AI juba koostab ettepanekut. Oota hetk.', code: 'in_progress' });
@@ -253,7 +287,7 @@ export function criteriaRouter({ db, ai }) {
     try {
       ({ data } = await runAiTask(ai, {
         task: 'mockup',
-        messages: buildMockupMessages(buildProjectContext(db, projectId), story, criteria.length ? criteria : proposed),
+        messages: buildMockupMessages(buildProjectContext(db, projectId), story, criteria.length ? criteria : proposed, note),
         schema: MOCKUP_ONLY_SCHEMA,
         check: (d) => checkMockup(d.mockup),
       }));
@@ -272,7 +306,7 @@ export function criteriaRouter({ db, ai }) {
   });
 
   // Kasutaja seob kriteeriumi mockup'i elemendiga või märgib "ei puuduta vaadet" (L23). Muudab ainult selle kriteeriumi viidet.
-  router.post('/link', (req, res) => {
+  router.post('/link', undoable(db, L.link, (req, res) => {
     const projectId = req.projectId;
     const { criterionId, kind, index } = req.body ?? {};
     const viewNo = req.body?.view ?? 1; // L22: seos võib olla ükskõik millise vaate elemendiga
@@ -292,11 +326,11 @@ export function criteriaRouter({ db, ai }) {
     else return res.status(400).json({ error: 'Vigane seos.', code: 'invalid_link' });
     db.prepare('UPDATE criteria SET ref_kind = ?, ref_index = ?, ref_version = ?, ref_source = ? WHERE id = ?').run(...values, row.id);
     res.json(snapshot(projectId));
-  });
+  }));
 
   // "Vaatasin üle": kasutaja kinnitab, et vaatas selle seisu ise üle. See ei ole automaatne tõend kooskõla kohta
   // ja aegub, kui kriteeriumid, viited või mockup muutuvad (sõrmejälg ei klapi enam).
-  router.post('/review', (req, res) => {
+  router.post('/review', undoable(db, L.review, (req, res) => {
     const projectId = req.projectId;
     const story = focusStory(projectId);
     if (!story || req.body?.storyId !== story.id) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
@@ -308,7 +342,7 @@ export function criteriaRouter({ db, ai }) {
     db.prepare('UPDATE stories SET consistency_review = ? WHERE id = ?')
       .run(JSON.stringify({ fingerprint: current.fingerprint, mockupVersion: mockup?.version ?? null, at: new Date().toISOString() }), story.id);
     res.json(snapshot(projectId));
-  });
+  }));
 
   return router;
 }

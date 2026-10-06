@@ -3,9 +3,12 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildPriorityMessages, buildPrioritySchema, checkPriority } from '../ai/tasks/priority.js';
-import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
+import { readNote } from '../ai/note.js';
+import { txBegin, txCommit, txRollback } from '../db.js';
+import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectPending, rejectProposal } from '../proposals.js';
 import { getFocusStoryId, setFocusStory, storyInProject } from '../priority.js';
 import { listStories } from '../stories.js';
+import { storyNo, undoable } from '../undo.js';
 
 const KIND = 'priority';
 
@@ -42,11 +45,14 @@ export function priorityRouter({ db, ai }) {
   router.get('/', (req, res) => res.json(snapshot(req.projectId)));
 
   // Küsib AI soovitust. Kui pooleli soovitus on juba olemas, tagastab selle ilma AI-kutseta.
+  // Vabatekstiga (note) küsitakse alati uus soovitus; see asendab ootel soovituse alles AI vastuse õnnestumisel.
   router.post('/propose', async (req, res) => {
     const projectId = req.projectId;
+    const { note, error } = readNote(req.body);
+    if (error) return res.status(400).json({ error, field: 'note', code: 'invalid_note' });
     const stories = listStories(db, projectId);
     if (stories.length === 0) return res.status(409).json({ error: 'Prioriteeti saab küsida pärast lugude lisamist backlog\'i.', code: 'no_stories' });
-    if (findPendingProposal(db, projectId, KIND)) return res.json(snapshot(projectId));
+    if (!note && findPendingProposal(db, projectId, KIND)) return res.json(snapshot(projectId));
     if (running.has(projectId)) return res.status(409).json({ error: 'AI juba koostab soovitust. Oota hetk.', code: 'in_progress' });
 
     const storyIds = stories.map((s) => s.id);
@@ -54,11 +60,19 @@ export function priorityRouter({ db, ai }) {
     try {
       const { data } = await runAiTask(ai, {
         task: 'priority',
-        messages: buildPriorityMessages(buildProjectContext(db, projectId), stories),
+        messages: buildPriorityMessages(buildProjectContext(db, projectId), stories, note),
         schema: buildPrioritySchema(storyIds),
         check: (d) => checkPriority(d, storyIds),
       });
-      createProposal(db, { projectId, kind: KIND, payload: { message: data.message, storyId: data.storyId, reason: data.reason } });
+      const sp = txBegin(db);
+      try {
+        rejectPending(db, projectId, KIND);
+        createProposal(db, { projectId, kind: KIND, payload: { message: data.message, storyId: data.storyId, reason: data.reason } });
+        txCommit(db, sp);
+      } catch (err) {
+        txRollback(db, sp);
+        throw err;
+      }
     } catch (err) {
       const { status, body } = toHttpError(err);
       return res.status(status).json(body);
@@ -69,7 +83,10 @@ export function priorityRouter({ db, ai }) {
   });
 
   // "Nõus, alustame sellest": soovitatud lugu saab alustamise looks (ettepanek rakendatakse üks kord).
-  router.post('/accept', (req, res) => {
+  // L21: alustamise loo valik on tagasivõetav.
+  const acceptLabel = (req) => `Valisid AI soovitusel alustamise looks loo ${storyNo(db, req.projectId, getProposal(db, String(req.body?.proposalId ?? ''))?.payload.storyId)}`;
+  const chooseLabel = (req) => `Valisid alustamise looks loo ${storyNo(db, req.projectId, req.body?.storyId)}`;
+  router.post('/accept', undoable(db, acceptLabel, (req, res) => {
     const projectId = req.projectId;
     const proposal = getProposal(db, String(req.body?.proposalId ?? ''));
     if (!proposal || proposal.projectId !== projectId || proposal.kind !== KIND) {
@@ -85,10 +102,10 @@ export function priorityRouter({ db, ai }) {
       throw err;
     }
     res.json(snapshot(projectId));
-  });
+  }));
 
   // "Valin ise teise": kasutaja valib alustamise loo ise; pooleli AI soovitus lükatakse tagasi.
-  router.post('/choose', (req, res) => {
+  router.post('/choose', undoable(db, chooseLabel, (req, res) => {
     const projectId = req.projectId;
     const storyId = req.body?.storyId;
     if (!storyInProject(db, projectId, storyId)) return res.status(404).json({ error: 'Lugu ei leitud selle projekti backlog\'ist.', code: 'not_found' });
@@ -102,7 +119,7 @@ export function priorityRouter({ db, ai }) {
       }
     }
     res.json(snapshot(projectId));
-  });
+  }));
 
   return router;
 }

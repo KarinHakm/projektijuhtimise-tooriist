@@ -1,4 +1,4 @@
-// Üldine tagasivõtmine (L21): projekti viimane TOETATUD muudatus. Üks kirje projekti kohta (undo_journal).
+// Üldine tagasivõtmine (L21): projekti viimane backlog'i muudatus (toimingud, mis on mähitud undoable() sisse). Üks kirje projekti kohta (undo_journal).
 // undoable() teeb ühes SQLite transaktsioonis: enne-seisu hetktõmmis → toiming → pärast-seisu räsi → kirje.
 // Kui kirje kirjutamine ebaõnnestub, võetakse ka toiming tagasi (rollback); vastus saadetakse alles pärast COMMIT'i.
 // Tagasivõtmine taastab hetktõmmise ainult siis, kui praeguse seisu räsi on sama mis kohe pärast toimingut.
@@ -49,12 +49,18 @@ function restoreProject(db, projectId, snapshot) {
     .run(snapshot.project.focus_story_id, snapshot.project.mvp_count, projectId);
 }
 
+// Siltide jaoks: loo järjekorranumber backlog'is ('?', kui lugu pole selle projekti oma).
+export function storyNo(db, projectId, storyId) {
+  const i = db.prepare('SELECT id FROM stories WHERE project_id = ? ORDER BY position').all(projectId).findIndex((r) => r.id === Number(storyId));
+  return i < 0 ? '?' : i + 1;
+}
+
 const journalRow = (db, projectId) => db.prepare('SELECT label, snapshot, after_hash AS afterHash, created_at AS at FROM undo_journal WHERE project_id = ?').get(projectId);
 
-// Seis brauserile: kas viimast toetatud muudatust saab tagasi võtta ja miks mitte.
+// Seis brauserile: kas viimast muudatust saab tagasi võtta ja miks mitte.
 export function undoState(db, projectId) {
   const row = journalRow(db, projectId);
-  if (!row) return { available: false, label: null, at: null, reason: 'Tagasivõetavat toetatud muudatust pole.' };
+  if (!row) return { available: false, label: null, at: null, reason: 'Tagasivõetavat muudatust pole.' };
   const current = stateHash(captureProject(db, projectId));
   return current === row.afterHash
     ? { available: true, label: row.label, at: row.at, reason: null }
@@ -69,12 +75,12 @@ export class UndoError extends Error {
   }
 }
 
-// Võtab viimase toetatud muudatuse tagasi. expectedAt = brauseri nähtud kirje aeg (topeltklõpsu kaitse).
+// Võtab viimase muudatuse tagasi. expectedAt = brauseri nähtud kirje aeg (topeltklõpsu kaitse).
 export function undoLast(db, projectId, expectedAt) {
   db.exec('BEGIN IMMEDIATE');
   try {
     const row = journalRow(db, projectId);
-    if (!row) throw new UndoError(409, 'nothing', 'Tagasivõetavat toetatud muudatust pole.');
+    if (!row) throw new UndoError(409, 'nothing', 'Tagasivõetavat muudatust pole.');
     if (expectedAt !== row.at) throw new UndoError(409, 'changed', 'Viimane muudatus on vahepeal muutunud – värskenda lehte.');
     if (stateHash(captureProject(db, projectId)) !== row.afterHash) {
       throw new UndoError(409, 'stale', `Pärast muudatust „${row.label}“ on tehtud teisi muudatusi – seda ei saa enam tagasi võtta. Osalist taastamist ei tehta.`);

@@ -13,6 +13,7 @@ import { aiRef, appendCriteria, consistencyFor, CRITERIA_MAX_COUNT, latestMockup
 import { getFocusStoryId } from '../priority.js';
 import { applyProposal, createProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { listStories } from '../stories.js';
+import { storyNo, undoable } from '../undo.js';
 
 const KIND = 'refinement';
 
@@ -166,7 +167,9 @@ export function refinementRouter({ db, ai }) {
 
   // [Rakenda]. Päring võib sisaldada ainult ettepaneku tunnust, valitud loo tunnust ja selle loo muudatusi ("Muuda").
   // Kõik, mis viitab teisele loole või on tundmatu, lükatakse tervikuna tagasi; midagi ei salvestata.
-  router.post('/apply', (req, res) => {
+  // L21: rakendatud täpsustus on tagasivõetav.
+  const applyLabel = (req) => `Rakendasid kliendi täpsustuse loole ${storyNo(db, req.projectId, req.body?.storyId)}`;
+  router.post('/apply', undoable(db, applyLabel, (req, res) => {
     const projectId = req.projectId;
     const body = req.body ?? {};
     const proposal = getProposal(db, String(body.proposalId ?? ''));
@@ -245,7 +248,7 @@ export function refinementRouter({ db, ai }) {
       throw err;
     }
     res.json(snapshot(projectId, target));
-  });
+  }));
 
   // [Loobu]: lugu, kriteeriumid ja mockup jäävad muutmata.
   router.post('/reject', (req, res) => {

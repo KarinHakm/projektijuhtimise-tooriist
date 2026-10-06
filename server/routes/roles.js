@@ -3,7 +3,9 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildRolesMessages, checkRoles, ROLES_SCHEMA } from '../ai/tasks/roles.js';
-import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
+import { readNote } from '../ai/note.js';
+import { txBegin, txCommit, txRollback } from '../db.js';
+import { applyProposal, createProposal, findPendingProposal, getProposal, ProposalError, rejectPending, rejectProposal } from '../proposals.js';
 import { listRoles, replaceRoles, validateRoleSelection } from '../roles.js';
 
 const KIND = 'roles';
@@ -34,22 +36,33 @@ export function rolesRouter({ db, ai }) {
   router.get('/', (req, res) => res.json(snapshot(req.projectId)));
 
   // Küsib AI-lt rollide ettepaneku. Kui pooleli ettepanek on juba olemas, tagastab selle ilma AI-kutseta.
+  // Vabatekstiga (note) küsitakse alati uus ettepanek; see asendab ootel ettepaneku alles AI vastuse õnnestumisel.
   router.post('/propose', async (req, res) => {
     const projectId = req.projectId;
+    const { note, error } = readNote(req.body);
+    if (error) return res.status(400).json({ error, field: 'note', code: 'invalid_note' });
     const hasSummary = db.prepare("SELECT 1 FROM conversation_messages WHERE project_id = ? AND kind = 'summary'").get(projectId);
     if (!hasSummary) return res.status(409).json({ error: 'Rolle saab pakkuda pärast vestluse kokkuvõtet.', code: 'conversation_not_ready' });
-    if (findPendingProposal(db, projectId, KIND)) return res.json(snapshot(projectId));
+    if (!note && findPendingProposal(db, projectId, KIND)) return res.json(snapshot(projectId));
     if (running.has(projectId)) return res.status(409).json({ error: 'AI juba koostab rolle. Oota hetk.', code: 'in_progress' });
 
     running.add(projectId);
     try {
       const { data } = await runAiTask(ai, {
         task: 'roles',
-        messages: buildRolesMessages(buildProjectContext(db, projectId)),
+        messages: buildRolesMessages(buildProjectContext(db, projectId), note),
         schema: ROLES_SCHEMA,
         check: checkRoles,
       });
-      createProposal(db, { projectId, kind: KIND, payload: { message: data.message, roles: data.roles } });
+      const sp = txBegin(db);
+      try {
+        rejectPending(db, projectId, KIND);
+        createProposal(db, { projectId, kind: KIND, payload: { message: data.message, roles: data.roles } });
+        txCommit(db, sp);
+      } catch (err) {
+        txRollback(db, sp);
+        throw err;
+      }
     } catch (err) {
       const { status, body } = toHttpError(err);
       return res.status(status).json(body);

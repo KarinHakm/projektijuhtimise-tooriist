@@ -52,6 +52,13 @@ export function applyProposal(db, id, apply, expect) {
   return decide(db, id, 'applied', apply, expect);
 }
 
+// Vabatekst: uus ettepanek asendab sama liigi ootel ettepaneku. Vana lükatakse tagasi (mitte ei rakendata).
+// Kutsuda samas transaktsioonis uue ettepaneku loomisega.
+export function rejectPending(db, projectId, kind) {
+  db.prepare("UPDATE ai_proposals SET status = 'rejected', decided_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE project_id = ? AND kind = ? AND status = 'pending'")
+    .run(projectId, kind);
+}
+
 export function rejectProposal(db, id, expect) {
   return decide(db, id, 'rejected', undefined, expect);
 }

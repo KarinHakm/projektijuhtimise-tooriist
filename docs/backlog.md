@@ -37,7 +37,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Plaanitud |
 | L14 | Sammude riba | S | Kohustuslik | – | Tehtud |
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Tehtud |
-| L16 | Järjestamine lohistades | S | Kohustuslik | 3 | Plaanitud |
+| L16 | Järjestamine lohistades | S | Valikuline | – | Plaanitud, kui aega jääb |
 | L17 | MVP joon | S | Kohustuslik | – | Valmis |
 | L18 | Kriteeriumide kontrollitavuse kontroll | S | Kohustuslik | – | Tehtud |
 | L19 | Staatused ja Definition of Ready | M | Kohustuslik | 7 | Pooleli |
@@ -59,8 +59,8 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L36 | Kriteeriumile osutades tõstetakse mockup'i element esile | – | Valikuline | – | Plaanitud, kui aega jääb |
 
 Backlog'is on **36 lugu**:
-- **31 kohustuslikku:** L01–L30 ja L35;
-- **5 valikulist:** L31–L34 ja L36. Need on õpetaja loetelust „Lisavõimalused (ei ole kohustuslikud)“.
+- **30 kohustuslikku:** L01–L15, L17–L30 ja L35;
+- **6 valikulist:** L31–L34 ja L36 on õpetaja loetelust „Lisavõimalused (ei ole kohustuslikud)“; L16 on valikuline, sest õpetaja nõue on „järjestada (nt lohistades)“ – lohistamine on näide ja järjestamine on tehtud nuppudega ↑/↓ (L07).
 
 ID ei ole järjekorranumber. L35 lisati hiljem ja paigutati kohe MVP joone alla.
 
@@ -449,6 +449,12 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Iga läbimise kogu AI ooteaeg on dokumenteeritud.
 - Mõõtmiste põhjal on kirja pandud, kas valitud AI-teenus (01.10.2026 seisuga Claude Code CLI, Sonnet) sobib demo jaoks.
 
+**Seis 06.10.2026 – vabatekst kõigis juhitud sammudes (õpetaja nõue „Vabatekst on alati lubatud … AI peab selle õigesti tõlgendama“):**
+- **Rollid, lood, prioriteet, kriteeriumid ja mockup:** kaardil on väli „Või kirjuta oma sõnadega“ (kuni 500 märki). Tekst läheb sama sammu olemasolevasse AI päringusse eraldi plokis `<kasutaja_soov>` koos projekti kontekstiga (`server/ai/note.js`); AI vastus läbib sama skeemi ja kontrolli. Tulemus on tavaline ootel ettepanek (kinnita / muuda / lükka tagasi). Kui ootel ettepanek on juba olemas, ütleb väli, et uus ettepanek asendab selle; vana lükatakse tagasi alles siis, kui uus AI vastus on kontrollitud (AI tõrke korral jääb vana alles). Kriteeriumide kaardil: kinnitatud kriteeriumideta loole uued kriteeriumid ja mockup, mockup'ita loole mockup; kinnitatud kriteeriumide ja mockup'i muutmiseks juhatab kaart kliendi täpsustuse juurde (sellel on oma vabateksti väli). Idee, küsimuste „Muu (kirjutan ise)“, kliendi täpsustus ja uus vaade olid vabatekstiga juba varem.
+- **„Mida teeme edasi?“:** iga ploki all on väli „Või kirjuta oma sõnadega, mida soovid edasi teha“. Uus AI ülesanne (`server/ai/tasks/next-step.js`, `POST /api/projects/:id/stage/next`) saab projekti konteksti ja praegu lubatud sammud (järgmised sammud ning iga avatav etapp) ja valib ühe; skeem lubab ainult neid sammude id-sid. Vastuses on AI selgitus, sammu nupp ja vajadusel märkus. Nupp viib sammu juurde ja kirjutab märkuse selle sammu vabateksti välja (täpsustuse kaardil täpsustuse välja); AI ettepaneku käivitab kasutaja ise. Andmeid see ei muuda.
+- **Automaattestid** (võlts-AI, näidisbaasi koopia): märkus jõuab nelja sammu päringusse, uus ettepanek asendab vana ja backlog ning rollid ei muutu; AI tõrke korral jääb vana ettepanek; liiga pikk tekst lükatakse tagasi ilma AI-kutseta; „Mida teeme edasi?“ tagastab lubatud sammu ja märkuse, lubamatu samm lükatakse tagasi ja andmed ei muutu; väljade ja tulemuse renderdus.
+- **Pooleli:** päris AI-ga proovimata (kas Sonnet tõlgendab teksti õigesti).
+
 ### L14 · Sammude riba (S)
 *Projektijuhina soovin näha protsessi etappe ja nende vahel liikuda, et saaksin etappe vahele jätta või varasema juurde tagasi minna.*
 - Ribal on etapid Idee → Rollid → Lood → Prioriteedid → Kriteeriumid ja mockup → Täpsustused → Groomimine.
@@ -490,7 +496,9 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Seis 02.10.2026 – kriteeriumide käsitsi haldus (töötab ka AI-ta):** backlog'is iga loo all paneel „Kriteeriumid, valmisolek ja küsimused“, mille esimene plokk „Vastuvõtukriteeriumid“: read päritolu, kontrollitavuse hoiatuse ja mockup'i seosega; ✎ Muuda samal real (märge, et seos jääb alles); Kustuta kinnitusega (seosega kriteeriumi korral on kinnituses seose nimi); „Lisa kriteerium“ koos hoiatusega kirjutamise ajal (`checkCriterion`, salvestamist ei keela). Route'id `POST /stories/:storyId/criteria`, `PUT` ja `DELETE …/criteria/:criterionId`; server kontrollib tühja, üle 200 märgi ja korduva teksti (400), 10 kriteeriumi piiri (409) ja et kriteerium kuulub loole (404); kõik ühes transaktsioonis. Päritolu: käsitsi lisatud „manual“, AI kriteeriumi muutmisel „ai_edited“. Seos jääb muutmisel alles (kooskõla hoiatused arvutatakse uue teksti järgi, ülevaatus aegub), kustutamisel kaob ainult selle kriteeriumi seos; mockup ei muutu. DoR uueneb vastuses kohe; alla 3 kriteeriumi korral staatust ei muudeta, „Valmis arenduseks“ loo valmisolek aegub. Kliendi täpsustuse ootel ettepanek ja ülevaatuse leiud aeguvad olemasoleva loogikaga. AI kriteeriumide ettepaneku rakendamine keeldub (400), kui valik kordab loo olemasolevat kriteeriumi või ületaks 10 piiri; ettepanek jääb ootele. Alustamise loo kaardil muutmisnuppe ei ole. **Automaattestid:** lisamine/muutmine/kustutamine koos DoR-i ja aegumisega, piirangud, seosed ja mockup'i muutumatus, AI rakendamise kaitse, paneeli renderdus. **Arendaja nägi brauseris (demobaasi koopia, AI väljas):** lisamine koos hoiatuse ja DoR-i uuendusega, muutmine samal real (seos alles), kustutamise kinnitus seose nimega, kahe kriteeriumi kustutamine → „Valmis arenduseks – valmisolek aegunud“.
 **Pooleli:** „AI järgmine vastus kasutab uut sõnastust“ – AI kontekstis on lood ja kriteeriumid andmebaasist, kuid päris AI-ga proovimata. Eraldi märkuste välja ei tehta: ülesanne nõuab „avatud küsimused või märkused“ ja avatud küsimused on olemas (L20).
 
-### L16 · Järjestamine lohistades (S)
+### L16 · Järjestamine lohistades (S, valikuline)
+> **06.10.2026:** õpetaja tekstis on „Lugusid saab käsitsi lisada, muuta, kustutada ja järjestada (nt lohistades)“. Lohistamine on näide, mitte nõue; kohustuslik järjestamine on tehtud nuppudega ↑/↓ (L07). Varem oli lugu ekslikult märgitud kohustuslikuks.
+
 *Projektijuhina soovin lugusid lohistades ümber järjestada, et saaksin kliendiga koos järjekorda kiiresti muuta.*
 - Lugu saab lohistades teise kohta tõsta.
 - Uus järjekord püsib pärast lehe värskendamist.
@@ -562,6 +570,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Kui tagasi võetavat muudatust ei ole, on nupp keelatud.
 
 **Seis 02.10.2026 (L21 tehtud):** backlog'i kaardi ülaosas on nupp **„↶ Võta tagasi viimane toetatud muudatus“** koos muudatuse sildiga (nt „Kustutasid loo 4 „…““). Iga projekti kohta hoitakse ühte püsivat kirjet (migratsioon v14, tabel `undo_journal`): projekti seis enne muudatust (lood, kriteeriumid, küsimused, mockup'id, kattuvusmärked, ettepanekud, alustamise lugu, MVP joon) ja pärast-seisu SHA-256 räsi kanoonilisest JSON-ist (read id järjekorras, ajatemplid välja jäetud). Kirje, toiming ja räsi salvestatakse **ühes SQLite transaktsioonis** (`server/undo.js`, `undoable`); kui kirje salvestamine ebaõnnestub, võetakse ka toiming tagasi. Kirje püsib pärast lehe värskendamist ja serveri taaskäivitust. Tagasivõtmine taastab enne-seisu samade id-dega; see on lubatud ainult siis, kui praegune seis on sama mis kohe pärast muudatust – kui pärast seda on tehtud uus muudatus (ka toetamata, nt küsimus või uus AI ettepanek), on nupp keelatud ja põhjus nähtav; osalist taastamist ei tehta. **Toetatud muudatused:** lugude käsitsi lisamine, muutmine, kustutamine ja ümberjärjestamine; kriteeriumide käsitsi lisamine, muutmine ja kustutamine; kattuvuse märkimine ja eemaldamine; käsitsi jagamine ja ühendamine; uue vaate „Lisa“ (L24); ülevaatuse leiust tehtud jagamine ja ühendamine (L28, L29). **Toetamata** (ei loo kirjet): AI ettepanekute küsimine ja tagasilükkamine, ülevaatuse ignoreerimine, mockup'i seos, versiooni taastamine, kooskõla ülevaatus, küsimused, staatus, MVP joon, etapi ja vestluse andmed. L29 leiu enda tagasivõtmine kustutab üldise kirje; üldine tagasivõtmine avab leiu uuesti – topelttagasivõtmist ei teki. API: `GET` / `POST /api/projects/:id/undo` (`at` kontroll). **Automaattestid:** räsi deterministlikkus, täpne taastamine ka taaskäivituse järel, ainult viimane muudatus, aegumine toetamata muudatuse järel, jagamine ja ühendamine, kirje salvestamise tõrge tühistab toimingu, L24 ja L29 koostöö, renderdus. **Arendaja nägi brauseris (demobaasi koopia):** kustutamine → silt → F5 → tagasivõtmine (lugu, kriteeriumid ja vaated tagasi, teised kaardid uuenevad), ainult viimane muudatus, küsimuse lisamise järel keelatud koos põhjusega.
+
+**Seis 06.10.2026 – katvus laiendatud õpetaja nõude „Viimase muudatuse saab tagasi võtta“ järgi:** sama `undoable()` mehhanism (uut tabelit ega migratsiooni pole) katab nüüd ka AI ettepanekute rakendamise ja muud backlog'i muudatused: AI lugude lisamine backlog'i, AI kriteeriumide salvestamine, mockup'i kinnitamine ja versiooni taastamine, kliendi täpsustuse rakendamine, staatuse muutmine, küsimuse lisamine ja vastatuks märkimine, MVP joon, alustamise loo valik (AI soovitusega või ise), kriteeriumi seos mockup'iga ja kooskõla ülevaatuse kinnitus. Tagasivõtmisel on rakendatud AI ettepanek jälle ootel. Nupp on nüüd „↶ Võta tagasi viimane muudatus“. Kirjet ei tee AI ettepaneku küsimine ega tagasilükkamine; need muudavad ettepanekute seisu, nii et nende järel varasemat muudatust enam tagasi ei võeta (nupp keelatud, põhjus nähtav). Rollid ja vestlus jäävad tagasivõtmisest välja (ei ole backlog'i andmed ega blokeeri tagasivõtmist). **Automaattestid** (`test/undo-coverage.test.js`, näidisandmebaasi koopia): iga uue toimingu silt ja täpne taastamine, ettepanek jälle ootel, ebaõnnestunud toiming ei muuda kirjet.
 
 ### L22 · Mockup'i versioonid ja mitu mockup'i loo kohta (S)
 *Projektijuhina soovin näha mockup'i varasemaid versioone ja vajaduse korral mõne taastada, et ükski kliendiga arutatud variant ei kaoks.*
@@ -733,22 +743,22 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 | 2. Prioriteedi küsimine ja soovitus | L08 | Soovitus koos põhjendusega ja kaks valikunuppu on näha. |
 | 2. Järgmine samm 1–4 valikuga | L13 | Iga AI vastuse all on 1–4 nuppu. |
 | 2. Nähtavad etapid, vahelejätmine ja tagasiminek | L14 | Klõpsa ribal varasemale etapile ja kasuta „Jäta vahele“. |
-| 2. Vabatekst on alati lubatud | L04, L05 | Kirjuta nuppude asemel „lisa ka treener“ ja vaata, kas treener ilmub rollidesse. |
+| 2. Vabatekst on alati lubatud | L04, L05, L06, L08, L09, L13 | Kirjuta rollide juures „Või kirjuta oma sõnadega“ väljale „lisa ka treener“: tekib uus ootel rollide ettepanek treeneriga. „Mida teeme edasi?“ all kirjuta oma soov ja vaata, millise sammu AI valis. |
 | 2. AI arvestab projekti tegelikku seisu | L02, L15 | Muuda lugu käsitsi, küsi AI-lt ettepanekut ja vaata, kas ta kasutab uut sõnastust. |
 | 2. Struktureeritud vastus, valideerimine ja kordus | L02 | Automaattest võltsitud vigase vastusega; brauseris on näha veateade ja nupp „Proovi uuesti“. |
 | 3. Loo väljad | L06, L15, L19, L20 | Ava loo detailvaade ja veendu, et kõik väljad on olemas. |
 | 3. Käsitsi haldus ka AI tõrke korral | L15 | Käivita `npm run demo` (AI välja lülitatud) ja lisa, muuda ning kustuta lugu. |
-| 3. Järjestamine lohistades | L16 | Lohista lugu teise kohta ja värskenda lehte. |
+| 3. Järjestamine (nt lohistades) | L07 | Tõsta lugu nupuga ↑/↓ ja värskenda lehte. Lohistamine (L16) on valikuline. |
 | 3. MVP joon | L17 | Paiguta joon ja värskenda lehte. |
 | 3. Definition of Ready | L18, L19, L23 | Proovi lugu kahe kriteeriumiga valmis märkida: näed puuduste loendit. |
-| 3. Tagasivõtmine | L21 | Kustuta lugu ja kasuta „Võta tagasi“. |
+| 3. Tagasivõtmine | L21 | Rakenda kliendi täpsustus (või kustuta lugu) ja kasuta „Võta tagasi viimane muudatus“. |
 | 4. Mockup loost või promptist | L10, L24 | Vali lugu. Seejärel kirjelda uus vaade ja vaata, kas tekivad kavand, lugu ja kriteeriumid. |
 | 4. Turvaline kuvamine | L10 | Automaattest, kus mockup'is on `<script>`-tekst: see kuvatakse tekstina. |
 | 4. Kriteeriumide ja mockup'i kooskõla | L23 | Kustuta mockup'ist element, millele kriteerium viitab, ja vaata hoiatust. |
 | 4. Täpsustus enne/pärast eelvaatega | L11 | Sisesta täpsustus ning vaata eelvaadet ja nuppe. |
 | 4. Teisi lugusid ei muudeta ja server tagab selle | L12 | Pane tähele teise loo muutmisaega. Rakenda täpsustus. Teise loo muutmisaeg on sama. Automaattest saadab teist lugu muutva päringu, mis lükatakse tagasi. |
 | 4. Mockup'i versioonid | L22 | Ava versioonide loend, taasta versioon 1 ja vaata, et tekib uus versioon. |
-| 5. Käsitsi groomimine | L15, L16, L20, L25, L26 | Jaga, ühenda, järjesta ja märgi lugu täpsustamist vajavaks. |
+| 5. Käsitsi groomimine | L07, L15, L20, L25, L26 | Jaga, ühenda, järjesta ja märgi lugu täpsustamist vajavaks. |
 | 5. AI ülevaatus viie probleemiliigiga | L27 | Lisa meelega vigased lood ja käivita ülevaatus. |
 | 5. Jagamise ja ühendamise eelvaade | L28, L29 | Rakenda leid ja vaata kriteeriumide jaotust ning korduseks märgitud kriteeriume. |
 | Kriteeriumide reegel: AI enesekontroll ja hoiatus | L18 | Kirjuta kriteeriumiks „Leht on kasutajasõbralik“ ja vaata hoiatust. |
@@ -762,7 +772,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 |---|---|---|
 | 1. Uus projekt ja umbmäärane lause → küsimus valikutega | L03, L04 | Sisesta „Spordiklubi tahab veebi…“: tuleb küsimus koos nuppudega. |
 | 2. Vähemalt viis lugu happy path'i järjekorras ja klõpsudega backlog'i | L06, L07 | Backlog'is on täpselt märgitud lood ja samas järjekorras. |
-| 3. Alustamise soovitus ja järjekorra muutmine | L08, L07, L16 | Nõustu soovitusega ja tõsta lugu ümber. |
+| 3. Alustamise soovitus ja järjekorra muutmine | L08, L07 | Nõustu soovitusega ja tõsta lugu ümber. |
 | 4. Kriteeriumid ja mockup: kinnita osa, lükka üks tagasi, muuda üht | L09, L10 | Loo detailis on ainult kinnitatud ja muudetud kriteeriumid. |
 | 5. Täpsustus → eelvaade → muudatus mockup'is ja loos, teised lood muutumata | L11, L12 | Muudatus on näha mockup'is ja kriteeriumides, teised lood on muutumata. |
 | 6. AI ülevaatus leiab probleemi, jagamine või ühendamine eelvaatega | L15, L27, L28, L29 | Lisa liiga suur lugu, käivita ülevaatus ja rakenda jagamine. |

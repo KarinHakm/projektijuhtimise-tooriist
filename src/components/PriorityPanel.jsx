@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { acceptPriority, choosePriority, getPriority, proposePriority } from '../api.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
+import NoteField from './NoteField.jsx';
 
 const POLL_MS = 3000;
 
@@ -112,9 +113,11 @@ export default function PriorityPanel({ projectId, backlogVersion, onFocusChange
         setChosenId(null);
         onFocusChanged?.();
       }
+      return true;
     } catch (e) {
       if (kind === 'propose') { if (e.code !== 'in_progress') setAiError(e); } else setError(e.message);
       await refresh();
+      return false;
     } finally {
       setBusy(null);
     }
@@ -140,6 +143,9 @@ export default function PriorityPanel({ projectId, backlogVersion, onFocusChange
           onChoose={() => run('choose', () => choosePriority(projectId, chosenId), { focusChanges: true })}
           onCancel={() => { setChoosing(false); setChosenId(null); }}
         />
+      )}
+      {!waiting && data.stories.length > 0 && (
+        <NoteField card="priority" replaces={Boolean(data.proposal)} disabled={Boolean(busy)} onSend={(note) => run('propose', () => proposePriority(projectId, note))} />
       )}
       {!waiting && aiError && <AiError error={aiError} onRetry={() => run('propose', () => proposePriority(projectId))} retrying={busy === 'propose'} />}
     </>

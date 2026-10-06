@@ -1,11 +1,26 @@
 import { Router } from 'express';
 import { STAGE_KEYS } from '../../shared/stage.js';
 import { stageFor, stageState } from '../stage.js';
+import { runAiTask } from '../ai/run.js';
+import { toHttpError } from '../ai/errors.js';
+import { buildProjectContext } from '../ai/context.js';
+import { buildNextStepMessages, buildNextStepSchema, checkNextStep, NEXT_TEXT_MAX } from '../ai/tasks/next-step.js';
 
 // Projekti etapp ja soovitatud järgmised sammud (L13, L14). GET ainult loeb. POST /skip ja /active salvestavad ainult
 // etapi märke (vahele jäetud etapid, aktiivne etapp): need ei muuda backlog'i, ei leevenda eeldusi ega kutsu AI-d.
-export function stageRouter({ db }) {
+// POST /next: „Mida teeme edasi?“ vabatekst – AI valib ühe praegu lubatud sammu; andmeid ei muudeta.
+export function stageRouter({ db, ai }) {
   const router = Router({ mergeParams: true });
+  const running = new Set();
+
+  // Lubatud sammud: praegused järgmised sammud ja iga avatav etapp (selle kaardi juurde minek).
+  const candidatesFor = (projectId) => {
+    const stage = stageFor(db, projectId);
+    const steps = stage.steps.map((s) => ({ id: s.id, label: s.label, card: s.card, focus: s.focus, ai: s.ai }));
+    const stages = stage.stages.filter((s) => s.selectable && s.card)
+      .map((s) => ({ id: `stage:${s.key}`, label: `Ava etapp „${s.label}“`, card: s.card, focus: null, ai: false }));
+    return [...steps, ...stages];
+  };
 
   router.use((req, res, next) => {
     const id = Number(req.params.id);
@@ -49,6 +64,32 @@ export function stageRouter({ db }) {
     const { skipped } = stageState(db, req.projectId);
     save(req.projectId, skipped.filter((k) => k !== stage.key), stage.key);
     res.json(stageFor(db, req.projectId));
+  });
+
+  router.post('/next', async (req, res) => {
+    const projectId = req.projectId;
+    const text = typeof req.body?.text === 'string' ? req.body.text.replace(/\s+/g, ' ').trim() : '';
+    if (!text) return res.status(400).json({ error: 'Kirjuta, mida soovid edasi teha.', field: 'text' });
+    if (text.length > NEXT_TEXT_MAX) return res.status(400).json({ error: `Tekst võib olla kuni ${NEXT_TEXT_MAX} märki.`, field: 'text' });
+    const candidates = candidatesFor(projectId);
+    if (running.has(projectId)) return res.status(409).json({ error: 'AI juba tõlgendab sinu soovi. Oota hetk.', code: 'in_progress' });
+    const ids = candidates.map((c) => c.id);
+    running.add(projectId);
+    try {
+      const { data } = await runAiTask(ai, {
+        task: 'next-step',
+        messages: buildNextStepMessages(buildProjectContext(db, projectId), candidates, text),
+        schema: buildNextStepSchema(ids),
+        check: (d) => checkNextStep(d, ids),
+      });
+      const step = candidates.find((c) => c.id === data.stepId);
+      res.json({ message: data.message, step, note: data.note.replace(/\s+/g, ' ').trim() });
+    } catch (err) {
+      const { status, body } = toHttpError(err);
+      res.status(status).json(body);
+    } finally {
+      running.delete(projectId);
+    }
   });
 
   return router;

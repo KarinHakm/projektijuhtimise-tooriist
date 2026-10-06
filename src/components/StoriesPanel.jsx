@@ -3,13 +3,14 @@ import { applyStories, getStories, proposeStories } from '../api.js';
 import { buildApply, fromProposal, rejectStory, saveEdit, toggleChecked } from '../stories/selection.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
+import NoteField from './NoteField.jsx';
 import StoriesProposal from './StoriesProposal.jsx';
 
 const POLL_MS = 3000;
 
-// Lood (L06): AI ettepanek kaartidena → kasutaja valik → backlog. rolesVersion muutub, kui rolle kinnitatakse.
+// Lood (L06): AI ettepanek kaartidena → kasutaja valik → backlog. rolesVersion muutub, kui rolle kinnitatakse, backlogVersion backlog'i muutusel.
 // Backlog ise on eraldi paneelis (L07); onBacklogChanged annab sellele teada, et lugusid lisati.
-export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged }) {
+export default function StoriesPanel({ projectId, rolesVersion, backlogVersion, onBacklogChanged }) {
   const [data, setData] = useState(null); // { stories, proposal, roles, aiRunning }
   const [loadError, setLoadError] = useState('');
   const [items, setItems] = useState([]);
@@ -27,7 +28,7 @@ export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged
     }
   }, [projectId]);
 
-  useEffect(() => { refresh(); }, [refresh, rolesVersion]);
+  useEffect(() => { refresh(); }, [refresh, rolesVersion, backlogVersion]); // backlogVersion: nt tagasivõtmine taastas ettepaneku
 
   // Uus ettepanek → uus valikuloend. Sama ettepaneku puhul (nt ebaõnnestunud "Paku teistsuguseid")
   // jäävad kasutaja valikud alles.
@@ -43,16 +44,19 @@ export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged
     return () => clearTimeout(timer);
   }, [data, busy, refresh]);
 
-  async function propose(replace) {
+  // note = vabatekst (ootel ettepaneku korral asendab selle nagu „Paku teistsuguseid“); tagastab true, kui ettepanek tuli.
+  async function propose(replace, note) {
     setBusy(replace ? 'replace' : 'propose');
     setAiError(null);
     setReplaceError(null);
     try {
-      setData(await proposeStories(projectId, replace ? proposalId : undefined));
+      setData(await proposeStories(projectId, replace ? proposalId : undefined, note));
+      return true;
     } catch (e) {
       if (e.code !== 'in_progress') (replace ? setReplaceError : setAiError)(e);
       if (e.code === 'stale_proposal') setReplaceError(null);
       await refresh();
+      return false;
     } finally {
       setBusy(null);
     }
@@ -109,6 +113,9 @@ export default function StoriesPanel({ projectId, rolesVersion, onBacklogChanged
         <button type="button" data-step="stories-propose" onClick={() => propose(false)} disabled={Boolean(busy)}>
           {stories.length ? 'Paku veel lugusid' : 'Paku lugusid'}
         </button>
+      )}
+      {roles.length > 0 && !waiting && (
+        <NoteField card="stories" replaces={Boolean(proposal)} disabled={Boolean(busy)} onSend={(note) => propose(Boolean(proposal), note)} />
       )}
       {waiting && <AiWait label={busy === 'replace' ? 'AI koostab teistsuguseid lugusid' : 'AI koostab lugusid'} />}
       {!waiting && !proposal && aiError && <AiError error={aiError} onRetry={() => propose(false)} retrying={busy === 'propose'} />}

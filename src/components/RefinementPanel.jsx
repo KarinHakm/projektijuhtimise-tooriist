@@ -55,7 +55,8 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
         {separate && <span className="tag">eraldi täpsustusvoog – alustamise lugu ei muutu</span>}
       </p>
       {separate && <button type="button" className="secondary" onClick={onBackToFocus} disabled={disabled}>Tagasi alustamise loo juurde</button>}
-      {notice && <p className="notice" role="status">{notice}</p>}
+      {/* Teade käib otsustatud ettepaneku kohta; kui ettepanek on jälle ootel (nt tagasivõtmise järel), on see aegunud. */}
+      {notice && !proposal && <p className="notice" role="status">{notice}</p>}
 
       {!proposal && (
         <>
@@ -183,6 +184,13 @@ export default function RefinementPanel({ projectId, version, onApplied }) {
   }, [projectId, storyId]);
 
   useEffect(() => { refresh(); }, [refresh, version]);
+
+  // „Mida teeme edasi?“ vabatekst võib täpsustuse välja eeltäita (pjt:note); AI päringu saadab kasutaja ise.
+  useEffect(() => {
+    const onNote = (e) => { if (e.detail?.card === 'refinement') setText(e.detail.note ?? ''); };
+    window.addEventListener('pjt:note', onNote);
+    return () => window.removeEventListener('pjt:note', onNote);
+  }, []);
 
   useEffect(() => {
     if (!data?.aiRunning || busy) return undefined;

@@ -519,3 +519,11 @@ button.danger { background: var(--error); }
 .undo-bar { margin: 0.25rem 0 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 .undo-bar__label { margin-left: 0.5rem; font-size: 0.9rem; }
 .undo-bar__reason { margin: 0.25rem 0 0; font-size: 0.85rem; }
+
+/* Vabatekst sammu juures ja „Mida teeme edasi?“ all */
+.note-field, .next-steps__text { margin-top: 0.75rem; }
+.note-field label, .next-steps__text label { display: block; font-weight: 600; }
+.note-field textarea, .next-steps__text textarea { width: 100%; box-sizing: border-box; }
+.note-field .muted { margin: 0.25rem 0; }
+.next-steps__text button { margin-top: 0.5rem; }
+.next-steps__result { margin-top: 0.5rem; }

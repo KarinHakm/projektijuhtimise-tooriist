@@ -59,7 +59,7 @@ export default function ProjectView() {
 
   // L13: "Mida teeme edasi?" (1–4 sammu) iga nähtava AI väljundi kaardi lõpus – server annab sammud kaardi kaupa
   // (stepsByCard). Vanade, juba vastatud vestlussõnumite ega backlog'i ülevaatuse juures plokki ei ole.
-  const stepsAfter = (card) => stage?.stepsByCard?.[card] && <NextSteps steps={stage.stepsByCard[card]} onGo={goToStep} />;
+  const stepsAfter = (card) => stage?.stepsByCard?.[card] && <NextSteps steps={stage.stepsByCard[card]} onGo={goToStep} projectId={project.id} card={card} />;
 
   // L14: projekti avamisel keritakse aktiivse etapi kaardi juurde (üks kord avamise kohta). Kaardid laadivad oma sisu
   // alles pärast seda ja lükkavad sihtkaarti allapoole, seega lehe kõrguse muutumisel keritakse kuni ~2 s uuesti.
@@ -123,6 +123,7 @@ export default function ProjectView() {
                 <StoriesPanel
                   projectId={project.id}
                   rolesVersion={rolesVersion}
+                  backlogVersion={backlogVersion}
                   onBacklogChanged={() => setBacklogVersion((v) => v + 1)}
                 />
                 {stepsAfter('stories')}

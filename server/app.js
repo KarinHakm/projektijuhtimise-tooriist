@@ -32,7 +32,7 @@ export function createApp({ db, ai = createDisabledAi() } = {}) {
     app.use('/api/projects/:id/review', reviewRouter({ db, ai }));
     app.use('/api/projects/:id/views', viewsRouter({ db, ai }));
     app.use('/api/projects/:id/undo', undoRouter({ db }));
-    app.use('/api/projects/:id/stage', stageRouter({ db }));
+    app.use('/api/projects/:id/stage', stageRouter({ db, ai }));
     app.use('/api/projects', projectsRouter(db));
   }
 

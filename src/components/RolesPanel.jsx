@@ -3,6 +3,7 @@ import { applyRoles, getRoles, proposeRoles, rejectRoles } from '../api.js';
 import { addManualRole, buildSelection, fromProposal, removeRole, toggleRole } from '../roles/selection.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
+import NoteField from './NoteField.jsx';
 import RolesProposalCard from './RolesProposalCard.jsx';
 
 const POLL_MS = 3000;
@@ -45,14 +46,17 @@ export default function RolesPanel({ projectId, ready, onRolesChanged }) {
     return () => clearTimeout(timer);
   }, [data, busy, refresh]);
 
-  async function propose() {
+  // note = vabatekst; tagastab true, kui ettepanek tuli.
+  async function propose(note) {
     setBusy('propose');
     setAiError(null);
     try {
-      setData(await proposeRoles(projectId));
+      setData(await proposeRoles(projectId, note));
+      return true;
     } catch (e) {
       if (e.code !== 'in_progress') setAiError(e);
       await refresh();
+      return false;
     } finally {
       setBusy(null);
     }
@@ -124,12 +128,13 @@ export default function RolesPanel({ projectId, ready, onRolesChanged }) {
 
       {!proposal && !ready && <p className="muted">Rolle saab pakkuda pärast vestluse kokkuvõtet.</p>}
       {!proposal && ready && !waiting && (
-        <button type="button" data-step="roles-propose" onClick={propose} disabled={Boolean(busy)}>
+        <button type="button" data-step="roles-propose" onClick={() => propose()} disabled={Boolean(busy)}>
           {roles.length ? 'Paku rollid uuesti' : 'Paku rollid'}
         </button>
       )}
+      {ready && !waiting && <NoteField card="roles" replaces={Boolean(proposal)} disabled={Boolean(busy)} onSend={propose} />}
       {waiting && <AiWait label="AI koostab rolle" />}
-      {!waiting && aiError && <AiError error={aiError} onRetry={propose} retrying={busy === 'propose'} />}
+      {!waiting && aiError && <AiError error={aiError} onRetry={() => propose()} retrying={busy === 'propose'} />}
     </div>
   );
 }

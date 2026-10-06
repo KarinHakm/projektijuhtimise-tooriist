@@ -56,7 +56,8 @@ export const continueConversation = (projectId) => postJson(`${conversationPath(
 const rolesPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/roles`;
 
 export const getRoles = (projectId) => request(rolesPath(projectId));
-export const proposeRoles = (projectId) => postJson(`${rolesPath(projectId)}/propose`);
+// note = vabatekst („Või kirjuta oma sõnadega“); uus ettepanek asendab ootel ettepaneku.
+export const proposeRoles = (projectId, note) => postJson(`${rolesPath(projectId)}/propose`, note ? { note } : undefined);
 export const applyRoles = (projectId, proposalId, roles) => postJson(`${rolesPath(projectId)}/apply`, { proposalId, roles });
 export const rejectRoles = (projectId, proposalId) => postJson(`${rolesPath(projectId)}/reject`, { proposalId });
 
@@ -64,13 +65,13 @@ const storiesPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/s
 
 export const getStories = (projectId) => request(storiesPath(projectId));
 // replace = senise ettepaneku id ("Paku teistsuguseid"); server vahetab selle alles pärast uue edukat salvestamist.
-export const proposeStories = (projectId, replace) => postJson(`${storiesPath(projectId)}/propose`, replace ? { replace } : {});
+export const proposeStories = (projectId, replace, note) => postJson(`${storiesPath(projectId)}/propose`, { ...(replace ? { replace } : {}), ...(note ? { note } : {}) });
 export const applyStories = (projectId, proposalId, stories) => postJson(`${storiesPath(projectId)}/apply`, { proposalId, stories });
 const priorityPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/priority`;
 
 // Prioriteet (L08): AI soovitus, millest alustada; kinnitamine või oma valik.
 export const getPriority = (projectId) => request(priorityPath(projectId));
-export const proposePriority = (projectId) => postJson(`${priorityPath(projectId)}/propose`);
+export const proposePriority = (projectId, note) => postJson(`${priorityPath(projectId)}/propose`, note ? { note } : undefined);
 export const acceptPriority = (projectId, proposalId) => postJson(`${priorityPath(projectId)}/accept`, { proposalId });
 export const choosePriority = (projectId, storyId) => postJson(`${priorityPath(projectId)}/choose`, { storyId });
 
@@ -78,11 +79,11 @@ const criteriaPath = (projectId) => `/projects/${encodeURIComponent(projectId)}/
 
 // Kriteeriumid ja mockup alustamise loole (L09, L10).
 export const getCriteria = (projectId) => request(criteriaPath(projectId));
-export const proposeCriteria = (projectId) => postJson(`${criteriaPath(projectId)}/propose`);
+export const proposeCriteria = (projectId, note) => postJson(`${criteriaPath(projectId)}/propose`, note ? { note } : undefined);
 export const applyCriteria = (projectId, proposalId, criteria) => postJson(`${criteriaPath(projectId)}/apply`, { proposalId, criteria });
 export const acceptMockup = (projectId, proposalId) => postJson(`${criteriaPath(projectId)}/mockup/accept`, { proposalId });
 export const rejectMockup = (projectId, proposalId) => postJson(`${criteriaPath(projectId)}/mockup/reject`, { proposalId });
-export const proposeMockup = (projectId) => postJson(`${criteriaPath(projectId)}/mockup/propose`);
+export const proposeMockup = (projectId, note) => postJson(`${criteriaPath(projectId)}/mockup/propose`, note ? { note } : undefined);
 // L22: varasema mockup'i versiooni taastamine uue versioonina.
 export const restoreMockupVersion = (projectId, storyId, version) => postJson(`${criteriaPath(projectId)}/mockup/restore`, { storyId, version });
 // Kooskõla (L23): kriteeriumi käsitsi sidumine ja kasutaja ülevaatuse kinnitus.
@@ -107,6 +108,8 @@ export const getStage = (projectId) => request(`/projects/${encodeURIComponent(p
 // L14: etapi vahelejätmine ja aktiivne etapp (ka tagasiminek). Ei muuda backlog'i ega kutsu AI-d.
 export const skipStage = (projectId, key) => postJson(`/projects/${encodeURIComponent(projectId)}/stage/skip`, { key });
 export const setActiveStage = (projectId, key) => postJson(`/projects/${encodeURIComponent(projectId)}/stage/active`, { key });
+// „Mida teeme edasi?“ vabatekst: AI valib ühe lubatud sammu ja märkuse; andmeid ei muudeta.
+export const interpretNextStep = (projectId, text) => postJson(`/projects/${encodeURIComponent(projectId)}/stage/next`, { text });
 
 // L19/L20: loo staatus ja avatud küsimused.
 export const setStoryStatus = (projectId, storyId, status) =>

@@ -10,6 +10,7 @@ import {
 } from '../criteria/selection.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
+import NoteField from './NoteField.jsx';
 import MockupView from './MockupView.jsx';
 
 const POLL_MS = 3000;
@@ -276,9 +277,11 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
     setBusy(kind);
     try {
       setData(await call());
+      return true;
     } catch (e) {
       onError(e);
       await refresh();
+      return false;
     } finally {
       setBusy(null);
     }
@@ -341,6 +344,19 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
         onReview={() => { setLinkError(''); run('review', () => reviewConsistency(projectId, data.story.id, data.consistency.fingerprint), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.()); }}
       />
       {!waiting && aiError && <AiError error={aiError} onRetry={() => { setAiError(null); run('propose', () => proposeCriteria(projectId), (e) => setAiError(e)); }} retrying={busy === 'propose'} />}
+      {/* Vabatekst: kinnitatud kriteeriumideta loole uued kriteeriumid ja mockup; kriteeriumidega, aga mockup'ita loole mockup.
+          Kinnitatud kriteeriumide ja mockup'i muutmiseks on kliendi täpsustus (oma vabateksti väljaga). */}
+      {!waiting && data.story && data.criteria.length === 0 && (
+        <NoteField card="criteria" replaces={Boolean(data.criteriaProposal || data.mockupProposal)} disabled={Boolean(busy)}
+          onSend={(note) => { setAiError(null); return run('propose', () => proposeCriteria(projectId, note), (e) => { if (e.code !== 'in_progress') setAiError(e); }); }} />
+      )}
+      {!waiting && data.story && data.criteria.length > 0 && !data.mockup && (
+        <NoteField card="criteria" replaces={Boolean(data.mockupProposal)} disabled={Boolean(busy)}
+          onSend={(note) => { setMockupError(''); return run('mockup-propose', () => proposeMockup(projectId, note), (e) => setMockupError(e.message)); }} />
+      )}
+      {!waiting && data.story && data.criteria.length > 0 && data.mockup && (
+        <p className="muted">Kinnitatud kriteeriume ja mockup'i muudad oma sõnadega kaardil „Kliendi täpsustus“.</p>
+      )}
     </>
   );
 }

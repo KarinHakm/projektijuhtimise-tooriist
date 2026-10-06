@@ -11,14 +11,14 @@ before(async () => {
 });
 const render = (props) => renderToStaticMarkup(createElement(UndoView, { onUndo: () => {}, ...props })).replace(/<!-- -->/g, '');
 
-test('saadaval: nupp „Võta tagasi viimane toetatud muudatus“ koos muudatuse sildiga', () => {
+test('saadaval: nupp „Võta tagasi viimane muudatus“ koos muudatuse sildiga', () => {
   const html = render({ state: { available: true, label: 'Kustutasid loo 2 „Lugu“', at: 'x', reason: null } });
-  assert.match(html, /<button type="button" class="secondary">↶ Võta tagasi viimane toetatud muudatus<\/button><span class="undo-bar__label">Kustutasid loo 2 „Lugu“<\/span>/);
+  assert.match(html, /<button type="button" class="secondary">↶ Võta tagasi viimane muudatus<\/button><span class="undo-bar__label">Kustutasid loo 2 „Lugu“<\/span>/);
 });
 
 test('pole saadaval: nupp keelatud ja põhjus nähtav', () => {
   const html = render({ state: { available: false, label: 'Muutsid lugu 1', at: 'x', reason: 'Pärast seda muudatust on tehtud teisi muudatusi – seda ei saa enam tagasi võtta.' } });
-  assert.match(html, /<button type="button" class="secondary" disabled="">↶ Võta tagasi viimane toetatud muudatus<\/button>/);
+  assert.match(html, /<button type="button" class="secondary" disabled="">↶ Võta tagasi viimane muudatus<\/button>/);
   assert.match(html, /<p class="muted undo-bar__reason">Pärast seda muudatust on tehtud teisi muudatusi/);
-  assert.match(render({ state: { available: false, label: null, at: null, reason: 'Tagasivõetavat toetatud muudatust pole.' } }), /Tagasivõetavat toetatud muudatust pole\./);
+  assert.match(render({ state: { available: false, label: null, at: null, reason: 'Tagasivõetavat muudatust pole.' } }), /Tagasivõetavat muudatust pole\./);
 });

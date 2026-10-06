@@ -2,6 +2,7 @@
 // Mockup on komponentide loend JSON-ina; rakendus kuvab selle ise (HTML-i AI-lt ei võeta).
 import { CRITERION_MAX, cleanCriterion } from '../../../shared/criteria-check.js';
 import { renderConversation, renderProjectState } from './clarify.js';
+import { noteBlock } from '../note.js';
 
 export const COMPONENT_TYPES = ['heading', 'text', 'button', 'input', 'list', 'image', 'card'];
 
@@ -79,13 +80,13 @@ ${renderProjectState(context)}
 Valitud kasutajalugu: ${story.title}
 </andmed>`;
 
-export function buildCriteriaMessages(context, story) {
+export function buildCriteriaMessages(context, story, note = '') {
   return [
     { role: 'system', content: SYSTEM },
     {
       role: 'user',
       content: `${projectData(context, story)}
-
+${noteBlock(note)}
 Paku valitud loole 3–6 vastuvõtukriteeriumi ja selle loo vaate mockup.
 Kriteeriumid:
 - Iga kriteerium on üks lihtne tingimus, millele saab vastata jah või ei.
@@ -99,7 +100,7 @@ ${MOCKUP_RULES}
   ];
 }
 
-export function buildMockupMessages(context, story, criteria) {
+export function buildMockupMessages(context, story, criteria, note = '') {
   const list = criteria.length ? criteria.map((c) => `- ${c}`).join('\n') : '- (kriteeriume veel ei ole)';
   return [
     { role: 'system', content: SYSTEM },
@@ -109,7 +110,7 @@ export function buildMockupMessages(context, story, criteria) {
 
 Loo kriteeriumid:
 ${list}
-
+${noteBlock(note)}
 Paku sellele loole uus, eelmisest erinev vaate mockup.
 ${MOCKUP_RULES}
 "message" on üks lühike lause kasutajale.`,

@@ -9,8 +9,9 @@ import { createDisabledAi } from '../server/ai/client.js';
 import { appendStories } from '../server/stories.js';
 import { appendCriteria, saveMockup } from '../server/criteria.js';
 import { captureProject, stateHash } from '../server/undo.js';
+import { createProposal } from '../server/proposals.js';
 
-// L21: üldine tagasivõtmine (viimane toetatud muudatus). Ajutine andmebaas, AI välja lülitatud.
+// L21: üldine tagasivõtmine (viimane muudatus). Ajutine andmebaas, AI välja lülitatud.
 let dir, db, projectId, otherProjectId, ids, server, base;
 const s = (want) => ({ role: 'Külastaja', rolePhrase: 'Külastajana', want, soThat: 'saaksin valida', size: 'M', origin: 'ai', touchesView: true });
 
@@ -74,7 +75,7 @@ test('loo kustutamise tagasivõtmine taastab kõik read täpselt (ka ajatemplid)
   assert.equal((await undo()).status, 409); // teist korda midagi tagasi võtta pole
 });
 
-test('ainult viimane toiming; vale aeg või pärast toetamata muudatust (küsimus) tagasivõtmist ei tehta', async () => {
+test('ainult viimane toiming; vale aeg või pärast uut AI ettepanekut tagasivõtmist ei tehta', async () => {
   await send('POST', `/stories/${ids[2]}/move`, { direction: 'up' });
   const afterMove = all(projectId);
   await send('POST', `/stories/${ids[0]}/criteria`, { text: 'Kavas on iga trenni algusaeg.' });
@@ -83,7 +84,7 @@ test('ainult viimane toiming; vale aeg või pärast toetamata muudatust (küsimu
   assert.deepEqual(all(projectId), afterMove); // järjekord jäi muudetuks, kriteerium kadus
 
   await send('PUT', `/stories/${ids[0]}`, { ...s('näha nädala kava'), touchesView: true });
-  await send('POST', `/stories/${ids[0]}/questions`, { text: 'Toetamata muudatus' });
+  createProposal(db, { projectId, kind: 'priority', payload: { message: 'x', storyId: ids[0], reason: 'y' } }); // uus AI ettepanek muudab seisu
   const st = await undoState();
   assert.equal(st.available, false);
   assert.match(st.reason, /on tehtud teisi muudatusi/);

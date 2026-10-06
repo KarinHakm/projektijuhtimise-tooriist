@@ -5,6 +5,7 @@ import { runAiTask } from '../ai/run.js';
 import { toHttpError } from '../ai/errors.js';
 import { buildProjectContext } from '../ai/context.js';
 import { buildStoriesMessages, buildStoriesSchema, checkStories } from '../ai/tasks/stories.js';
+import { readNote } from '../ai/note.js';
 import { applyProposal, findPendingProposal, getProposal, ProposalError, rejectProposal } from '../proposals.js';
 import { getFocusStoryId } from '../priority.js';
 import { listRoles } from '../roles.js';
@@ -14,7 +15,7 @@ import {
 } from '../stories.js';
 import { insertStoryQuestion, withReadiness } from '../readiness.js';
 import { addManualCriterion, deleteCriterion, updateCriterionText, validateManualCriterion } from '../criteria.js';
-import { dorMissing, READY, STORY_STATUSES } from '../../shared/dor.js';
+import { dorMissing, READY, STORY_STATUS_LABELS, STORY_STATUSES } from '../../shared/dor.js';
 import { txBegin, txCommit, txRollback } from '../db.js';
 import { undoable } from '../undo.js';
 
@@ -83,6 +84,12 @@ export function storiesRouter({ db, ai }) {
     critAdd: (req) => `Lisasid loole ${no(req, req.params.storyId)} kriteeriumi`,
     critEdit: (req) => `Muutsid loo ${no(req, req.params.storyId)} kriteeriumi`,
     critDelete: (req) => `Kustutasid loo ${no(req, req.params.storyId)} kriteeriumi`,
+    // Näidisettepanek on käsitsi koostatud – siis ei nimetata seda AI ettepanekuks.
+    apply: (req) => `Lisasid backlog'i ${getProposal(db, String(req.body?.proposalId ?? ''))?.payload.demo === true ? '' : 'AI pakutud '}lood${Array.isArray(req.body?.stories) ? ` (${req.body.stories.length})` : ''}`,
+    mvp: (req) => (req.body?.count === null ? 'Eemaldasid MVP joone' : 'Muutsid MVP joone kohta'),
+    status: (req) => `Muutsid loo ${no(req, req.params.storyId)} staatust (${STORY_STATUS_LABELS[req.body?.status] ?? '?'})`,
+    question: (req) => `Lisasid loole ${no(req, req.params.storyId)} küsimuse`,
+    resolve: (req) => `Märkisid loo ${no(req, req.params.storyId)} küsimuse vastatuks`,
   };
 
   // Küsib AI-lt lugude ettepaneku. Ilma "replace"-ita tagastab olemasoleva pooleli ettepaneku ilma AI-kutseta.
@@ -92,8 +99,11 @@ export function storiesRouter({ db, ai }) {
     const roleNames = listRoles(db, projectId).map((r) => r.name);
     if (roleNames.length === 0) return res.status(409).json({ error: 'Kinnita enne lugude pakkumist projekti rollid.', code: 'roles_not_confirmed' });
 
+    const { note, error: noteError } = readNote(req.body);
+    if (noteError) return res.status(400).json({ error: noteError, field: 'note', code: 'invalid_note' });
     const pending = findPendingProposal(db, projectId, KIND);
-    const replace = req.body?.replace ? String(req.body.replace) : null;
+    // Vabatekst asendab ootel ettepaneku samamoodi nagu „Paku teistsuguseid“.
+    const replace = req.body?.replace ? String(req.body.replace) : (note && pending ? pending.id : null);
     if (!replace && pending) return res.json(snapshot(projectId));
     if (replace && pending?.id !== replace) {
       return res.status(409).json({ error: 'See ettepanek ei ole enam pooleli.', code: 'stale_proposal' });
@@ -105,7 +115,7 @@ export function storiesRouter({ db, ai }) {
     try {
       ({ data } = await runAiTask(ai, {
         task: 'stories',
-        messages: buildStoriesMessages(buildProjectContext(db, projectId)),
+        messages: buildStoriesMessages(buildProjectContext(db, projectId), note),
         schema: buildStoriesSchema(roleNames),
         check: (d) => checkStories(d, roleNames),
       }));
@@ -146,7 +156,7 @@ export function storiesRouter({ db, ai }) {
   });
 
   // Lisab valitud lood backlog'i. Sama ettepanekut saab rakendada ainult üks kord (teine kord 409).
-  router.post('/apply', (req, res) => {
+  router.post('/apply', undoable(db, L.apply, (req, res) => {
     const projectId = req.projectId;
     const proposal = getProposal(db, String(req.body?.proposalId ?? ''));
     if (!proposal || proposal.projectId !== projectId || proposal.kind !== KIND) {
@@ -163,7 +173,7 @@ export function storiesRouter({ db, ai }) {
       throw err;
     }
     res.json(snapshot(projectId));
-  });
+  }));
 
   router.post('/reject', (req, res) => {
     try {
@@ -255,7 +265,7 @@ export function storiesRouter({ db, ai }) {
   }));
 
   // L17: MVP joone koht (count = mitu lugu on joonest ülalpool, 0…lugude arv) või null (joon eemaldatakse).
-  router.post('/mvp', (req, res) => {
+  router.post('/mvp', undoable(db, L.mvp, (req, res) => {
     const count = req.body?.count;
     const total = db.prepare('SELECT COUNT(*) AS n FROM stories WHERE project_id = ?').get(req.projectId).n;
     if (count !== null && !(Number.isInteger(count) && count >= 0 && count <= total)) {
@@ -263,7 +273,7 @@ export function storiesRouter({ db, ai }) {
     }
     db.prepare("UPDATE projects SET mvp_count = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(count, req.projectId);
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // L19/L20: staatus, valmisolek ja avatud küsimused. Käsitsi tegevused, töötavad ka ilma AI-ta.
   const storyIn = (projectId, raw) => {
@@ -274,7 +284,7 @@ export function storiesRouter({ db, ai }) {
   const touch = "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 
   // Staatuse muutmine. „Valmis arenduseks“ ainult siis, kui DoR on täidetud; muidu 409 koos puuduste loendiga.
-  router.post('/:storyId/status', (req, res) => {
+  router.post('/:storyId/status', undoable(db, L.status, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     const status = req.body?.status;
@@ -285,10 +295,10 @@ export function storiesRouter({ db, ai }) {
     }
     db.prepare(`UPDATE stories SET status = ?, ${touch} WHERE id = ? AND project_id = ?`).run(status, story.id, req.projectId);
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // Avatud küsimuse lisamine: lugu saab staatuse „Vajab täpsustamist“ (ka siis, kui see oli valmis).
-  router.post('/:storyId/questions', (req, res) => {
+  router.post('/:storyId/questions', undoable(db, L.question, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     if (!story) return res.status(404).json({ error: 'Lugu ei leitud.', code: 'not_found' });
     const text = typeof req.body?.text === 'string' ? req.body.text.replace(/\s+/g, ' ').trim() : '';
@@ -303,17 +313,17 @@ export function storiesRouter({ db, ai }) {
       throw err;
     }
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // Küsimus vastatuks. Staatust ei muudeta: „Valmis arenduseks“ määrab kasutaja ise.
-  router.post('/:storyId/questions/:questionId/resolve', (req, res) => {
+  router.post('/:storyId/questions/:questionId/resolve', undoable(db, L.resolve, (req, res) => {
     const story = storyIn(req.projectId, req.params.storyId);
     const question = story?.questions.find((q) => q.id === Number(req.params.questionId));
     if (!question) return res.status(404).json({ error: 'Küsimust ei leitud.', code: 'not_found' });
     if (question.resolvedAt) return res.status(409).json({ error: 'Küsimus on juba vastatud.', code: 'already_resolved' });
     db.prepare("UPDATE story_questions SET resolved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND resolved_at IS NULL").run(question.id);
     res.json(snapshot(req.projectId));
-  });
+  }));
 
   // L26: kahe loo märkimine kattuvaks ja „Pole kattuv“. Muudavad ainult märke; otsus (ühenda / eemalda) on eraldi.
   router.post('/:storyId/overlaps', undoable(db, L.mark, (req, res) => {
