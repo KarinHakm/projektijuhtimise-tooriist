@@ -2,7 +2,7 @@
 
 AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 
-> **Seis 06.10.2026:** kohustuslikest lugudest on **Pooleli** L11, L23 ja L30 ning L35 (päev 1 mõõdetud, päev 2 ja otsus tegemata); ülejäänud on **Valmis** või **Tehtud** (vt tabel). Mis on brauseris proovitud, mis ainult automaattestiga kaetud ja mis puudu, on kirjas iga loo all.
+> **Seis 07.10.2026:** kohustuslikest lugudest on **Pooleli** L11, L23 ja L30; ülejäänud on **Valmis** või **Tehtud** (vt tabel). Mis on brauseris proovitud, mis ainult automaattestiga kaetud ja mis puudu, on kirjas iga loo all.
 >
 > **Staatuste tähendus** (täpsustatud 06.10.2026 – varasem sõnastus nõudis iga kriteeriumi proovimist brauseris, kuid nii ei ole seda ka varem rakendatud, nt L09):
 > - **Valmis** – kõik vastuvõtukriteeriumid on täidetud, põhivoog on brauseris läbi proovitud, reeglipõhine loogika on automaattestiga kaetud ja muudatus on commit'itud. Alamjuhud, mis on kaetud ainult automaattestiga, on loo all eraldi kirjas.
@@ -38,7 +38,7 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L12 | Server muudab ainult valitud lugu | M | Kohustuslik | 5 | Valmis |
 | L13 | Järgmise sammu pakkumine ja jätkamine samast kohast | M | Kohustuslik | 8 | Tehtud |
 | | **═══ MVP JOON ═══** | | | | |
-| L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Pooleli |
+| L35 | Vastuvõtukatse töövoo ajamõõtmine päris rakenduses | S | Kohustuslik | – | Valmis |
 | L14 | Sammude riba | S | Kohustuslik | – | Tehtud |
 | L15 | Käsitsi backlog'i haldus, ka AI tõrke korral | M | Kohustuslik | 6 | Tehtud |
 | L16 | Järjestamine lohistades | S | Valikuline | – | Plaanitud, kui aega jääb |
@@ -475,7 +475,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **Pooleli:** päris AI-ga proovimata (kas Sonnet tõlgendab teksti õigesti).
 
 
-**Seis 06.10.2026 – Pooleli:** server logib iga AI päringu etapi (`task`), kestuse ja väljundtokenite arvu (`[ai] {…}` read). **Päev 1 (06.10.2026) tehtud:** sammud 1–5 päris AI-ga, 8 AI päringut, kordusi ja vigu 0, kogu AI ooteaeg 59,3 s (tabel: [ai-piirangud.md](ai-piirangud.md), „L35“). **Tegemata:** teine päev ja demo sobivuse otsus.
+**Seis 07.10.2026 – Valmis:** server logib iga AI päringu etapi (`task`), kestuse ja väljundtokenite arvu (`[ai] {…}` read). Sammud 1–5 läbiti päris AI-ga kahel eri päeval sama ideega: **päev 1 (06.10.2026)** 8 AI päringut, kordusi ja vigu 0, kogu AI ooteaeg 59,3 s; **päev 2 (07.10.2026)** 8 AI päringut, kordusi ja vigu 0, kogu AI ooteaeg 59,8 s. Demo sobivuse otsus: valitud AI-teenus sobib demo jaoks; mõõdeti AI päringute kestuste summat, mitte kogu töövoo aega (tabelid, tähelepanekud ja otsus: [ai-piirangud.md](ai-piirangud.md), „L35“).
 ### L14 · Sammude riba (S)
 *Projektijuhina soovin näha protsessi etappe ja nende vahel liikuda, et saaksin etappe vahele jätta või varasema juurde tagasi minna.*
 - Ribal on etapid Idee → Rollid → Lood → Prioriteedid → Kriteeriumid ja mockup → Täpsustused → Groomimine.
@@ -746,7 +746,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Git'i ajaloos on iga valmis loo kohta vähemalt üks commit.
 
 
-**Seis 06.10.2026 – Pooleli:** README on lõplik (aegunud „minimaalne README“ märge eemaldatud; käivitusjuhis, keskkonnamuutujad koos `PORT` ja `DATABASE_PATH`-iga, testide juhis ja lõppseis koos teadaolevate piirangutega). Kasutusstsenaarium (`docs/kasutusstsenaarium.md`, 377 sõna, näidisteema Explore Estonia), backlog koos järjestuse põhjenduse ja MVP joonega ning AI piirangud ([ai-piirangud.md](ai-piirangud.md)) on repositooriumis. **Tegemata:** demo stsenaariumi läbimine kuni 10 minutiga (sõltub L35-st) ja README järgi käivitamine puhtast kloonist teises arvutis.
+**Seis 06.10.2026 – Pooleli:** README on lõplik (aegunud „minimaalne README“ märge eemaldatud; käivitusjuhis, keskkonnamuutujad koos `PORT` ja `DATABASE_PATH`-iga, testide juhis ja lõppseis koos teadaolevate piirangutega). Kasutusstsenaarium (`docs/kasutusstsenaarium.md`, 377 sõna, näidisteema Explore Estonia), backlog koos järjestuse põhjenduse ja MVP joonega ning AI piirangud ([ai-piirangud.md](ai-piirangud.md)) on repositooriumis. **Tegemata:** demo stsenaariumi läbimine kuni 10 minutiga (L35 annab AI ooteaja mõõtmised, kuid ei tõenda kogu demo kestust) ja README järgi käivitamine puhtast kloonist teises arvutis.
 ### L31–L34, L36 · Valikulised lisad, kui aega jääb
 Õpetaja loetelu „Lisavõimalused (ei ole kohustuslikud)“. Neid alustatakse alles pärast L30. Vastuvõtukriteeriumid kirjutatakse enne alustamist.
 - **L31:** eksport Markdowni ja CSV-sse.
@@ -830,7 +830,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 
 | Risk | Maandamine |
 |---|---|
-| AI-teenuse vastamisaeg võib kõikuda (varasema teenuse proovides 16–110 s; Sonneti esimene katse 6 s) | L35 mõõdab kogu töövoo aja enne demo otsust. Täpsustuse lühivorm (ainult muudatused) on proovimata kavand ja seda proovitakse L11 käigus. Ooteajal kuvatakse ooteindikaator. Varuks on salvestatud demovideo. |
+| AI-teenuse vastamisaeg võib kõikuda (varasema teenuse proovides 16–110 s; Sonneti esimene katse 6 s) | L35 mõõtmised annavad AI ooteaja põhjal sisendi demo sobivuse otsuseks; kogu demo kestust ei mõõdetud. Täpsustuse lühivorm (ainult muudatused) on proovimata kavand ja seda proovitakse L11 käigus. Ooteajal kuvatakse ooteindikaator. Varuks on salvestatud demovideo. |
 | AI sõltub serveri arvuti Claude Code'i sisselogimisest ja tellimuse kasutuslimiidist | Käsitsi haldus töötab ilma AI-ta (L15); `npm run demo` töötab üldse ilma AI-ta. Sisselogimata ja limiidi olukorras annab rakendus selge teate. |
 | AI vastustes on keelevigu ja sisulisi vigu | Iga ettepanek vajab inimese kinnitust. ✎ Muuda on alati olemas. Promptides on eeskujud. Kood kontrollib, mida saab reeglitega kontrollida. |
 | Groomimine (L25–L29) on mahukas ja jääb lõppu | Groomimise jaoks on aeg eraldi reserveeritud. Käsitsi ja AI variant kasutavad sama rakendamise loogikat. |

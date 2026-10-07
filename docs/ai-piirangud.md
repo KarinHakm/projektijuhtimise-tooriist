@@ -36,7 +36,7 @@ Serveri logis oli ainult ohutu rida (ülesanne, tulemus, kestus, tokenid); päri
 | Vabatekst lugude juures | „lisa lood proovitreeningu kohta“ | 1 (õnnestus esimesel katsel) | 9,1 s | uus ootel ettepanek (8 lugu) asendas näidisettepaneku; nähtavad lood käsitlesid proovitreeningut töövoo järjekorras ja saatetekst kirjeldas tõlgendust; backlog jäi muutmata kuni kinnituseni |
 | „Mida teeme edasi?“ vabatekst | „tahan rollidesse treeneri“ | 1 (õnnestus esimesel katsel) | 5,8 s | AI valis sammu „Ava etapp „Rollid““ ja märkuse „Lisa rollide hulka treener.“; nupp viis rollide kaardile ja kirjutas märkuse välja; rollid ja muud andmed jäid muutmata |
 
-**Praeguse teenusega proovimata:** täpsustavad küsimused, rollide ettepanek, kriteeriumid ja mockup, kliendi täpsustus, backlog'i ülevaatus, uus vaade promptist ning rollide, prioriteedi ja kriteeriumide vabatekst. Kolm katset ei ole piisav, et hinnata kvaliteeti ega kiirust; kogu vastuvõtukatse töövoo aeg mõõdetakse loos L35.
+**Praeguse teenusega proovimata:** täpsustavad küsimused, rollide ettepanek, kriteeriumid ja mockup, kliendi täpsustus, backlog'i ülevaatus, uus vaade promptist ning rollide, prioriteedi ja kriteeriumide vabatekst. Kolm katset ei ole piisav, et hinnata kvaliteeti ega kiirust. L35 raames mõõdeti ja dokumenteeriti kogu AI ooteaeg kahel eri päeval.
 
 ### L35: vastuvõtukatse sammude 1–5 AI ooteaeg
 
@@ -58,7 +58,31 @@ Mõõdetakse ainult serveri logi `[ai]` ridadest: etapp (`task`), katse, tulemus
 
 Läbimise käigus nähtud (ei mõjuta mõõtmist): lugude ettepaneku esimene lugu oli keelevahetus, mitte põhitöövoo algus; enesekontroll sõnastas ühe kriteeriumi ümber („AI parandas“); kuni mockup oli ootel, näitasid salvestatud kriteeriumid hoiatust „viide on mõne teise mockup'i versiooni elemendile“, mis kadus mockup'i kinnitamisel; pärast kinnitamist oli igal seotud kriteeriumil sõnapõhine „pole vastet“ vihje (L23 piirang); täpsustus muutis ainult valitud lugu ja pakkus kolmele teisele loole tekstisoovituse.
 
-**Päev 2:** tegemata. **Otsus demo sobivuse kohta:** kirjutatakse pärast teist päeva.
+**Päev 2 – 07.10.2026** (sama idee)
+
+| # | Vastuvõtukatse samm | Etapp (`task`) | Katse | Tulemus | Kestus | Väljundtokeneid |
+|---|---|---|---|---|---|---|
+| 1 | 1 – täpsustavad küsimused | `clarify` | 1 | ok | 7,4 s | 392 |
+| 2 | 1 – vastused → kokkuvõte | `clarify` | 1 | ok | 5,4 s | 249 |
+| 3 | 2 – rollid | `roles` | 1 | ok | 6,8 s | 373 |
+| 4 | 2 – lood | `stories` | 1 | ok | 9,4 s | 826 |
+| 5 | 3 – prioriteedisoovitus | `priority` | 1 | ok | 6,8 s | 257 |
+| 6 | 4 – kriteeriumid ja mockup | `criteria` | 1 | ok | 7,6 s | 665 |
+| 7 | 5 – kliendi täpsustus | `refine` | 1 | ok | 9,2 s | 1118 |
+| 8 | 5 – täpsustuse enesekontroll | `criteria_selfcheck` | 1 | ok | 7,1 s | 362 |
+| | **Kokku** | 8 päringut | kordusi 0 | vigu 0 | **59,8 s** | 4242 |
+
+Läbimise käigus nähtud (ei mõjuta mõõtmist): lugude ettepanekus oli jälle keelevahetuse lugu, arendaja lükkas selle tagasi ja lisas backlog'i 6 lugu; kõik pakutud kriteeriumid läbisid koodi kontrolli, seega kriteeriumide juures enesekontrolli päringut ei tehtud – see tehti hoopis kliendi täpsustuse järel (päringute arv jäi 8); pärast mockup'i kinnitamist oli seotud kriteeriumidel sama sõnapõhine „pole vastet“ vihje kui päeval 1 (L23 piirang); täpsustus muutis ainult valitud lugu; tagasivõtmise kastis muutus eelmine muudatus pärast järgmist AI ettepanekut tagasivõetamatuks („pärast seda muudatust on tehtud teisi muudatusi“).
+
+Kogusummad on arvutatud logi täpsetest millisekunditest (päev 1: 59 296 ms, päev 2: 59 754 ms), mitte tabeli ümardatud ridadest.
+
+**Otsus demo sobivuse kohta**
+
+Vastuvõtukatse sammud 1–5 läbiti päris AI-ga 06.10.2026 ja 07.10.2026. Mõlemal läbimisel tehti 8 AI päringut; kõik õnnestusid esimesel katsel, kordusi ega päringuvigu ei olnud. Kogu AI ooteaeg oli vastavalt 59,3 s ja 59,8 s. Üksiku päringu kestus jäi vahemikku 5,3–9,5 s. Nende kahe läbimise põhjal sobib valitud AI-teenus demo jaoks.
+
+Mõõdeti AI päringute kestuste summat, mitte kogu töövoo läbimise aega. Tulemused põhinevad kahel läbimisel sama ideega ega taga tulevaste päringute sama kiirust või töökindlust. Demo eeldab töötavat Claude CLI sisselogimist ja võrguühendust. Teenuse tõrke korral saab kasutada `npm run demo` AI-ta näidisrežiimi, kuid see ei demonstreeri päris AI vastuseid.
+
+Mõlema päeva tähelepanekud ei muuda ajamõõtmise tulemusi, kuid võivad mõjutada demo sujuvust ja väljundi kvaliteeti.
 
 ## Teadaolevad AI piirangud
 
@@ -120,7 +144,7 @@ Arenduse alguses kasutati teist AI-teenust. Selle kood ja seadistus on rakenduse
 
 > **Märkus:** proovide tulemused on saadud **30.09.2026 eraldi proovi skriptidega, mitte rakenduses**. Rakendust sel hetkel veel ei olnud.
 > Iga päringutüüpi prooviti **üks kord**, seega tulemuste kõikumist korduval kasutamisel ei ole mõõdetud.
-> Rakenduse tegelik töövoo aeg mõõdetakse loos L35.
+> L35 raames mõõdeti AI päringute kogu ooteaeg kahel eri päeval.
 
 
 ### Varasem teenus (kuni 01.10.2026)
