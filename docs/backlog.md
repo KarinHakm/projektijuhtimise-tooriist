@@ -495,6 +495,7 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
   - **Groomimine on päris etapp** (backlog'i kaart): lukus ilma lugudeta; soovitatud pärast Täpsustusi; „tehtud“, kui backlog'i ülevaatusel pole avatud aegumata leide. Seis loetakse L27 andmetest ainult lugedes, L27–L29 loogikat ei muudetud.
   - **Automaattestid:** vahelejätmine ja lukk, lubatud/keelatud vahelejätmine (409), tagasiminek, Groomimise olekud, backlog muutumata ja AI-d ei kutsuta. **Arendaja nägi brauseris (demobaasi koopia):** Groomimine ● → „Jäta vahele“ → » ka pärast F5 → ribalt tagasi ●; ülevaatus → „Vaata ülevaatuse leiud üle“ → kõik leiud ignoreeritud → ✓.
   - **Brauseris proovimata:** vahelejätmise tõttu lukku jääv järgmine etapp (demos on kõik varasemad etapid tehtud) – kaetud automaattestiga.
+- **13.10.2026 (nõudmata lisa):** alla 1000 px on etapid mitmes reas ja kõigil etappidel on nimi numbri all; staatust see ei muuda (vt „Nõudmata lisa“ L31–L36 järel).
 
 ### L15 · Käsitsi backlog'i haldus, ka AI tõrke korral (M)
 *Projektijuhina soovin lugusid käsitsi lisada, muuta ja kustutada, et saaksin töötada ka siis, kui AI ei ole kättesaadav.*
@@ -754,6 +755,13 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - **L33:** story map mitme rolli kaupa.
 - **L34:** kõnesisend.
 - **L36:** kriteeriumile osutades tõstetakse mockup'is vastav element esile. Selle aluseks on L23 viited.
+
+### Nõudmata lisa (13.10.2026) · Mockup'i esitus „Veeb | Mobiil“ ja kitsa ekraani etapiriba
+Ülesanne mobiilivaadet ei nõua (mockup on seadmest sõltumatu wireframe). Õpetaja küsis seda 08.10 demol, seega lisati väike esitusmuudatus. Lugude arvu ja L30 staatust see ei muuda.
+- Mockup'i juures on lüliti „Veeb | Mobiil“, vaikimisi „Veeb“. Mõlemad näitavad sama komponentide loendit: veebis brauseriakna raamis kogu kaardi laiuses (kriteeriumid ja mockup ning täpsustuse enne → pärast on siis üksteise all), mobiilis telefoni raamis (kuni 360 px, nupp täislaiuses) senises kõrvutises paigutuses.
+- Valik on ainult brauseri olek: see ei muuda andmeid, mockup'i versiooni ega ülevaatuse kehtivust ega tee päringut. K-sildid, seosed ja ülevaatuse kinnitus on mõlemas esituses samad. AI skeemi, API-t ega andmebaasi ei muudetud.
+- Alla 1000 px laiusel on etapiriba mitmes reas ja igal etapil on märk, number ja nimi (varem oli nimi ainult soovitatud etapil).
+- **Automaattestid:** `test/ui-mockup-device-render.test.js` (vaikimisi Veeb, sama sisu ja K-sildid mõlemas esituses, kriteeriumide kaart ja täpsustuse eelvaade). **Brauseris proovimata.**
 
 ---
 

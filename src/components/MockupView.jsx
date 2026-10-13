@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 // Mockup'i kuvamine komponentide loendist (L10). Kõik tekstid lähevad Reacti kaudu tekstina,
 // seega ka "<script>" kuvatakse tavatekstina; HTML-i ei sisestata kunagi otse.
 function Component({ c }) {
@@ -37,17 +39,38 @@ function Notes({ note }) {
   );
 }
 
-export default function MockupView({ mockup, marks = null, mark = null, notes = null }) {
+// „Veeb | Mobiil“ (nõudmata lisa): sama komponentide loend kahes raamis. Valik on ainult brauseri olek –
+// see ei muuda andmeid, versiooni ega ülevaatust ega tee päringut.
+const DEVICES = [{ key: 'web', label: 'Veeb' }, { key: 'mobile', label: 'Mobiil' }];
+
+export function DeviceToggle({ device, onChange }) {
   return (
-    <figure className="mockup" aria-label={`Mockup: ${mockup.title}`}>
-      <figcaption className="mockup__title">{mockup.title}</figcaption>
-      <div className="mockup__body">
-        {mockup.components.map((c, i) => {
-          const body = <><Component c={c} /><Notes note={notes?.[i]} /></>;
-          if (marks?.[i]) return <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span>{body}</div>;
-          return notes ? <div key={i} className="mock-item">{body}</div> : <Component key={i} c={c} />;
-        })}
-      </div>
-    </figure>
+    <div className="device-toggle" role="group" aria-label="Mockup'i esitus">
+      {DEVICES.map((d) => (
+        <button key={d.key} type="button" className="device-toggle__button" aria-pressed={device === d.key} onClick={() => onChange(d.key)}>{d.label}</button>
+      ))}
+    </div>
+  );
+}
+
+// device (valikuline): 'web' | 'mobile' – kutsuja hoiab valikut ise ja näitab lülitit (nt kriteeriumide ja mockup'i paigutus).
+// Ilma selleta on mockup'il oma lüliti, vaikimisi „Veeb“.
+export default function MockupView({ mockup, marks = null, mark = null, notes = null, device = null }) {
+  const [own, setOwn] = useState('web');
+  const shown = device ?? own;
+  return (
+    <>
+      {device === null && <DeviceToggle device={own} onChange={setOwn} />}
+      <figure className={`mockup mockup--${shown}`} aria-label={`Mockup: ${mockup.title}`}>
+        <figcaption className="mockup__title">{mockup.title}</figcaption>
+        <div className="mockup__body">
+          {mockup.components.map((c, i) => {
+            const body = <><Component c={c} /><Notes note={notes?.[i]} /></>;
+            if (marks?.[i]) return <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span>{body}</div>;
+            return notes ? <div key={i} className="mock-item">{body}</div> : <Component key={i} c={c} />;
+          })}
+        </div>
+      </figure>
+    </>
   );
 }

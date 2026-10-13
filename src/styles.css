@@ -226,7 +226,7 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .priority-choose__option { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: normal; margin: 0.35rem 0; }
 .priority-choose__option input { width: auto; margin-top: 0.25rem; }
 .criteria-mockup h3 { font-size: 1rem; margin: 0.5rem 0; }
-.criteria-mockup__columns { display: grid; gap: 1rem; }
+.criteria-mockup__columns { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 700px) { .criteria-mockup__columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .criteria-list, .criteria-saved { padding-left: 0; list-style: none; margin: 0.5rem 0; }
 .criteria-saved li { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
@@ -252,11 +252,26 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 .mock-image { padding: 1rem; text-align: center; color: var(--muted); border: 1px dashed var(--muted); background: var(--bg); }
 .mock-card { padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 .mockup-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; }
+/* „Veeb | Mobiil“ (nõudmata lisa): sama sisu, muutuvad ainult raam ja laius. Veebis on kriteeriumid ja mockup
+   (ning täpsustuse enne → pärast) üksteise all, et mockup saaks kaardi laiuse; mobiilis jääb senine kõrvutine paigutus. */
+.device-toggle { display: inline-flex; margin: 0.25rem 0; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; }
+button.device-toggle__button { margin: 0; padding: 0.2rem 0.75rem; font-size: 0.85rem; font-weight: 400; color: var(--text); background: var(--card); border: 0; border-radius: 0; }
+button.device-toggle__button + button.device-toggle__button { border-left: 1px solid var(--border-strong); }
+button.device-toggle__button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); font-weight: 600; }
+button.device-toggle__button:not(:disabled):hover { background: var(--accent-soft); }
+button.device-toggle__button[aria-pressed="true"]:not(:disabled):hover { background: var(--accent-hover); }
+.criteria-mockup__columns.criteria-mockup__columns--stacked, .before-after.before-after--stacked { grid-template-columns: minmax(0, 1fr); }
+.mockup--web .mockup__title::before { content: "● ● ●" / ""; margin-right: 0.6rem; font-size: 0.6rem; vertical-align: middle; color: var(--muted); }
+/* Telefoniraam ei ole kunagi laiem kui veerg (ka kitsal ekraanil): piir arvestab äärise sisse. */
+.mockup--mobile { box-sizing: border-box; max-width: min(360px, 100%); margin-inline: auto; border-width: 6px; border-radius: 22px; }
+.mockup--mobile .mockup__title { text-align: center; }
+.mockup--mobile .mockup__title::before { content: ""; display: block; width: 3rem; height: 0.3rem; margin: 0 auto 0.3rem; border-radius: 999px; background: var(--border-strong); }
+.mockup--mobile .mock-button { align-self: stretch; text-align: center; }
 .refinement h3 { font-size: 1rem; margin: 0.5rem 0; }
 .refinement h4 { font-size: 0.95rem; margin: 0.75rem 0 0.35rem; }
 .refinement textarea { width: 100%; }
 .refine-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem; }
-.before-after { display: grid; gap: 0.75rem; }
+.before-after { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 700px) { .before-after { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .before-after__label { margin: 0; font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 .diff-list { list-style: none; padding: 0; margin: 0; }
@@ -398,12 +413,11 @@ button.stage__button:hover { border-color: var(--accent); }
 @media (min-width: 1000px) {
   .backlog-column { position: sticky; top: calc(var(--project-header-h, 0px) + 0.5rem); max-height: calc(100vh - var(--project-header-h, 0px) - 1rem); overflow-y: auto; }
 }
-/* Kitsamal ekraanil on ribal ainult märk ja number; nimi on näha ainult soovitatud järgmisel etapil.
-   Teiste etappide nimi jääb ekraanilugejale ja vihjesse, kokkuvõtte rida nimetab etapid sõnadega. */
+/* Kitsamal ekraanil paiknevad etapid mitmes reas (telefonis 4 + 3); igal etapil on märk, number ja nimi numbri all. */
 @media (max-width: 999px) {
-  .stage:not(.stage--next) .stage__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .stage:not(.stage--next) .stage__button { justify-content: center; }
-  .stage--next { flex: 2 1 auto; }
+  .stage-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr)); overflow-x: visible; }
+  .stage__button { flex-wrap: wrap; justify-content: center; row-gap: 0.15rem; padding: 0.3rem 0.2rem; text-align: center; }
+  .stage__label { flex-basis: 100%; font-size: 0.7rem; overflow-wrap: anywhere; }
 }
 /* Madalas aknas (nt suur suum või telefon rõhtasendis) ei jää päis üles kinni, et see ei võtaks pool ekraani. */
 @media (max-height: 600px) {

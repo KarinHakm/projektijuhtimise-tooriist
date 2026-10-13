@@ -5,7 +5,7 @@ import { componentLabel } from '../../shared/consistency.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import DemoTag from './DemoTag.jsx';
-import MockupView from './MockupView.jsx';
+import MockupView, { DeviceToggle } from './MockupView.jsx';
 import StoryFields from './StoryFields.jsx';
 import { SelfCheckNote } from './Consistency.jsx';
 
@@ -33,6 +33,7 @@ export function NewViewView({
 }) {
   const p = data.proposal;
   const disabled = busy || running;
+  const [device, setDevice] = useState('web'); // „Veeb | Mobiil“: veebis saab mockup ettepaneku kogu laiuse
   const criteria = editing ? draft.criteria : p?.criteria ?? [];
   const byIndex = new Map((p?.criteria ?? []).map((c) => [c.index, c]));
   const setCriterion = (i, text) => onDraft({ ...draft, criteria: draft.criteria.map((c, j) => (j === i ? { ...c, text } : c)) });
@@ -53,7 +54,7 @@ export function NewViewView({
       {p && (
         <section className="new-view__proposal" aria-label="Uue vaate ettepanek">
           <p className="muted">{p.demo && <><DemoTag />{' '}</>}AI ettepanek – ei ole veel backlog'is. Kirjeldus: „{p.description}“</p>
-          <div className="criteria-mockup__columns">
+          <div className={`criteria-mockup__columns${device === 'web' ? ' criteria-mockup__columns--stacked' : ''}`}>
             <div>
               {editing ? (
                 <StoryFields idBase="uus-vaade-lugu" value={draft.story} onChange={(story) => onDraft({ ...draft, story })} roles={data.roles} busy={busy} />
@@ -83,7 +84,8 @@ export function NewViewView({
             </div>
             <div>
               <p className="story-ready__heading">Mockup</p>
-              <MockupView mockup={p.mockup} />
+              <DeviceToggle device={device} onChange={setDevice} />
+              <MockupView mockup={p.mockup} device={device} />
             </div>
           </div>
           <fieldset className="new-view__target">

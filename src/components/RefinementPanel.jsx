@@ -3,7 +3,7 @@ import { composeTitle } from '../../shared/story-format.js';
 import { applyRefinement, getRefinement, proposeRefinement, rejectRefinement } from '../api.js';
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
-import MockupView from './MockupView.jsx';
+import MockupView, { DeviceToggle } from './MockupView.jsx';
 import DemoTag from './DemoTag.jsx';
 import { CheckWarnings, LinkLine, SelfCheckNote } from './Consistency.jsx';
 
@@ -45,6 +45,7 @@ function EditForm({ proposal, rolePhrase, busy, onApply, onCancel }) {
 export function RefinementView({ data, focusStoryId = null, busy = null, error = '', notice = '', text = '', editing = false, onText, onPropose, onApply, onEdit, onCancelEdit, onReject, onOpenStory, onBackToFocus }) {
   const { story, proposal } = data;
   const disabled = Boolean(busy);
+  const [device, setDevice] = useState('web'); // „Veeb | Mobiil“: sama valik enne ja pärast; veebis on need üksteise all
   if (!story) return <p className="muted">Vali enne prioriteedi juures lugu, millest alustada.</p>;
   const separate = focusStoryId !== null && story.id !== focusStoryId;
 
@@ -107,14 +108,15 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
               </ul>
 
               <h4>Mockup</h4>
-              <div className="before-after">
+              <DeviceToggle device={device} onChange={setDevice} />
+              <div className={`before-after${device === 'web' ? ' before-after--stacked' : ''}`}>
                 <div>
                   <p className="before-after__label">Enne{proposal.before.mockup ? ` (versioon ${proposal.before.mockup.version})` : ''}</p>
-                  {proposal.before.mockup ? <MockupView mockup={proposal.before.mockup} marks={proposal.preview.mockup.removed} mark="removed" /> : <p className="muted">Mockup puudub.</p>}
+                  {proposal.before.mockup ? <MockupView mockup={proposal.before.mockup} marks={proposal.preview.mockup.removed} mark="removed" device={device} /> : <p className="muted">Mockup puudub.</p>}
                 </div>
                 <div>
                   <p className="before-after__label">Pärast</p>
-                  <MockupView mockup={proposal.after.mockup} marks={proposal.preview.mockup.added} mark="added" notes={proposal.preview.consistency?.components ?? null} />
+                  <MockupView mockup={proposal.after.mockup} marks={proposal.preview.mockup.added} mark="added" notes={proposal.preview.consistency?.components ?? null} device={device} />
                 </div>
               </div>
               {proposal.preview.consistency && (

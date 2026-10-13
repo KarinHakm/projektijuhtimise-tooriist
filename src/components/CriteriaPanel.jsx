@@ -11,7 +11,7 @@ import {
 import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import NoteField from './NoteField.jsx';
-import MockupView from './MockupView.jsx';
+import MockupView, { DeviceToggle } from './MockupView.jsx';
 
 const POLL_MS = 3000;
 const STATE_LABELS = { pending: 'Ootab otsust', accepted: '✓ Kinnitatud', edited: '✎ Muudetud' };
@@ -68,8 +68,10 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
+export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', initialDevice = 'web', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
   const { story, criteria, mockup, criteriaProposal, mockupProposal } = data;
+  // „Veeb | Mobiil“: üks valik kõigile selle kaardi mockup'idele; veebis saab mockup kogu kaardi laiuse.
+  const [device, setDevice] = useState(initialDevice);
   // L22: lisavaated (vaade 2, …). Versiooni number on loo piires ühine kõigile vaadetele.
   const extraViews = data.extraViews ?? [];
   const nextVersion = Math.max(mockup?.version ?? 0, ...extraViews.map((v) => v.mockup.version)) + 1;
@@ -94,7 +96,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
           <li key={v.version}>
             <details>
               <summary>Versioon {v.version} · {new Date(v.createdAt).toLocaleString('et-EE')} · elemente {v.components.length}</summary>
-              <MockupView mockup={v} />
+              <MockupView mockup={v} device={device} />
               <button type="button" className="secondary" disabled={disabled} onClick={() => onRestore(v.version)}>
                 {busy === 'mockup-restore' ? 'Taastan…' : 'Taasta see versioon'}
               </button>
@@ -116,7 +118,7 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
   return (
     <div className="criteria-mockup">
       <p><span className="tag tag--focus">Alustame sellest</span> {story.title}</p>
-      <div className="criteria-mockup__columns">
+      <div className={`criteria-mockup__columns${device === 'web' ? ' criteria-mockup__columns--stacked' : ''}`}>
         <section aria-labelledby="criteria-title">
           <h3 id="criteria-title">Vastuvõtukriteeriumid</h3>
           {criteria.length > 0 && (
@@ -193,11 +195,12 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
 
         <section aria-labelledby="mockup-title">
           <h3 id="mockup-title">Mockup</h3>
+          {(mockup || mockupProposal || extraViews.length > 0) && <DeviceToggle device={device} onChange={setDevice} />}
           {mockup && (
             <>
               {extraViews.length > 0 && <h4 className="mockup-view__title">Vaade 1: {mockup.title}</h4>}
               <p className="muted">Kinnitatud, versioon {mockup.version}</p>
-              <MockupView mockup={mockup} notes={data.consistency?.components ?? null} />
+              <MockupView mockup={mockup} notes={data.consistency?.components ?? null} device={device} />
               {restoreNotice && <p className="notice" role="status">{restoreNotice}</p>}
               {/* L22: varasemad versioonid jäävad alles; taastamine loob uue versiooni. */}
               {versionList(data.mockupVersions ?? [])}
@@ -208,14 +211,14 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
             <div key={v.viewNo} className="mockup-view">
               <h4 className="mockup-view__title">Vaade {v.viewNo}: {v.mockup.title}</h4>
               <p className="muted">Kinnitatud, versioon {v.mockup.version}. Kliendi täpsustus muudab ainult vaadet 1.</p>
-              <MockupView mockup={v.mockup} notes={data.consistency?.views?.find((x) => x.viewNo === v.viewNo)?.components ?? null} />
+              <MockupView mockup={v.mockup} notes={data.consistency?.views?.find((x) => x.viewNo === v.viewNo)?.components ?? null} device={device} />
               {versionList(v.versions)}
             </div>
           ))}
           {mockupProposal && (
             <div className="mockup-proposal">
               <p className="muted">AI ettepanek – mockup ei ole veel looga seotud.</p>
-              <MockupView mockup={mockupProposal.mockup} />
+              <MockupView mockup={mockupProposal.mockup} device={device} />
               <div className="actions">
                 <button type="button" onClick={onAcceptMockup} disabled={disabled}>{busy === 'mockup-accept' ? 'Kinnitan…' : 'Kinnita mockup'}</button>
                 <button type="button" className="secondary" onClick={onProposeMockup} disabled={disabled}>Paku uus</button>
