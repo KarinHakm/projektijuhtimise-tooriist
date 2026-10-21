@@ -86,7 +86,8 @@ test('alustamise loo järgsed etapid; teise loo ootel ettepanek ei loe', async (
   appendCriteria(db, target, [{ text: "Kasutaja näeb nuppu 'Esita taotlus'.", origin: 'ai' }]);
   saveMockup(db, target, { title: 'Taotlus', components: [{ type: 'button', text: 'Esita taotlus', items: [] }, { type: 'button', text: 'Salvesta', items: [] }] });
   r = (await stage()).body;
-  assert.deepEqual([r.lastDone.key, r.next.key, r.steps.map((x) => x.id)], ['kriteeriumid', 'tapsustused', ['review-consistency', 'refine']]);
+  // „Salvesta“ ilma kriteeriumita on märkus, mitte hoiatus (L37) – kooskõla ülevaatuse sammu ei tule.
+  assert.deepEqual([r.lastDone.key, r.next.key, r.steps.map((x) => x.id)], ['kriteeriumid', 'tapsustused', ['refine']]);
 
   const applied = createProposal(db, { projectId, kind: 'refinement', payload: { storyId: target } });
   db.prepare("UPDATE ai_proposals SET status = 'applied' WHERE id = ?").run(applied.id);

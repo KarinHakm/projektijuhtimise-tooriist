@@ -145,7 +145,7 @@ export default function PriorityPanel({ projectId, backlogVersion, onFocusChange
         />
       )}
       {!waiting && data.stories.length > 0 && (
-        <NoteField card="priority" replaces={Boolean(data.proposal)} disabled={Boolean(busy)} onSend={(note) => run('propose', () => proposePriority(projectId, note))} />
+        <NoteField card="priority" disabled={Boolean(busy)} onSend={(note) => run('propose', () => proposePriority(projectId, note))} />
       )}
       {!waiting && aiError && <AiError error={aiError} onRetry={() => run('propose', () => proposePriority(projectId))} retrying={busy === 'propose'} />}
     </>

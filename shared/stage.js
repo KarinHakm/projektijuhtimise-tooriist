@@ -2,7 +2,7 @@
 // Kõik tuletatakse andmebaasi hetkeseisust (server/stage.js kogub faktid); eraldi etapivälja ei hoita.
 // Samast tulemusest kuvatakse nii etappide riba kui plokk "Mida teeme edasi?" uusima AI väljundi juures.
 //
-// Sammud ainult kerivad olemasoleva tegevuseni – nupp ise AI-kutset ei tee. Sammu, mille eeldus puudub,
+// Samm kerib olemasoleva tegevuseni; „(AI)“ samm vajutab seal ettepaneku nuppu (L37) – tulemus on ootel ettepanek. Sammu, mille eeldus puudub,
 // ei pakuta. Groomimist rakenduses pole, seega seda ei soovitata ega saa valida.
 
 // Kaartide DOM id-d projekti vaates (ProjectView kasutab sama tabelit).
@@ -133,7 +133,7 @@ export function computeStage(facts) {
 
   // 3. Soovitatud järgmise etapi tegevus (kui selles etapis pole juba pooleli otsust).
   const nextKey = next?.key;
-  if (nextKey === 'idee' && f.conversation === 'empty') add({ id: 'write-idea', stage: 'idee', label: 'Kirjelda projekti idee', card: 'conversation', focus: '#idea', ai: true });
+  if (nextKey === 'idee' && f.conversation === 'empty') add({ id: 'write-idea', stage: 'idee', label: 'Kirjelda projekti idee', card: 'conversation', focus: '#chat-text', ai: true });
   if (nextKey === 'rollid' && !p.roles) add({ id: 'propose-roles', stage: 'rollid', label: 'Küsi AI-lt rollide ettepanek', card: 'roles', focus: '[data-step="roles-propose"]', ai: true });
   if (nextKey === 'lood' && !p.stories) add({ id: 'propose-stories', stage: 'lood', label: 'Küsi AI-lt lugude ettepanek', card: 'stories', focus: '[data-step="stories-propose"]', ai: true });
   if (nextKey === 'prioriteedid' && !p.priority) {
@@ -145,7 +145,7 @@ export function computeStage(facts) {
     else if (!f.mockup) add({ id: 'propose-mockup', stage: 'kriteeriumid', label: 'Küsi AI-lt mockup', card: 'criteria', focus: '[data-step="mockup-propose"]', ai: true });
   }
   if (nextKey === 'tapsustused' && !p.refinement) {
-    add({ id: 'refine', stage: 'tapsustused', label: 'Sisesta kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
+    add({ id: 'refine', stage: 'tapsustused', label: 'Sisesta kliendi täpsustus', card: 'refinement', focus: '#chat-text', ai: true, optional: true });
   }
 
   if (nextKey === 'groomimine' && !(f.review?.open > 0)) {
@@ -154,7 +154,7 @@ export function computeStage(facts) {
 
   // 4. Soovitatud etappi pole ja töövoog on läbitud (Groomimine või vähemalt Täpsustused tehtud): ainult valikulised sammud.
   if (!next && (done.groomimine || done.tapsustused)) {
-    if (done.tapsustused && !p.refinement) add({ id: 'refine-again', stage: 'tapsustused', label: 'Sisesta uus kliendi täpsustus', card: 'refinement', focus: '#kliendi-tapsustus', ai: true, optional: true });
+    if (done.tapsustused && !p.refinement) add({ id: 'refine-again', stage: 'tapsustused', label: 'Sisesta uus kliendi täpsustus', card: 'refinement', focus: '#chat-text', ai: true, optional: true });
     if (done.groomimine) add({ id: 'view-backlog', stage: 'groomimine', label: "Vaata backlog'i uuesti üle", card: 'backlog', focus: '[data-step="review-run"]', ai: true, optional: true });
     if (f.stories > 1 && !p.priority) add({ id: 'choose-other', stage: 'prioriteedid', label: 'Vali teine alustamise lugu', card: 'priority', focus: '[data-step="priority-choose"]', optional: true });
   }

@@ -9,6 +9,11 @@ export function LinkLine({ link }) {
   return <p className="consistency-link">Seotud: {link.label} <span className="tag">{SOURCE[link.source] ?? link.source}</span></p>;
 }
 
+// Märkus (L37): hall vihje, mitte hoiatus (nt AI seos elemendiga, mida kriteerium sõnasõnaliselt ei nimeta).
+export function CheckHints({ hints }) {
+  return (hints ?? []).map((h) => <p key={h.code + h.message} className="consistency-hint">{h.message}</p>);
+}
+
 export function CheckWarnings({ warnings }) {
   return warnings.map((w) => <p key={w.code + w.message} className="consistency-warning">⚠ Kontrolli: {w.message}</p>);
 }
@@ -19,9 +24,26 @@ export function ReviewBox({ consistency, mockupVersion, versionsLabel = null, bu
   const reviewed = versionsLabel ? `mockup'i versioonid (${versionsLabel})` : `mockup'i versiooni ${mockupVersion ?? '–'}`;
   const { review, warningCount } = consistency;
   const at = review?.at ? new Date(review.at).toLocaleString('et-EE') : '';
+  // L37: hoiatusteta ja kinnitamata ülevaatus on valikuline – kokku volditud, avaneb klõpsuga.
+  if (warningCount === 0 && !review?.valid) {
+    return (
+      <details className="review-box review-box--quiet">
+        <summary>Ülevaatus (valikuline) – kontrollimist vajavaid hoiatusi pole</summary>
+        <ReviewBody reviewed={reviewed} review={review} at={at} warningCount={warningCount} busy={busy} mockupVersion={mockupVersion} onReview={onReview} />
+      </details>
+    );
+  }
   return (
     <section className="review-box" aria-labelledby="review-title">
       <h4 id="review-title">Ülevaatus</h4>
+      <ReviewBody reviewed={reviewed} review={review} at={at} warningCount={warningCount} busy={busy} mockupVersion={mockupVersion} onReview={onReview} />
+    </section>
+  );
+}
+
+function ReviewBody({ reviewed, review, at, warningCount, busy, mockupVersion, onReview }) {
+  return (
+    <>
       <p className="muted">
         Kinnitus tähendab, et <strong>sina</strong> vaatasid selle loo kriteeriumid ja {reviewed} üle.
         See ei ole automaatne tõend täieliku kooskõla kohta. Kinnitus aegub, kui kriteeriumid, viited või mockup muutuvad.
@@ -38,7 +60,7 @@ export function ReviewBox({ consistency, mockupVersion, versionsLabel = null, bu
           </button>
         </>
       )}
-    </section>
+    </>
   );
 }
 

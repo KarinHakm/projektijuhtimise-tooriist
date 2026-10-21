@@ -230,11 +230,33 @@ function FindingCard({ f, stories, number, busy, editing, error, actions }) {
   );
 }
 
+// L37: lihtsam leidude loend. Üleval AI leiud (jagamine, ühendamine eelvaatega jne), seejärel üksikud rakenduse
+// kontrollid; sama tüüpi rakenduse kontrollid (nt 6 lugu ilma kriteeriumideta) on kokku volditud rühmana.
+// Otsustatud leiud on kokku volditud; tagasivõetav jagamine või ühendamine jääb nähtavale.
+const PRIORITY = { too_large: 0, overlap: 1 };
+export function groupFindings(findings) {
+  const open = findings.filter((f) => f.status === 'open');
+  const counts = new Map();
+  for (const f of open) if (f.source !== 'ai') counts.set(f.type, (counts.get(f.type) ?? 0) + 1);
+  const grouped = (f) => f.source !== 'ai' && counts.get(f.type) > 1;
+  const rank = (f) => (f.source === 'ai' ? 0 : 1) * 10 + (PRIORITY[f.type] ?? 5);
+  const top = open.filter((f) => !grouped(f)).sort((a, b) => rank(a) - rank(b));
+  const groups = [...counts].filter(([, n]) => n > 1).map(([type]) => ({ type, findings: open.filter((f) => grouped(f) && f.type === type) }));
+  const decided = findings.filter((f) => f.status !== 'open');
+  return { top, groups, undoable: decided.filter((f) => f.canUndo), decided: decided.filter((f) => !f.canUndo) };
+}
+
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
 export function ReviewView({ review, stories, running = false, busy = false, error = null, notice = '', editingId = null, findingError = null, onRun, actions }) {
   const number = (id) => { const i = stories.findIndex((s) => s.id === id); return i < 0 ? null : i + 1; };
   const open = review?.findings.filter((f) => f.status === 'open') ?? [];
   const decided = review?.findings.filter((f) => f.status !== 'open') ?? [];
+  const parts = groupFindings(review?.findings ?? []);
+  const isActive = (f) => editingId === f.id || findingError?.id === f.id;
+  const card = (f) => (
+    <FindingCard key={f.id} f={f} stories={stories} number={number} busy={busy || running} editing={editingId === f.id}
+      error={findingError?.id === f.id ? findingError : null} actions={actions} />
+  );
   return (
     <section className="review" aria-label="Backlog'i ülevaatus">
       <button type="button" className="secondary" data-step="review-run" disabled={busy || running || stories.length === 0} onClick={onRun}>
@@ -252,10 +274,23 @@ export function ReviewView({ review, stories, running = false, busy = false, err
           </p>
           {review.aiNote && <p className="muted">{review.aiNote}</p>}
           <ul className="review__list" data-step="review-findings">
-            {[...open, ...decided].map((f) => (
-              <FindingCard key={f.id} f={f} stories={stories} number={number} busy={busy || running} editing={editingId === f.id}
-                error={findingError?.id === f.id ? findingError : null} actions={actions} />
+            {[...parts.top, ...parts.undoable].map(card)}
+            {parts.groups.map((g) => (
+              <li key={g.type} className="review-group">
+                <details open={g.findings.some(isActive) || undefined}>
+                  <summary>{TYPE_LABELS[g.type]} – {g.findings.length} lugu <span className="muted">(rakenduse kontroll)</span></summary>
+                  <ul className="review__list">{g.findings.map(card)}</ul>
+                </details>
+              </li>
             ))}
+            {parts.decided.length > 0 && (
+              <li className="review-group">
+                <details open={parts.decided.some(isActive) || undefined}>
+                  <summary>Otsustatud ({parts.decided.length})</summary>
+                  <ul className="review__list">{parts.decided.map(card)}</ul>
+                </details>
+              </li>
+            )}
           </ul>
         </div>
       )}

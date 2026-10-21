@@ -304,10 +304,12 @@ button.device-toggle__button[aria-pressed="true"]:not(:disabled):hover { backgro
 .review-box { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
 .review-box h4 { margin: 0 0 0.35rem; }
 .review-box__ok { color: var(--success); font-weight: 600; margin: 0.35rem 0 0; }
+.review-box--quiet > summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .mock-item { display: flex; flex-direction: column; gap: 0.15rem; }
 .mock-notes { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .mock-badge { font-size: 0.7rem; padding: 0 0.35rem; color: var(--on-accent); background: var(--accent); border-radius: 999px; }
-.mock-flag { font-size: 0.75rem; color: var(--warning-text); background: var(--warning-soft); padding: 0 0.3rem; border-radius: 3px; }
+.mock-hint { font-size: 0.75rem; color: var(--muted); }
+.consistency-hint { margin: 0.15rem 0; font-size: 0.85rem; color: var(--muted); }
 .stories-proposal {
   border: 1px dashed var(--accent);
   border-radius: 8px;
@@ -428,6 +430,24 @@ button.stage__button:hover { border-color: var(--accent); }
 .next-steps .actions { flex-wrap: wrap; }
 .next-steps .actions button { margin-top: 0.5rem; }
 .card:focus { outline: none; }
+/* L37: üks vestlus – plokid üksteise järel, AI ploki päis nagu vestluse sõnum, kast vestluse all (kerimisel nähtav). */
+.chat { padding-bottom: 0; }
+.chat-block { padding: 0.75rem 0; border-top: 1px solid var(--border); scroll-margin-top: calc(var(--project-header-h, 0px) + 0.75rem); }
+.chat-block:first-of-type { border-top: 0; padding-top: 0; }
+.chat-block:focus { outline: none; }
+.chat-block__head { margin-bottom: 0.5rem; }
+.chat-block__head h3 { margin: 0.1rem 0 0.2rem; font-size: 1rem; }
+.chat-block__head p { margin: 0; }
+.chat-block__close { float: right; margin-top: -2.5rem; }
+.chat-composer { position: sticky; bottom: 0; z-index: 5; margin: 0 -1.25rem; padding: 0.6rem 1.25rem 0.9rem; background: var(--card); border-top: 1px solid var(--border-strong); border-radius: 0 0 var(--radius) var(--radius); }
+.chat-composer__target { margin: 0 0 0.35rem; font-size: 0.85rem; }
+.chat-composer__target select { width: auto; max-width: 100%; font: inherit; padding: 0.15rem 0.3rem; }
+.chat-composer__row { display: flex; gap: 0.5rem; align-items: flex-end; }
+.chat-composer__row textarea { flex: 1; min-width: 0; resize: vertical; }
+.chat-composer__row button { margin: 0; }
+.chat-composer .next-steps__result { margin-bottom: 0.5rem; }
+.chat-block.card--highlight { animation: block-highlight 1.6s ease-out; }
+@keyframes block-highlight { from { background: var(--accent-soft); } to { background: transparent; } }
 .card--highlight { animation: card-highlight 1.6s ease-out; }
 @keyframes card-highlight { from { box-shadow: 0 0 0 4px var(--accent-border); } to { box-shadow: 0 0 0 4px transparent; } }
 
@@ -519,6 +539,9 @@ button.danger { background: var(--error); }
 .review-finding p { margin: 0.25rem 0; }
 .review-finding ol { margin: 0.25rem 0; padding-left: 1.25rem; }
 .review-finding--decided { border-left-color: var(--border); color: var(--muted); }
+.review-group > details > summary { cursor: pointer; padding: 0.4rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); font-size: 0.9rem; }
+.review-group > details[open] > summary { margin-bottom: 0.5rem; }
+.review-group .review__list { padding-left: 0.75rem; }
 .review-finding__stories { font-weight: 600; }
 .review-edit { margin: 0.5rem 0 0; }
 .review-edit input:not([type="radio"]), .review-edit textarea { width: 100%; box-sizing: border-box; }

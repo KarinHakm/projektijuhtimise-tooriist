@@ -78,7 +78,7 @@ export default function StagePanel({ name, demo = false, stage, onGo, onActivate
           Vahelejätmine: soovitatud või aktiivse etapi saab „Jäta vahele“ nupuga vahele jätta. See ei ava järgmisi etappe, mille
           eeldus puudub (nt kriteeriumid vajavad alustamise lugu). Vahele jäetud etapi juurde saab ribal klõpsates tagasi minna.
         </p>
-        {first?.ai && <p>„(AI)“ nupp viib tegevuse juurde; AI-kutse käivitub alles sealse nupuga.</p>}
+        {first?.ai && <p>„(AI)“ nupp küsib AI-lt ettepaneku (kirjutamist vajav samm viib vestluse kasti); midagi ei rakendu enne sinu kinnitust.</p>}
       </details>
     </header>
   );

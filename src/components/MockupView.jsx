@@ -28,13 +28,14 @@ function Component({ c }) {
 }
 
 // marks (valikuline, L11 eelvaade): iga komponendi kohta true, kui see on lisandunud/eemaldatud; mark = 'added' | 'removed'.
-// notes (valikuline, L23): iga komponendi kohta { linkedBy: [kriteeriumi numbrid], warnings: [{ message }] }.
+// notes (valikuline, L23): iga komponendi kohta { linkedBy: [kriteeriumi numbrid], hints: [{ message }] }.
+// Märkus (nt „ükski kriteerium ei nimeta seda“) on hall vihje, mitte hoiatus (L37).
 function Notes({ note }) {
-  if (!note || (note.linkedBy.length === 0 && note.warnings.length === 0)) return null;
+  if (!note || (note.linkedBy.length === 0 && note.hints.length === 0)) return null;
   return (
     <span className="mock-notes">
       {note.linkedBy.length > 0 && <span className="mock-badge">{note.linkedBy.map((n) => `K${n}`).join(', ')}</span>}
-      {note.warnings.map((w) => <span key={w.message} className="mock-flag">⚠ Kontrolli: {w.message}</span>)}
+      {note.hints.map((h) => <span key={h.message} className="mock-hint">{h.message}</span>)}
     </span>
   );
 }

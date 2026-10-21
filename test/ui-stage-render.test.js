@@ -62,13 +62,13 @@ test('„Mida teeme edasi?“: 1–4 nuppu, AI tegevusel märge ja selgitus; tü
   const html = renderToStaticMarkup(createElement(NextSteps, { steps: reviewed.steps, onGo: () => {} }));
   assert.match(html, /<nav class="next-steps" aria-label="Mida teeme edasi\?"><p class="next-steps__title">Mida teeme edasi\?<\/p>/);
   assert.deepEqual(buttons(html), ['Sisesta uus kliendi täpsustus (valikuline) (AI)', "Vaata backlog'i uuesti üle (valikuline) (AI)", 'Vali teine alustamise lugu (valikuline)']);
-  assert.match(html, /AI-kutse käivitub alles sealse nupuga/);
+  assert.match(html, /„\(AI\)“ nupp küsib AI-lt ettepaneku \(kirjutamist vajav samm viib vestluse kasti\); midagi ei rakendu enne sinu kinnitust\./);
   assert.equal(renderToStaticMarkup(createElement(NextSteps, { steps: [], onGo: () => {} })), '');
 });
 
 test('projekti vaates on plokk nähtavate AI väljundi kaartide lõpus (iga AI kaardi jaoks üks koht, backlog’is mitte)', () => {
   const view = readFileSync('src/pages/ProjectView.jsx', 'utf8');
-  assert.match(view, /const stepsAfter = \(card\) => stage\?\.stepsByCard\?\.\[card\] && <NextSteps steps=\{stage\.stepsByCard\[card\]\}/);
+  assert.match(view, /const stepsAfter = \(card\) => stage\?\.stepsByCard\?\.\[card\] && <NextSteps steps=\{stepsForBlock\(card, stage\.stepsByCard\[card\]\)\}/);
   for (const card of new Set(Object.values(AI_OUTPUT_CARD))) {
     assert.equal(view.split(`{stepsAfter('${card}')}`).length - 1, 1, card);
     // plokk on sama kaardi sees, kaardi viimase elemendina

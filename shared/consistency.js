@@ -3,8 +3,10 @@
 // sõnatüvesid; ta ei tea, kas element tegelikult näitab seda, mida kriteerium nõuab.
 //
 // Kriteeriumi viide (ref): { kind: 'element' | 'no_view' | null, index, version, source: 'ai' | 'user' }.
-// Hoiatuse kõrvaldab ainult KASUTAJA enda seos (source 'user'); AI seos või AI hinnang "ei puuduta vaadet"
-// on nähtav, aga hoiatust ei kustuta.
+// Sõnapõhine „pole vastet“ käib ainult seoseta kriteeriumi kohta (nõue: iga vaadet puudutav kriteerium on mockup'is
+// nähtav). Seotud kriteeriumi puhul on küsimus seose õigsus – AI seose juures on „Kinnitan selle seose“ / „Seo ise“.
+// Element, mida ükski kriteerium ei nimeta, ja AI seos elemendiga, mida kriteerium sõnasõnaliselt ei nimeta, on märkused
+// (hints), mitte hoiatused, ega lähe hoiatuste arvu (L37): sõnapõhine võrdlus annab eesti käänete tõttu valehäireid.
 
 // Üldsõnad, mis ei kirjelda konkreetset elementi (ainult siin ühes kohas).
 export const STOP_WORDS = new Set([
@@ -55,12 +57,11 @@ export function analyzeConsistency(criteria, mockups) {
     if (stale) warnings.push({ code: 'stale_ref', message: 'Viide on mõne teise mockup\'i versiooni elemendile – seo kriteerium uuesti.' });
 
     const userDecided = ref.source === 'user' && !stale && (ref.kind === 'element' || ref.kind === 'no_view');
-    if (views.length && !userDecided) {
+    if (views.length && !userDecided && !link) {
       const missing = contentStems(c.text).filter((s) => !allStems.some((m) => stemsMatch(s, m)));
       if (missing.length) {
         const shown = words(c.text).filter((w) => missing.includes(stem(w)) && !STOP_WORDS.has(w)).slice(0, 4);
-        const note = ref.kind === 'no_view' ? ' AI hinnangul ei puuduta kriteerium vaadet – kinnita või seo ise.' : '';
-        warnings.push({ code: 'no_match', message: `Pole vastet: sõnadele „${shown.join('“, „')}“ ei leitud mockup'is vastet.${note}` });
+        warnings.push({ code: 'no_match', message: `Pole vastet: sõnadele „${shown.join('“, „')}“ ei leitud mockup'is vastet.` });
       }
     }
     // Nuppu nimetav kriteerium peab viitama nupule – välja arvatud juhul, kui kriteerium nimetab ka seotud elementi ennast
@@ -70,31 +71,31 @@ export function analyzeConsistency(criteria, mockups) {
     if (linked && BUTTON_WORDS.test(c.text) && linked.type !== 'button' && !namesLinked) {
       warnings.push({ code: 'button_type', message: 'Kriteerium nimetab nuppu, kuid on seotud elemendiga, mis ei ole nupp.' });
     }
-    // Võimalik probleem: AI seos elemendiga, mida kriteerium ei nimeta (nt "E-posti aadress" → nupp "Esita taotlus").
+    // Märkus: AI seos elemendiga, mida kriteerium ei nimeta (nt "E-posti aadress" → nupp "Esita taotlus").
     // Kasutaja enda seosele seda ei rakendata – see on inimese otsus.
+    const hints = [];
     if (linked && ref.source !== 'user' && !namesLinked && !warnings.some((w) => w.code === 'button_type')) {
-      warnings.push({ code: 'ai_link_unnamed', message: `Võimalik probleem: AI seos – kriteerium ei nimeta seotud elementi „${linked.text}“. Kontrolli, kas seos on õige.` });
+      hints.push({ code: 'ai_link_unnamed', message: `AI seos – kriteerium ei nimeta elementi „${linked.text}“ sõnasõnaliselt; kinnita või vali ise.` });
     }
-    return { number: ci + 1, link, warnings };
+    return { number: ci + 1, link, warnings, hints };
   });
 
   const viewsResult = views.map((v, vi) => ({
     viewNo: v.viewNo,
     version: v.version,
     components: v.components.map((c, i) => {
-      const warnings = [];
+      const hints = [];
       const mentioned = criteria.some((cr) => contentStems(cr.text).some((s) => stemsOf[vi][i].some((m) => stemsMatch(s, m))));
       if (INTERACTIVE.has(c.type) && linkedBy[vi][i].length === 0 && !mentioned) {
-        warnings.push({ code: 'unjustified', message: 'Põhjendamata: ükski kriteerium ei viita sellele elemendile ega nimeta seda.' });
+        hints.push({ code: 'unjustified', message: 'ükski kriteerium ei nimeta seda' });
       }
-      return { index: i, label: componentLabel(c, i), linkedBy: linkedBy[vi][i], warnings };
+      return { index: i, label: componentLabel(c, i), linkedBy: linkedBy[vi][i], hints };
     }),
   }));
   const primary = viewsResult.find((v) => v.viewNo === 1) ?? viewsResult[0];
   const components = primary?.components ?? [];
 
-  const warningCount = criteriaResult.reduce((n, c) => n + c.warnings.length, 0)
-    + viewsResult.reduce((n, v) => n + v.components.reduce((m, c) => m + c.warnings.length, 0), 0);
+  const warningCount = criteriaResult.reduce((n, c) => n + c.warnings.length, 0);
   return { criteria: criteriaResult, components, views: viewsResult, warningCount };
 }
 

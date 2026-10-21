@@ -3,7 +3,7 @@ import {
   acceptMockup, applyCriteria, getCriteria, linkCriterion, proposeCriteria, proposeMockup, rejectMockup, restoreMockupVersion, reviewConsistency,
 } from '../api.js';
 import { componentLabel } from '../../shared/consistency.js';
-import { CheckWarnings, LinkLine, ReviewBox, SelfCheckNote } from './Consistency.jsx';
+import { CheckHints, CheckWarnings, LinkLine, ReviewBox, SelfCheckNote } from './Consistency.jsx';
 import DemoTag from './DemoTag.jsx';
 import {
   accept, addManual, buildSave, CRITERIA_ORIGIN_LABELS, edit, fromProposal, remove, visible, warningsFor,
@@ -126,17 +126,22 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
               {criteria.map((c, i) => {
                 const check = data.consistency?.criteria[i];
                 const value = c.ref?.kind === 'element' ? elementValue(c.ref) : c.ref?.kind === 'no_view' ? 'no_view' : 'none';
+                // AI seos ootel mockup'i elemendile saab versiooni mockup'i kinnitamisel – see ei ole aegunud viide.
+                const awaitingMockup = Boolean(mockupProposal) && c.ref?.kind === 'element' && c.ref.version == null;
                 return (
                   <li key={c.id}>
                     <span className="criterion__number">K{i + 1}.</span> {c.text} <span className="tag">{CRITERIA_ORIGIN_LABELS[c.origin] ?? c.origin}</span>
                     {c.warnings.map((w) => <p key={w} className="warning">⚠ {w}</p>)}
-                    <LinkLine link={check?.link ?? null} />
+                    {awaitingMockup
+                      ? <p className="consistency-link consistency-link--none">Seotakse mockup'i elemendiga, kui kinnitad allpool mockup'i.</p>
+                      : <LinkLine link={check?.link ?? null} />}
                     {check?.link?.source === 'ai' && (
                       <button type="button" className="secondary link-confirm" disabled={disabled} onClick={() => onLink(c.id, value)}>
                         Kinnitan selle seose
                       </button>
                     )}
-                    {check && <CheckWarnings warnings={check.warnings} />}
+                    {check && <CheckWarnings warnings={awaitingMockup ? check.warnings.filter((w) => w.code !== 'stale_ref') : check.warnings} />}
+                    {check && <CheckHints hints={check.hints} />}
                     {mockup && (
                       <label className="link-select">
                         <span>Seo ise:</span>
@@ -350,15 +355,15 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
       {/* Vabatekst: kinnitatud kriteeriumideta loole uued kriteeriumid ja mockup; kriteeriumidega, aga mockup'ita loole mockup.
           Kinnitatud kriteeriumide ja mockup'i muutmiseks on kliendi täpsustus (oma vabateksti väljaga). */}
       {!waiting && data.story && data.criteria.length === 0 && (
-        <NoteField card="criteria" replaces={Boolean(data.criteriaProposal || data.mockupProposal)} disabled={Boolean(busy)}
+        <NoteField card="criteria" disabled={Boolean(busy)}
           onSend={(note) => { setAiError(null); return run('propose', () => proposeCriteria(projectId, note), (e) => { if (e.code !== 'in_progress') setAiError(e); }); }} />
       )}
       {!waiting && data.story && data.criteria.length > 0 && !data.mockup && (
-        <NoteField card="criteria" replaces={Boolean(data.mockupProposal)} disabled={Boolean(busy)}
+        <NoteField card="criteria" disabled={Boolean(busy)}
           onSend={(note) => { setMockupError(''); return run('mockup-propose', () => proposeMockup(projectId, note), (e) => setMockupError(e.message)); }} />
       )}
       {!waiting && data.story && data.criteria.length > 0 && data.mockup && (
-        <p className="muted">Kinnitatud kriteeriume ja mockup'i muudad oma sõnadega kaardil „Kliendi täpsustus“.</p>
+        <p className="muted">Kinnitatud kriteeriume ja mockup'i muudab kliendi täpsustus – kirjuta soov vestluse kasti.</p>
       )}
     </>
   );

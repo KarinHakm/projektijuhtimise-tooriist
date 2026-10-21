@@ -5,18 +5,18 @@ import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import DemoTag from './DemoTag.jsx';
 import QuestionCard from './QuestionCard.jsx';
+import { useChatTarget } from '../chat/bus.js';
 
 const POLL_MS = 3000;
 
 // Juhitud vestlus (L04): idee → AI täpsustavad küsimused → vastused → kokkuvõte.
 // Vestluse seis tuleb alati serverist; lehe värskendamisel jätkub samast kohast.
+// L37: idee kirjutatakse vestluse alla ühte kasti (ChatComposer); vestlusel endal ideevormi pole.
 export default function Conversation({ projectId, onPhaseChange }) {
   const [data, setData] = useState(null); // { messages, aiRunning }
   const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState(false); // meie enda päring käib
   const [error, setError] = useState(null);
-  const [idea, setIdea] = useState('');
-  const [ideaError, setIdeaError] = useState('');
   const [drafts, setDrafts] = useState({});
 
   const refresh = useCallback(async () => {
@@ -42,27 +42,20 @@ export default function Conversation({ projectId, onPhaseChange }) {
     setError(null);
     try {
       setData(await action());
+      return true;
     } catch (e) {
       // "in_progress" ei ole viga: AI juba töötab (nt teises vahelehes) ja vaade ootab seda.
       if (e.code !== 'in_progress') setError(e);
       await refresh(); // server võis idee või vastused enne viga salvestada
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  function submitIdea(e) {
-    e.preventDefault();
-    if (!idea.trim()) {
-      setIdeaError('Kirjelda ideed vähemalt ühe lausega.');
-      return;
-    }
-    setIdeaError('');
-    run(() => sendIdea(projectId, idea));
-  }
-
   const phase = data ? conversationPhase(data.messages, data.aiRunning) : null;
   useEffect(() => { if (phase) onPhaseChange?.(phase); }, [phase, onPhaseChange]);
+  useChatTarget('conversation', phase === 'empty' && !busy, (note) => run(() => sendIdea(projectId, note)));
 
   if (loadError) return <p className="error">Vestlust ei saanud laadida: {loadError}</p>;
   if (!data) return <p className="muted">Laadin vestlust…</p>;
@@ -74,21 +67,11 @@ export default function Conversation({ projectId, onPhaseChange }) {
   return (
     <section className="conversation" aria-label="Juhitud vestlus">
       {phase === 'empty' && (
-        <form onSubmit={submitIdea} noValidate>
-          <label htmlFor="idea">Kirjelda kliendi ideed ühe-kahe lausega</label>
-          <textarea
-            id="idea"
-            rows={3}
-            maxLength={2000}
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-            disabled={busy}
-            aria-invalid={Boolean(ideaError || error?.field === 'text')}
-            placeholder="Nt: Turismiportaal, kus külastaja avastab Eesti sihtkohti, koostab reisiplaani ja broneerib ekskursiooni."
-          />
-          {(ideaError || error?.field === 'text') && <p className="error">{ideaError || error.message}</p>}
-          <button type="submit" disabled={busy}>Alusta</button>
-        </form>
+        <div className="msg msg--ai">
+          <p className="msg__who">AI</p>
+          <p>Kirjelda kliendi ideed ühe-kahe lausega allolevas kastis. Seejärel esitan täpsustavad küsimused vastusevariantidega.</p>
+          {error?.field === 'text' && <p className="error">{error.message}</p>}
+        </div>
       )}
 
       {messages.map((m) => (

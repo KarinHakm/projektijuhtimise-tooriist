@@ -29,3 +29,13 @@ test('mockup: lisandunud ja eemaldatud komponendid märgitakse; puuduv vana mock
   assert.deepEqual(diffMockup(a, b), { added: [false, true], removed: [false, true] });
   assert.deepEqual(diffMockup(null, b), { added: [true, true], removed: [] });
 });
+
+// L37: kliendi täpsustus muudab ainult küsitut – AI juhis ei nõua enam „põhjendamata“ elementide eemaldamist.
+test('täpsustuse AI juhis: muuda ainult seda, mida täpsustus nõuab; ära eemalda puudutamata elemente ega kriteeriume', async () => {
+  const { buildRefineMessages } = await import('../server/ai/tasks/refine.js');
+  const context = { project: { name: 'P', stage: { lastDone: null, next: null } }, conversation: [], stories: [] };
+  const target = { title: 'Lugu', criteria: [{ text: 'Vormil on nimi.' }], mockup: { title: 'V', components: [{ type: 'input', text: 'Nimi', items: [] }] } };
+  const text = buildRefineMessages(context, target, [], 'Lisa steriliseerimise valik.').map((m) => m.content).join('\n');
+  assert.match(text, /Muuda ainult seda, mida kliendi täpsustus nõuab\. Ära eemalda ega muuda olemasolevaid mockup'i elemente ega kriteeriume, mida täpsustus ei puuduta/);
+  assert.doesNotMatch(text, /mida ükski kriteerium ei nõua/);
+});

@@ -80,3 +80,9 @@ test('üheloolises backlog’is on mõlemad nupud keelatud', () => {
   assert.match(button(html, 'Tõsta lugu 1 üles'), /disabled/);
   assert.match(button(html, 'Tõsta lugu 1 alla'), /disabled/);
 });
+
+// L24, L37: uus vaade avatakse backlog'i nupust (vestluses avaneb ploki „Uus vaade“); ilma käsitlejata nuppu pole.
+test(`„+ Uus vaade“ nupp on backlog'i juures ainult siis, kui vaade selle avamise annab`, () => {
+  assert.match(render({ onNewView: noop }), /<button type="button" class="secondary backlog__add">\+ Uus vaade<\/button>/);
+  assert.doesNotMatch(render(), /Uus vaade/);
+});

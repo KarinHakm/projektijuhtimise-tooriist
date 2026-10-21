@@ -13,7 +13,8 @@ const HIGHLIGHT_MS = 1500;
 
 // Kokkuvõte, teated ja loend ilma andmete laadimiseta (renderdustestide jaoks eraldi).
 // review = L27 ülevaatuse paneel (element) või null; undo = L21 tagasivõtmise riba (element) või null.
-export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null, review = null, undo = null }) {
+// onNewView (L24, L37): „+ Uus vaade“ avab vestluses uue vaate ploki.
+export function BacklogView({ stories, focusStoryId = null, busy = false, error = '', status = '', highlightId = null, onMove, buttonRef, readiness = null, mvpCount = null, onMvp = null, manage = null, review = null, undo = null, onNewView = null }) {
   const counts = sizeCounts(stories);
   return (
     <>
@@ -29,6 +30,7 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
       {manage && manage.mode?.type !== 'add' && (
         <button type="button" className="secondary backlog__add" disabled={busy} onClick={manage.onAdd}>+ Lisa lugu</button>
       )}
+      {onNewView && <button type="button" className="secondary backlog__add" onClick={onNewView}>+ Uus vaade</button>}
       {manage?.mode?.type === 'add' && (
         <section className="story-form-box" aria-label="Uus lugu">
           <p className="story-form-box__title">Uus lugu (lisatakse backlog'i lõppu)</p>
@@ -43,7 +45,7 @@ export function BacklogView({ stories, focusStoryId = null, busy = false, error 
 
 // Backlog vestluse kõrval (L07). version muutub, kui lugusid lisatakse; siis laaditakse loend uuesti.
 // Järjekord muutub ekraanil alles pärast serveri vastust, nii et näha on alati salvestatud seis.
-export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
+export default function BacklogPanel({ projectId, version, onBacklogChanged, onNewView = null }) {
   const [stories, setStories] = useState(null);
   const [focusStoryId, setFocusStoryId] = useState(null); // L08: "Alustame sellest"
   const [mvpCount, setMvpCount] = useState(null); // L17
@@ -318,6 +320,7 @@ export default function BacklogPanel({ projectId, version, onBacklogChanged }) {
       onMvp={changeMvp}
       manage={manage}
       review={review}
+      onNewView={onNewView}
       undo={<UndoBar projectId={projectId} onUndone={() => { setStatus(''); setError(''); refresh(); onBacklogChanged?.(); }} />}
     />
   );

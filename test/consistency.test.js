@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyzeConsistency, reviewFingerprint, stem } from '../shared/consistency.js';
 
-// Kooskõla vihjed (L23). Need on kontrollimist vajavad hoiatused, mitte semantilised otsused.
+// Kooskõla vihjed (L23, L37). Need on kontrollimist vajavad hoiatused, mitte semantilised otsused.
+// Sõnapõhine „pole vastet“ ainult seoseta kriteeriumile; elemendi „ükski kriteerium ei nimeta“ on märkus (hints).
 // Näide on testandmebaasi projekti 101 mockup'i versioon 2.
 const MOCKUP = {
   version: 2,
@@ -26,9 +27,10 @@ test('projekti 101 vana vastuolu: kinnitusteade pole mockup’is; "Salvesta" on 
   const r = analyzeConsistency(CRITERIA, MOCKUP);
   assert.deepEqual(r.criteria.map((c) => codes(c.warnings)), [[], [], ['no_match']]);
   assert.match(r.criteria[2].warnings[0].message, /„kinnitusteade“/);
-  assert.deepEqual(codes(r.components[5].warnings), ['unjustified']);
-  assert.deepEqual(codes(r.components[4].warnings), []); // "Esita taotlus" on kriteeriumides nimetatud
-  assert.deepEqual(codes(r.components[0].warnings), []); // pealkiri ei ole interaktiivne
+  assert.deepEqual(codes(r.components[5].hints), ['unjustified']);
+  assert.deepEqual(codes(r.components[4].hints), []); // "Esita taotlus" on kriteeriumides nimetatud
+  assert.deepEqual(codes(r.components[0].hints), []); // pealkiri ei ole interaktiivne
+  assert.equal(r.warningCount, 1); // märkus hoiatuste arvu ei lähe
 });
 
 test('vastuolu leitakse ka ilma jutumärkideta; käänded klapivad tüve järgi', () => {
@@ -37,18 +39,18 @@ test('vastuolu leitakse ka ilma jutumärkideta; käänded klapivad tüve järgi'
   assert.equal(stem('kinnitusteade'), stem('kinnitusteate'));
 });
 
-test('AI seos ei kustuta hoiatust vaikselt: seos on näha, hoiatus jääb', () => {
+test('seotud kriteeriumile sõnapõhist „pole vastet“ ei näidata; AI seos on näha allikaga „ai“ (kinnitamiseks)', () => {
   const criteria = CRITERIA.map((c, i) => ({ ...c, ref: i === 2 ? { kind: 'element', index: 4, version: 2, source: 'ai' } : null }));
   const r = analyzeConsistency(criteria, MOCKUP);
   assert.deepEqual(r.criteria[2].link, { kind: 'element', index: 4, label: '5. nupp: Esita taotlus', source: 'ai' });
-  assert.deepEqual(codes(r.criteria[2].warnings), ['no_match']);
+  assert.deepEqual(r.criteria[2].warnings, []);
   assert.deepEqual(r.components[4].linkedBy, [3]);
 });
 
-test('AI hinnang "ei puuduta vaadet" ei kustuta hoiatust; kasutaja enda otsus kustutab', () => {
+test('AI hinnang "ei puuduta vaadet" on seos kinnitamiseks (sõnapõhist hoiatust pole); kasutaja otsus on „sina“', () => {
   const ai = analyzeConsistency([{ ...CRITERIA[2], ref: { kind: 'no_view', source: 'ai' } }], MOCKUP);
-  assert.deepEqual(codes(ai.criteria[0].warnings), ['no_match']);
-  assert.match(ai.criteria[0].warnings[0].message, /AI hinnangul ei puuduta kriteerium vaadet/);
+  assert.deepEqual(ai.criteria[0].warnings, []);
+  assert.deepEqual(ai.criteria[0].link, { kind: 'no_view', label: 'ei puuduta vaadet', source: 'ai' });
   const user = analyzeConsistency([{ ...CRITERIA[2], ref: { kind: 'no_view', source: 'user' } }], MOCKUP);
   assert.deepEqual(user.criteria[0].warnings, []);
   assert.equal(user.criteria[0].link.label, 'ei puuduta vaadet');
@@ -75,7 +77,7 @@ test('kasutaja seos elemendiga põhjendab elementi ja eemaldab "pole vastet" hoi
   const criteria = [...CRITERIA.slice(0, 2), { ...CRITERIA[2], ref: { kind: 'element', index: 5, version: 2, source: 'user' } }];
   const r = analyzeConsistency(criteria, MOCKUP);
   assert.deepEqual(r.criteria[2].warnings, []);
-  assert.deepEqual(r.components[5].warnings, []);
+  assert.deepEqual(r.components[5].hints, []);
   assert.deepEqual(r.components[5].linkedBy, [3]);
 });
 
@@ -90,13 +92,15 @@ test('ülevaatuse sõrmejälg muutub, kui muutub kriteeriumi tekst, viide või m
   assert.notEqual(reviewFingerprint([{ ...CRITERIA[0], ref: aiRef }], MOCKUP), reviewFingerprint([{ ...CRITERIA[0], ref: { ...aiRef, source: 'user' } }], MOCKUP));
 });
 
-test('võimalik probleem: AI seos elemendiga, mida kriteerium ei nimeta (K2 → nupp); õige AI seos ja kasutaja seos hoiatust ei saa', () => {
+test('AI seos elemendiga, mida kriteerium ei nimeta (K2 → nupp), on märkus, mitte hoiatus; õige AI seos ja kasutaja seos märkust ei saa', () => {
   const v3 = { version: 3, components: [MOCKUP.components[0], MOCKUP.components[3], MOCKUP.components[4]] }; // pealkiri, E-posti aadress, Esita taotlus
   const ai = (index) => ({ kind: 'element', index, version: 3, source: 'ai' });
   const r = analyzeConsistency([{ ...CRITERIA[0], ref: ai(2) }, { ...CRITERIA[1], ref: ai(2) }], v3);
-  assert.deepEqual(codes(r.criteria[0].warnings), []);
-  assert.deepEqual(codes(r.criteria[1].warnings), ['ai_link_unnamed']);
-  assert.match(r.criteria[1].warnings[0].message, /^Võimalik probleem: AI seos – kriteerium ei nimeta seotud elementi „Esita taotlus“/);
+  assert.deepEqual(codes(r.criteria[0].hints), []);
+  assert.deepEqual(r.criteria[1].warnings, []);
+  assert.deepEqual(codes(r.criteria[1].hints), ['ai_link_unnamed']);
+  assert.match(r.criteria[1].hints[0].message, /^AI seos – kriteerium ei nimeta elementi „Esita taotlus“ sõnasõnaliselt; kinnita või vali ise\.$/);
+  assert.equal(r.warningCount, 0); // märkus hoiatuste arvu ei lähe
   const user = analyzeConsistency([{ ...CRITERIA[1], ref: { ...ai(2), source: 'user' } }], v3);
-  assert.ok(!codes(user.criteria[0].warnings).includes('ai_link_unnamed'));
+  assert.deepEqual(user.criteria[0].hints, []);
 });

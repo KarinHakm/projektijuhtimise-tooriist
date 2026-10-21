@@ -27,7 +27,7 @@ AI-põhine veebirakendus, mis aitab projektijuhil koos kliendiga muuta umbmäär
      5. F5 või serveri taaskäivitus – kõik tehtu on alles; etappide riba ja „Mida teeme edasi?“ näitavad jätkamise kohta.
    - **Teadlik kooskõlahoiatus:** 3. kriteerium nõuab teadet „Broneerimistaotlus saadetud“, mida mockup'is ei ole. Rakendus näitab hoiatust „pole vastet“. See on kontrollimist vajav vihje, mitte automaatne otsus – kasutaja otsustab (lisab elemendi, seob ise või kinnitab ülevaatuse).
    - ⚠ **Iga `npm run demo` käivitus taastab näidise algseisu – kõik näidises tehtud muudatused kaovad.** Näidis on eraldi failis `data/demo.db`; päris andmebaasi `data/app.db` see ei puuduta.
-   - `npm run demo` režiimis on AI välja lülitatud (AI-ga sama näidis: `npm run demo:ai`, vt samm 5): AI nupud (nt „Alusta“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
+   - `npm run demo` režiimis on AI välja lülitatud (AI-ga sama näidis: `npm run demo:ai`, vt samm 5): AI nupud ja vestluse kast (nt „Saada“, „Paku veel lugusid“, „Küsi AI-lt uus soovitus“, „Koosta muudatusettepanek“) annavad teate „AI ei ole serveris seadistatud“. Uut projekti saab luua, aga selle vestlus vajab AI-d.
    - Kasutusstsenaarium: [docs/kasutusstsenaarium.md](docs/kasutusstsenaarium.md).
 5. **Proovi päris AI-ga (Claude Code, API-võtit pole vaja):** rakendus kasutab serveri arvutis **sisse logitud Claude Code'i** (`claude`) ja sinu Claude'i tellimust. Mudeliks on seadistatud `sonnet` (`CLAUDE_MODEL`); täpset mudeli versiooni rakendus ei logi.
    1. Kontrolli, et käsk on olemas: `claude --version` (näitab versiooni; AI päringut ei tehta).
@@ -53,6 +53,7 @@ Kui port 5175 või 3001 on hõivatud, annab käivitus vea – sulge teine progra
 - **Puudub:** jagamine korraga rohkem kui kaheks (osa saab uuesti jagada); kahe mockup'iga loo ühendamine; lohistamine (õpetaja nõue on „järjestada (nt lohistades)“ – järjestamine käib nuppudega ↑/↓).
 - **Proovimata:** Windows; puhtast kloonist käivitamine teises arvutis; vastuvõtukatse täielik läbimäng päris AI-ga ja demo kestuse mõõtmine (L35). Detailid: [docs/backlog.md](docs/backlog.md), AI piirangud: [docs/ai-piirangud.md](docs/ai-piirangud.md).
 - **Nõudmata lisa (13.10.2026):** mockup'i juures on lüliti „Veeb | Mobiil“ (vaikimisi „Veeb“) – sama mockup brauseriakna või telefoni raamis; valik ei muuda andmeid ega tee AI päringut. Kitsal ekraanil on etapiriba mitmes reas koos etappide nimedega. Ülesanne seda ei nõua; vt [docs/backlog.md](docs/backlog.md) „Nõudmata lisa“.
+- **Juhitud vestlus ühes voos (L37, 21.10.2026, pooleli):** projekti vaates on üks vestlus – sammud (idee, rollid, lood, „Millest alustada?“, kriteeriumid ja mockup, kliendi täpsustus) ilmuvad järjest ja kogu vaba tekst kirjutatakse vestluse alla ühte kasti („Saadan: …“ näitab, kuhu). Varasemad „Või kirjuta oma sõnadega“ väljad kaartidel ja eraldi ideevorm asendusid selle kastiga; „Uus vaade“ avaneb backlog'i nupust. Vt [docs/backlog.md](docs/backlog.md) L37.
 
 ## Nõuded
 

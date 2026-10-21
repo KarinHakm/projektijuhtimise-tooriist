@@ -61,10 +61,12 @@ AI-põhine projektijuhtimise tööriist · TAK25 · üks arendaja
 | L33 | Story map mitme rolli kaupa | – | Valikuline | – | Plaanitud, kui aega jääb |
 | L34 | Kõnesisend | – | Valikuline | – | Plaanitud, kui aega jääb |
 | L36 | Kriteeriumile osutades tõstetakse mockup'i element esile | – | Valikuline | – | Plaanitud, kui aega jääb |
+| L37 | Juhitud vestlus ühes voos (üks vestlus, üks tekstikast) | L | Täiendus | 1–5, 9 | Pooleli |
 
-Backlog'is on **36 lugu**:
+Backlog'is on **37 lugu**:
 - **30 kohustuslikku:** L01–L15, L17–L30 ja L35;
-- **6 valikulist:** L31–L34 ja L36 on õpetaja loetelust „Lisavõimalused (ei ole kohustuslikud)“; L16 on valikuline, sest õpetaja nõue on „järjestada (nt lohistades)“ – lohistamine on näide ja järjestamine on tehtud nuppudega ↑/↓ (L07).
+- **6 valikulist:** L31–L34 ja L36 on õpetaja loetelust „Lisavõimalused (ei ole kohustuslikud)“; L16 on valikuline, sest õpetaja nõue on „järjestada (nt lohistades)“ – lohistamine on näide ja järjestamine on tehtud nuppudega ↑/↓ (L07);
+- **1 täiendus:** L37 muudab juhitud vestluse vormi (üks vestlusvoog), uut nõuet see ei lisa – õpetaja näidisvestluse loogika (küsimused valikutega, ettepanekud kaartidena, iga vastuse lõpus järgmine samm) on ühes vestluses.
 
 ID ei ole järjekorranumber. L35 lisati hiljem ja paigutati kohe MVP joone alla.
 
@@ -649,6 +651,8 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 
 
 **Seis 06.10.2026 – jääb Pooleli:** esimene kriteerium „iga vaadet puudutav kriteerium viitab ühele mockup'i elemendile“ ei ole tagatud – seoseta kriteerium on lubatud ja saab ainult hoiatuse („pole vastet“); DoR seost ei nõua. Ülejäänud kriteeriumid on täidetud ülal kirjeldatud piirangutega (sõnapõhine kontroll, mitte tähenduse kontroll).
+
+**Muudatus 21.10.2026 (L37, kasutaja brauserikatse järel):** vihjeid oli liiga palju ja need tundusid vigadena. Nüüd: sõnapõhine „pole vastet“ ainult **seoseta** kriteeriumile (seotud kriteeriumi juures on küsimus seose õigsus – AI seosel „Kinnitan selle seose“ / „Seo ise“); interaktiivne element, mida ükski kriteerium ei nimeta, on mockup'is hall märkus „ükski kriteerium ei nimeta seda“, mitte hoiatus, ja hoiatuste arvu ei lähe. Aegunud viide ja nupu tüüp jäävad hoiatusteks. Samal päeval muudeti ka „võimalik vale AI seos“ (kriteerium ei nimeta seotud elementi sõnasõnaliselt, nt „soo“ ↔ „Sugu“) halliks märkuseks, sest eesti käänete ja alla 4-täheliste sõnade tõttu andis see valehäireid; AI seose juures on „Kinnitan selle seose“ / „Seo ise“. Kliendi täpsustuse AI juhis muudeti samal päeval: muuda ainult seda, mida täpsustus nõuab (varem nõudis juhis kriteeriumita elementide eemaldamist ja AI eemaldas välja, mida klient ei puudutanud – vt `docs/ai-piirangud.md` piirang 18); „Loobu“ järel läheb täpsustus tagasi vestluse kasti. Backlog'i ülevaatuse leidude loend on lihtsam: AI leiud (jagamine, ühendamine) üleval, sama tüüpi rakenduse kontrollid (nt „Kriteeriumid puuduvad – 6 lugu“) kokku volditud rühmana, otsustatud leiud kokku volditud (tagasivõetav jagamine/ühendamine jääb nähtavale). **Automaattestid** uuendatud (`test/consistency*.test.js`, `test/refs.test.js`, `test/ui-consistency-render.test.js`).
 ### L24 · Uue vaate loomine promptist (M)
 *Projektijuhina soovin kirjeldada uue vaate ühe lausega ja saada korraga mockup'i, loo ja kriteeriumid, et klient näeks ideed kohe.*
 - Rakenduses on väli „Kirjelda uut vaadet“.
@@ -762,6 +766,19 @@ Siin on terviklik töövoog olemas: projekt → küsimus → lood → prioriteet
 - Valik on ainult brauseri olek: see ei muuda andmeid, mockup'i versiooni ega ülevaatuse kehtivust ega tee päringut. K-sildid, seosed ja ülevaatuse kinnitus on mõlemas esituses samad. AI skeemi, API-t ega andmebaasi ei muudetud.
 - Alla 1000 px laiusel on etapiriba mitmes reas ja igal etapil on märk, number ja nimi (varem oli nimi ainult soovitatud etapil).
 - **Automaattestid:** `test/ui-mockup-device-render.test.js` (vaikimisi Veeb, sama sisu ja K-sildid mõlemas esituses, kriteeriumide kaart ja täpsustuse eelvaade). **Brauseris proovimata.**
+
+
+### L37 · Juhitud vestlus ühes voos (L, täiendus)
+*Projektijuhina soovin pidada kliendiga ühte loomulikku vestlust, kus AI ettepanekud ilmuvad loogilises järjekorras ja kogu vaba teksti kirjutan ühte kohta, et kohtumine kulgeks nagu päris vestlus ja ma ei peaks kaartide vahel otsima.*
+- Projekti vaates on vasakul üks vestlus: idee ja täpsustavad küsimused, rollid, lood, „Millest alustada?“, kriteeriumid ja mockup, kliendi täpsustus – selles järjekorras; paremal backlog.
+- Samm ilmub vestlusesse alles siis, kui selle etapini on jõutud (lukus etappe ei näidata); etapiriba, vahelejätmine ja tagasiminek jäävad.
+- Vestluse all on üks kast „Kirjuta vabalt: vastus, täpsustus või küsimus“; kasti kohal on näha, kuhu tekst läheb, ja seda saab muuta.
+- Tekst läheb sammu olemasolevasse AI päringusse; tulemus on ootel ettepanek, mis jõuab backlog'i alles kinnitusel (inimese kontroll ei muutu).
+- „Mida teeme edasi?“ on uusima ploki all; „Uus vaade“ avatakse backlog'i nupust „+ Uus vaade“.
+- Kliendi laused jäävad vestlusesse alles ka pärast värskendamist („Sina: …“) – etapp 2.
+- AI tõlgendab, millise lubatud sammu juurde kliendi lause kuulub („AI suunas: …“, kasutaja saab suunda muuta) – etapp 3.
+
+**Seis 21.10.2026 – etapp 1 tehtud (kasutajaliides; server, AI ja andmebaas muutmata – `shared/stage.js`-is muutus ainult sammude „Kirjelda idee“ ja „Sisesta kliendi täpsustus“ fookuse sihtmärk):** üks vestlus ja plokkide järkjärguline ilmumine; üks kast sihtkohaga etapi järgi (idee → pooleli otsus või järgmise etapi samm → kliendi täpsustus → „Mida teeme edasi?“), mitme võimaluse korral valitav; kaartide eraldi tekstiväljad ja ideevorm eemaldati; samm „Kirjelda idee“ ja „Sisesta kliendi täpsustus“ toovad fookusesse vestluse kasti. **Automaattestid:** `test/chat-target.test.js`, `test/ui-free-text-render.test.js`, täpsustuse ja backlog'i renderdustestid. Kasutaja esimese brauserikatse järel (21.10): ploki all ei korrata sama ploki nähtava otsuse sammu (nt „Vali lood backlog'i“); „(AI)“ samm („Küsi AI-lt kriteeriumid ja mockup“ jms) vajutab ploki ettepaneku nuppu ise – varem (L13) viis see ainult nupu juurde. Tulemus on endiselt ootel ettepanek, mis vajab kinnitust. Kui kriteeriumid salvestatakse enne mockup'i kinnitamist, näitab ootel mockup'i elemendile viitav AI seos neutraalset rida „Seotakse mockup'i elemendiga, kui kinnitad allpool mockup'i“ (varem eksitav hoiatus „Viide on mõne teise mockup'i versiooni elemendile“); päris aegunud viide jääb hoiatuseks. **Brauseris kontrollimisel.** Etapid 2 ja 3 on plaanis.
 
 ---
 

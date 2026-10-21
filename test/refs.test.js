@@ -25,14 +25,14 @@ test('puuduv või mitmene vaste annab seose puudumise (null), mitte arvatud elem
   assert.equal(resolveRef(3, MOCKUP), null); // vana numbriline kuju ei kehti
 });
 
-test('tühi viide on AI hinnang "ei puuduta vaadet" – K3 hoiatus ei kao', () => {
+test('tühi viide on AI hinnang "ei puuduta vaadet" – AI seos kinnitamiseks, sõnapõhist hoiatust pole (L37)', () => {
   assert.equal(resolveRef('', MOCKUP), -1);
   assert.equal(resolveRef('   ', MOCKUP), -1);
   const k3 = { text: "Pärast nupu 'Esita taotlus' vajutamist kuvatakse kinnitusteade 'Taotlus on esitatud'.", ref: aiRef(resolveRef('', MOCKUP), 3) };
   const r = analyzeConsistency([k3], { version: 3, components: MOCKUP.components.slice(0, 3) });
   assert.equal(r.criteria[0].link.label, 'ei puuduta vaadet');
   assert.equal(r.criteria[0].link.source, 'ai');
-  assert.deepEqual(r.criteria[0].warnings.map((w) => w.code), ['no_match']);
+  assert.deepEqual(r.criteria[0].warnings, []);
 });
 
 test('projekti 101 katse tekstiviidetega: K1 → nupp, K2 → väli (nihet ei teki)', () => {

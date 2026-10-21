@@ -115,7 +115,7 @@ export default function StoriesPanel({ projectId, rolesVersion, backlogVersion, 
         </button>
       )}
       {roles.length > 0 && !waiting && (
-        <NoteField card="stories" replaces={Boolean(proposal)} disabled={Boolean(busy)} onSend={(note) => propose(Boolean(proposal), note)} />
+        <NoteField card="stories" disabled={Boolean(busy)} onSend={(note) => propose(Boolean(proposal), note)} />
       )}
       {waiting && <AiWait label={busy === 'replace' ? 'AI koostab teistsuguseid lugusid' : 'AI koostab lugusid'} />}
       {!waiting && !proposal && aiError && <AiError error={aiError} onRetry={() => propose(false)} retrying={busy === 'propose'} />}

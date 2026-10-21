@@ -34,6 +34,15 @@ test('ilma ettepanekuta on väli "Kliendi täpsustus" ja nupp, mis on tühja tek
   assert.doesNotMatch(render({ data: { ...DATA, proposal: null }, text: 'Lisa km' }), /disabled=""[^>]*>Koosta muudatusettepanek/);
 });
 
+// L37: projekti vaates kirjutatakse täpsustus vestluse alla ühte kasti – kaardil oma välja pole, juhis ja kooskõla hoiatus jäävad.
+test('ühe vestluse režiimis (showForm=false) pole kaardil tekstivälja; juhis viitab vestluse kastile', () => {
+  const consistency = { warningCount: 2 };
+  const html = render({ data: { ...DATA, proposal: null, consistency }, showForm: false });
+  assert.doesNotMatch(html, /kliendi-tapsustus|Koosta muudatusettepanek/);
+  assert.match(html, /<p class="muted">Kirjuta kliendi soov allolevasse vestluse kasti – koostan muudatusettepaneku eelvaatega enne → pärast\.<\/p>/);
+  assert.match(html, /⚠ Kontrolli: praeguses seisus on 2 kooskõla hoiatust/);
+});
+
 test('eelvaade: loo sõnastus enne ja pärast kõrvuti; kriteeriumid eri värviga (lisandub, muutmata, eemaldub)', () => {
   const html = render();
   assert.match(html, /Enne<\/p><p>Külastajana soovin näha hindu, et saaksin valida\.<\/p>/);

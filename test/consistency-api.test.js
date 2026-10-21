@@ -74,7 +74,8 @@ test('vana vastuolu on näha: K3 "pole vastet" ja nupp "Salvesta" põhjendamata;
   const before = dump();
   const s1 = await state();
   assert.deepEqual(s1.consistency.criteria[2].warnings.map((w) => w.code), ['no_match']);
-  assert.deepEqual(s1.consistency.components[3].warnings.map((w) => w.code), ['unjustified']);
+  assert.deepEqual(s1.consistency.components[3].hints.map((w) => w.code), ['unjustified']); // märkus, mitte hoiatus (L37)
+  assert.equal(s1.consistency.warningCount, 1);
   assert.equal(s1.consistency.review, null);
   assert.deepEqual(dump(), before);
 });
@@ -201,6 +202,7 @@ test('AI viited salvestuvad koos kriteeriumidega ja saavad versiooni mockup’i 
   assert.deepEqual(refs, [1, null]);
   const s1 = await state();
   assert.equal(s1.consistency.criteria[0].link.label, '2. nupp: Esita taotlus');
-  // AI hinnang "ei puuduta vaadet" ei kustuta hoiatust
-  assert.deepEqual(s1.consistency.criteria[1].warnings.map((w) => w.code), ['no_match']);
+  // AI hinnang "ei puuduta vaadet" on seos kinnitamiseks; sõnapõhist hoiatust seotud kriteeriumile ei näidata (L37)
+  assert.deepEqual(s1.consistency.criteria[1].link, { kind: 'no_view', label: 'ei puuduta vaadet', source: 'ai' });
+  assert.deepEqual(s1.consistency.criteria[1].warnings, []);
 });

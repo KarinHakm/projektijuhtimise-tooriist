@@ -5,7 +5,8 @@ import AiError from './AiError.jsx';
 import AiWait from './AiWait.jsx';
 import MockupView, { DeviceToggle } from './MockupView.jsx';
 import DemoTag from './DemoTag.jsx';
-import { CheckWarnings, LinkLine, SelfCheckNote } from './Consistency.jsx';
+import { useChatTarget } from '../chat/bus.js';
+import { CheckHints, CheckWarnings, LinkLine, SelfCheckNote } from './Consistency.jsx';
 
 const POLL_MS = 3000;
 const STATUS_LABELS = { added: 'Lisandub', modified: 'Muutub', unchanged: 'Muutmata' };
@@ -42,7 +43,8 @@ function EditForm({ proposal, rolePhrase, busy, onApply, onCancel }) {
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function RefinementView({ data, focusStoryId = null, busy = null, error = '', notice = '', text = '', editing = false, onText, onPropose, onApply, onEdit, onCancelEdit, onReject, onOpenStory, onBackToFocus }) {
+// showForm = false (L37): täpsustus kirjutatakse vestluse alla ühte kasti, kaardil oma tekstikasti pole.
+export function RefinementView({ data, focusStoryId = null, busy = null, error = '', notice = '', text = '', editing = false, showForm = true, onText, onPropose, onApply, onEdit, onCancelEdit, onReject, onOpenStory, onBackToFocus }) {
   const { story, proposal } = data;
   const disabled = Boolean(busy);
   const [device, setDevice] = useState('web'); // „Veeb | Mobiil“: sama valik enne ja pärast; veebis on need üksteise all
@@ -59,16 +61,19 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
       {/* Teade käib otsustatud ettepaneku kohta; kui ettepanek on jälle ootel (nt tagasivõtmise järel), on see aegunud. */}
       {notice && !proposal && <p className="notice" role="status">{notice}</p>}
 
-      {!proposal && (
+      {!proposal && !showForm && (
+        <p className="muted">Kirjuta kliendi soov allolevasse vestluse kasti – koostan muudatusettepaneku eelvaatega enne → pärast.</p>
+      )}
+      {!proposal && showForm && (
         <>
           <label htmlFor="kliendi-tapsustus">Kliendi täpsustus</label>
           <textarea id="kliendi-tapsustus" rows={3} value={text} onChange={(e) => onText(e.target.value)} disabled={disabled}
             placeholder="Nt: Broneeringus peab olema näha osalejate arv." />
           <button type="button" onClick={onPropose} disabled={disabled || !text.trim()}>Koosta muudatusettepanek</button>
-          {data.consistency?.warningCount > 0 && (
-            <p className="consistency-warning">⚠ Kontrolli: praeguses seisus on {data.consistency.warningCount} kooskõla hoiatust (vt „Kriteeriumid ja mockup“).</p>
-          )}
         </>
+      )}
+      {!proposal && data.consistency?.warningCount > 0 && (
+        <p className="consistency-warning">⚠ Kontrolli: praeguses seisus on {data.consistency.warningCount} kooskõla hoiatust (vt „Kriteeriumid ja mockup“).</p>
       )}
 
       {proposal && (
@@ -98,6 +103,7 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
                       <>
                         <LinkLine link={proposal.preview.consistency.criteria[i].link} />
                         <CheckWarnings warnings={proposal.preview.consistency.criteria[i].warnings} />
+                        <CheckHints hints={proposal.preview.consistency.criteria[i].hints} />
                       </>
                     )}
                   </li>
@@ -121,7 +127,7 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
               </div>
               {proposal.preview.consistency && (
                 <p className="muted">
-                  Kooskõla pärast muudatust: kontrollimist vajavaid hoiatusi {proposal.preview.consistency.warningCount}.
+                  Kooskõla pärast muudatust: kontrollimist vajavaid hoiatusi {proposal.preview.consistency.warningCount}.{' '}
                   {proposal.demo
                     ? 'Rakendamise järel saad kriteeriume mockup\'i elementidega siduda ja uue versiooni üle vaadata.'
                     : 'Seosed pakkus AI – kontrolli need üle; rakendamise järel saad seoseid muuta ja uue versiooni üle vaadata.'}
@@ -187,13 +193,6 @@ export default function RefinementPanel({ projectId, version, onApplied }) {
 
   useEffect(() => { refresh(); }, [refresh, version]);
 
-  // „Mida teeme edasi?“ vabatekst võib täpsustuse välja eeltäita (pjt:note); AI päringu saadab kasutaja ise.
-  useEffect(() => {
-    const onNote = (e) => { if (e.detail?.card === 'refinement') setText(e.detail.note ?? ''); };
-    window.addEventListener('pjt:note', onNote);
-    return () => window.removeEventListener('pjt:note', onNote);
-  }, []);
-
   useEffect(() => {
     if (!data?.aiRunning || busy) return undefined;
     const timer = setTimeout(refresh, POLL_MS);
@@ -206,18 +205,29 @@ export default function RefinementPanel({ projectId, version, onApplied }) {
     try {
       setData(await call());
       onSuccess?.();
+      return true;
     } catch (e) {
       onError(e);
       await refresh();
+      return false;
     } finally {
       setBusy(null);
     }
   }
 
+  const waiting = busy === 'propose' || Boolean(data?.aiRunning);
+  // Vestluse kast (L37): tekst saadetakse täpsustatava loo muudatusettepanekuks; ootel ettepaneku ajal uut ei küsita.
+  const propose = (clarification) => {
+    setAiError(null);
+    setNotice('');
+    setText(clarification);
+    return run('propose', () => proposeRefinement(projectId, data.story.id, clarification), { onError: (e) => (e.code === 'in_progress' ? null : setAiError(e)) });
+  };
+  useChatTarget('refinement', Boolean(data?.story) && !data.proposal && !waiting && !busy, propose);
+
   if (loadError) return <p className="error">Täpsustust ei saanud laadida: {loadError}</p>;
   if (!data) return <p className="muted">Laadin…</p>;
 
-  const waiting = busy === 'propose' || data.aiRunning;
   const switchStory = (id) => { setStoryId(id); setText(''); setNotice(''); setEditing(false); setError(''); setAiError(null); };
   return (
     <>
@@ -230,22 +240,27 @@ export default function RefinementPanel({ projectId, version, onApplied }) {
         notice={notice}
         text={text}
         editing={editing}
+        showForm={false}
         onText={setText}
-        onPropose={() => {
-          setAiError(null);
-          setNotice('');
-          run('propose', () => proposeRefinement(projectId, data.story.id, text), { onError: (e) => (e.code === 'in_progress' ? null : setAiError(e)) });
-        }}
+        onPropose={() => propose(text)}
         onApply={(changes) => run('apply', () => applyRefinement(projectId, data.proposal.id, data.story.id, changes), {
           onSuccess: () => { setEditing(false); setText(''); setNotice('Muudatus rakendati valitud loole. Teisi lugusid ei muudetud.'); onApplied?.(); },
           onError: (e) => setError(e.message),
         })}
         onEdit={() => setEditing(true)}
         onCancelEdit={() => setEditing(false)}
-        onReject={() => run('reject', () => rejectRefinement(projectId, data.proposal.id), {
-          onSuccess: () => { setEditing(false); setNotice('Loobusid ettepanekust; lugu jäi muutmata.'); },
-          onError: (e) => setError(e.message),
-        })}
+        onReject={() => {
+          // L37: loobumise järel läheb kliendi täpsustus tagasi vestluse kasti, et seda saaks parandada ja uuesti saata.
+          const clarification = data.proposal.clarification;
+          return run('reject', () => rejectRefinement(projectId, data.proposal.id), {
+            onSuccess: () => {
+              setEditing(false);
+              setNotice('Loobusid ettepanekust; lugu jäi muutmata. Täpsustus on vestluse kastis – paranda ja saada uuesti.');
+              window.dispatchEvent(new CustomEvent('pjt:note', { detail: { card: 'refinement', note: clarification } }));
+            },
+            onError: (e) => setError(e.message),
+          });
+        }}
         onOpenStory={(id) => switchStory(id)}
         onBackToFocus={() => switchStory(null)}
       />

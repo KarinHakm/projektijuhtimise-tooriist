@@ -85,7 +85,7 @@ Koosta muudatusettepanek ainult muudetavale loole.
 - Iga kriteerium on üks lihtne tingimus, millele saab vastata jah või ei; ära kasuta hinnangulisi sõnu ega ühenda mitut tingimust.
 - "mockup": loo TÄIELIK uus mockup samade reeglitega nagu varem (tüübid heading, text, button, input, list, image, card; "items" on tühi peale list).
   Iga vaadet puudutav kriteerium peab mockup'is nähtav olema; kui täpsustus eemaldab elemendi, eemalda see ka mockup'ist.
-  Mockup'is ei tohi olla interaktiivseid elemente (nupp, sisestusväli, loend), mida ükski kriteerium ei nõua.
+- Muuda ainult seda, mida kliendi täpsustus nõuab. Ära eemalda ega muuda olemasolevaid mockup'i elemente ega kriteeriume, mida täpsustus ei puuduta – säilita nende tekst ja järjekord. Kui täpsustus palub midagi eemaldada, eemalda see.
 - Iga kriteeriumi "ref" on UUE mockup'i selle komponendi TÄPNE tekst (komponendi väli "text"), mida kriteerium puudutab, või tühi tekst "", kui kriteerium ei puuduta vaadet.
 - "otherStories": kui täpsustus mõjutab ka mõnda teist lugu, kirjuta selle kohta lühike soovitus. Teisi lugusid ise ära muuda.
 - "message" on üks lühike lause kasutajale.`,

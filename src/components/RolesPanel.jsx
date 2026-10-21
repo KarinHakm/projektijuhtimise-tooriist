@@ -132,7 +132,7 @@ export default function RolesPanel({ projectId, ready, onRolesChanged }) {
           {roles.length ? 'Paku rollid uuesti' : 'Paku rollid'}
         </button>
       )}
-      {ready && !waiting && <NoteField card="roles" replaces={Boolean(proposal)} disabled={Boolean(busy)} onSend={propose} />}
+      {ready && !waiting && <NoteField card="roles" disabled={Boolean(busy)} onSend={propose} />}
       {waiting && <AiWait label="AI koostab rolle" />}
       {!waiting && aiError && <AiError error={aiError} onRetry={() => propose()} retrying={busy === 'propose'} />}
     </div>

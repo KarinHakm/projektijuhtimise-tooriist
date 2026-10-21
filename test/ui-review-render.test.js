@@ -5,9 +5,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { importJsx } from './helpers/jsx.js';
 
 // Backlog'i ülevaatuse paneel (L27), renderdus võltsandmetega. Klõpsamist ei testita.
-let ReviewView;
+let ReviewView, groupFindings;
 before(async () => {
-  ({ ReviewView } = await importJsx('src/components/ReviewPanel.jsx'));
+  ({ ReviewView, groupFindings } = await importJsx('src/components/ReviewPanel.jsx'));
 });
 const noop = () => {};
 const actions = { apply: noop, edit: noop, cancelEdit: noop, ignore: noop };
@@ -75,4 +75,19 @@ test('AI ühendamise eelvaates on kordus eraldi: eemaldatav ja säiliv tekst; mo
   assert.match(html, /Korduseks märgitud – eemaldatakse \(1\):<\/p><ul class="review-dups"><li>Eemaldatakse: <span class="review-dups__removed">„Lehel on otsing\.“<\/span><br\/><span class="review-dups__kept">Säilib: „Lehel on otsinguväli\.“<\/span>/);
   assert.match(html, /Mockup: loo 2 mockup \(2 versiooni\) jääb ühendatud loole\./);
   assert.match(html, /<button type="button">Rakenda<\/button>/); // mockup ainult ühel lool – lubatud
+});
+
+// L37: lihtsam loend – AI leiud üleval, sama tüüpi rakenduse kontrollid kokku volditud rühmana, otsustatud leiud kokku volditud.
+const codeFinding = (type, storyId, status = 'open') => ({ ...mockupFinding(null), id: `${type}-${storyId}`, type, status, storyIds: [storyId], stories: [{ id: storyId, title: `Lugu ${storyId}` }] });
+test('leiud: AI leiud enne, kaks või enam sama tüüpi rakenduse kontrolli on üks kokku volditud rühm', () => {
+  const split = { ...codeFinding('too_large', 9), source: 'ai' };
+  const findings = [codeFinding('no_criteria', 1), codeFinding('no_criteria', 2), codeFinding('no_mockup', 1), split, codeFinding('connextra', 3, 'ignored'), { ...codeFinding('overlap', 5, 'applied'), canUndo: true }];
+  const g = groupFindings(findings);
+  assert.deepEqual(g.top.map((f) => f.id), ['too_large-9', 'no_mockup-1']); // AI leid esimesena; ühekordne kontroll eraldi
+  assert.deepEqual(g.groups.map((x) => [x.type, x.findings.length]), [['no_criteria', 2]]);
+  assert.deepEqual(g.undoable.map((f) => f.id), ['overlap-5']);
+  assert.deepEqual(g.decided.map((f) => f.id), ['connextra-3']);
+  const html = render({ id: 'r', ai: true, findings: [codeFinding('no_criteria', 1), codeFinding('no_criteria', 2), codeFinding('connextra', 3, 'ignored')] });
+  assert.match(html, /<li class="review-group"><details><summary>Kriteeriumid puuduvad – 2 lugu <span class="muted">\(rakenduse kontroll\)<\/span><\/summary>/);
+  assert.match(html, /<details><summary>Otsustatud \(1\)<\/summary>/);
 });

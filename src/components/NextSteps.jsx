@@ -1,11 +1,7 @@
-import { useState } from 'react';
-import { interpretNextStep } from '../api.js';
-import AiError from './AiError.jsx';
-
-// "Mida teeme edasi?" (L13): 1–4 järgmist sammu. Sama loend on etappide paneelis ja uusima AI väljundi kaardi lõpus.
-// Nupp viib olemasoleva tegevuseni; AI-kutse käivitub alles kaardi enda nupuga.
-// Vabatekst (projectId olemas): AI valib kasutaja teksti järgi ühe lubatud sammu; kasutaja läheb sinna ise nupuga.
-export default function NextSteps({ steps, onGo, projectId, card }) {
+// "Mida teeme edasi?" (L13): 1–4 järgmist sammu uusima AI väljundi ploki lõpus.
+// Nupp viib tegevuseni; „(AI)“ samm vajutab ploki ettepaneku nuppu ise (L37, ProjectView go) – tulemus on ootel ettepanek.
+// Oma sõnadega kirjutamine käib vestluse all ühes kastis (L37, ChatComposer).
+export default function NextSteps({ steps, onGo }) {
   if (!steps?.length) return null;
   const hasAi = steps.some((s) => s.ai);
   return (
@@ -18,58 +14,26 @@ export default function NextSteps({ steps, onGo, projectId, card }) {
           </button>
         ))}
       </div>
-      {hasAi && <p className="muted">Nupp viib tegevuse juurde. „(AI)“ tegevuse AI-kutse käivitub alles sealse nupuga.</p>}
-      {projectId && <NextStepText projectId={projectId} card={card} onGo={onGo} />}
+      {hasAi && <p className="muted">„(AI)“ nupp küsib AI-lt ettepaneku (kirjutamist vajav samm viib vestluse kasti); midagi ei rakendu enne sinu kinnitust.</p>}
     </nav>
   );
 }
 
-// Märkus läheb valitud sammu vabateksti välja (pjt:note) ja fookus sinna; täpsustuse kaardil täpsustuse välja.
+// Vestluse kasti „Mida teeme edasi?“ vastus: AI valis kasutaja teksti järgi ühe lubatud sammu. Andmeid ei muudetud;
+// nupp viib sammu juurde ja AI märkus läheb vestluse kasti selle sammu sihtkohaga (pjt:note).
+export function NextStepResult({ result, onGo }) {
+  return (
+    <div className="next-steps__result" role="status">
+      <p>{result.message}</p>
+      {result.note && <p className="muted">Märkus, mis pannakse vestluse kasti: „{result.note}“</p>}
+      <button type="button" onClick={onGo}>{result.step.label}</button>
+      <p className="muted">Midagi ei muudetud. Nupp viib sammu juurde; AI ettepaneku käivitad seal ise.</p>
+    </div>
+  );
+}
+
+// Märkus läheb vestluse kasti valitud sammu sihtkohaga (pjt:note) ja leht kerib sammu juurde.
 export function goWithNote(step, note, onGo) {
   if (note && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('pjt:note', { detail: { card: step.card, note } }));
-  const noteFocus = step.card === 'refinement' ? '#kliendi-tapsustus' : `[data-note="${step.card}"]`;
-  onGo({ card: step.card, focus: note ? noteFocus : step.focus });
-}
-
-export function NextStepTextView({ card, text, busy, error, result, onText, onSubmit, onGoResult }) {
-  const id = `next-text-${card ?? 'main'}`;
-  return (
-    <form className="next-steps__text" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-      <label htmlFor={id}>Või kirjuta oma sõnadega, mida soovid edasi teha</label>
-      <textarea id={id} rows={2} maxLength={500} value={text} onChange={(e) => onText(e.target.value)} disabled={busy} />
-      <button type="submit" className="secondary" disabled={busy || !text.trim()}>{busy ? 'AI tõlgendab…' : 'Küsi AI-lt'}</button>
-      {error && <AiError error={error} />}
-      {result && (
-        <div className="next-steps__result" role="status">
-          <p>{result.message}</p>
-          {result.note && <p className="muted">Märkus, mis kirjutatakse sammu vabateksti välja: „{result.note}“</p>}
-          <button type="button" onClick={onGoResult}>{result.step.label}</button>
-          <p className="muted">Midagi ei muudetud. Nupp viib sammu juurde; AI ettepaneku käivitad seal ise.</p>
-        </div>
-      )}
-    </form>
-  );
-}
-
-function NextStepText({ projectId, card, onGo }) {
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-  async function submit() {
-    setBusy(true);
-    setError(null);
-    setResult(null);
-    try {
-      setResult(await interpretNextStep(projectId, text));
-    } catch (e) {
-      setError(e);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <NextStepTextView card={card} text={text} busy={busy} error={error} result={result} onText={setText} onSubmit={submit}
-      onGoResult={() => { goWithNote(result.step, result.note, onGo); setResult(null); setText(''); }} />
-  );
+  onGo({ card: step.card, focus: note ? null : step.focus });
 }
