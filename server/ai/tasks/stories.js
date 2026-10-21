@@ -1,5 +1,5 @@
 // AI ülesanne: kasutajalood happy path'i järjekorras (L06), ainult projekti kinnitatud rollidega.
-import { FIELD_MAX, validateStoryText } from '../../../shared/story-format.js';
+import { FIELD_MAX, formatErrorCodes, validateStoryText } from '../../../shared/story-format.js';
 import { roleKey } from '../../roles.js';
 import { renderConversation, renderProjectState } from './clarify.js';
 import { noteBlock } from '../note.js';
@@ -83,7 +83,8 @@ export function checkStories(data, roleNames) {
   if (!confirmed.has(roleKey(data.primaryRole))) problems.push('peamine roll ei ole kinnitatud');
   data.stories.forEach((s, i) => {
     if (!confirmed.has(roleKey(s.role))) problems.push(`lugu ${i + 1}: kinnitamata roll`);
-    if (validateStoryText(s).errors.length) problems.push(`lugu ${i + 1}: vorming`);
+    const formErrors = validateStoryText(s).errors;
+    if (formErrors.length) problems.push(`lugu ${i + 1}: vorming (${formatErrorCodes(formErrors)})`);
   });
   const primary = roleKey(data.primaryRole);
   const firstOther = data.stories.findIndex((s) => roleKey(s.role) !== primary);

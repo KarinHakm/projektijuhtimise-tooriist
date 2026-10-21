@@ -33,23 +33,27 @@ export function validateStoryText(fields) {
   };
   const errors = [];
   const warnings = [];
-  const error = (field, message) => errors.push({ field, message });
+  // code = fikseeritud reegli kood (ohutu logida, AI vastuse sisu ei sisalda).
+  const error = (field, message, code) => errors.push({ field, message, code });
 
   for (const field of ['rolePhrase', 'want', 'soThat']) {
-    if (!value[field]) error(field, `${LABELS[field]} ei tohi olla tühi.`);
-    else if (value[field].length > FIELD_MAX[field]) error(field, `${LABELS[field]} võib olla kuni ${FIELD_MAX[field]} märki.`);
+    if (!value[field]) error(field, `${LABELS[field]} ei tohi olla tühi.`, 'empty');
+    else if (value[field].length > FIELD_MAX[field]) error(field, `${LABELS[field]} võib olla kuni ${FIELD_MAX[field]} märki.`, 'too_long');
   }
   if (value.rolePhrase) {
     // L37: täpsustav kõrvallause pärast koma on lubatud (käsitsi lisatud roll „kaaslane, kes … jälgib“).
-    if (!/na$/iu.test(value.rolePhrase.split(',')[0].trim())) error('rolePhrase', 'Roll peab olema olevas käändes (nt „Külastajana“).');
-    if (/(^|\s)soovin(\s|$)/iu.test(value.rolePhrase)) error('rolePhrase', 'Rolli väljas ei tohi olla sõna „soovin“ – see lisatakse automaatselt.');
+    if (!/na$/iu.test(value.rolePhrase.split(',')[0].trim())) error('rolePhrase', 'Roll peab olema olevas käändes (nt „Külastajana“).', 'essive');
+    if (/(^|\s)soovin(\s|$)/iu.test(value.rolePhrase)) error('rolePhrase', 'Rolli väljas ei tohi olla sõna „soovin“ – see lisatakse automaatselt.', 'has_soovin');
   }
   // Ka kirjavahemärgiga kuju („soovin:“, „et,“) – vormi sildid „soovin …“ ja „et …“ võivad selleni viia.
-  if (/^soovin([\s:,;.–-]|$)/iu.test(value.want)) error('want', 'Tegevus ei tohi alata sõnaga „soovin“ – see lisatakse automaatselt.');
-  if (/^et([\s:,;.–-]|$)/iu.test(value.soThat)) error('soThat', 'Kasu ei tohi alata sõnaga „et“ – see lisatakse automaatselt.');
+  if (/^soovin([\s:,;.–-]|$)/iu.test(value.want)) error('want', 'Tegevus ei tohi alata sõnaga „soovin“ – see lisatakse automaatselt.', 'starts_soovin');
+  if (/^et([\s:,;.–-]|$)/iu.test(value.soThat)) error('soThat', 'Kasu ei tohi alata sõnaga „et“ – see lisatakse automaatselt.', 'starts_et');
 
   if (/(^|[\s,])et(\s|$)/iu.test(value.want)) {
     warnings.push({ field: 'want', message: 'Tegevus sisaldab eraldi „et“-kõrvallauset; kasu kuulub välja „Kasu“.' });
   }
   return { value, errors, warnings };
 }
+
+// Vormivigade ohutu kokkuvõte AI logi jaoks (L37), nt "rolePhrase:essive, want:too_long" – ainult väljade nimed ja koodid.
+export const formatErrorCodes = (errors) => [...new Set(errors.map((e) => `${e.field}:${e.code}`))].join(', ');

@@ -1,7 +1,7 @@
 // AI ülesanne: uus vaade promptist (L24). Ühe vastusega mockup, sellega seotud kasutajalugu ja vastuvõtukriteeriumid.
 // Midagi ei salvestata enne kasutaja kinnitust (routes/views.js). Mockup on komponentide loend (L10), HTML-i ei võeta.
 import { CRITERION_MAX, cleanCriterion } from '../../../shared/criteria-check.js';
-import { FIELD_MAX, validateStoryText } from '../../../shared/story-format.js';
+import { FIELD_MAX, formatErrorCodes, validateStoryText } from '../../../shared/story-format.js';
 import { checkMockup, MOCKUP_SCHEMA } from './criteria.js';
 import { renderConversation, renderProjectState } from './clarify.js';
 
@@ -83,7 +83,8 @@ Koosta kirjelduse põhjal üks uus vaade.
 // Reeglid, mida skeem üksi ei taga. Tagastab probleemide loendi (tühi = korras).
 export function checkNewView(data) {
   const problems = [];
-  if (validateStoryText(data.story).errors.length) problems.push('loo vorming');
+  const formErrors = validateStoryText(data.story).errors;
+  if (formErrors.length) problems.push(`loo vorming (${formatErrorCodes(formErrors)})`);
   const keys = data.criteria.map((c) => cleanCriterion(c.text).toLocaleLowerCase('et'));
   if (new Set(keys).size !== keys.length) problems.push('korduv kriteerium');
   return [...problems, ...checkMockup(data.mockup)];

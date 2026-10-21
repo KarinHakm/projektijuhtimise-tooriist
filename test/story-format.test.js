@@ -76,3 +76,10 @@ test('roll olevas käändes võib sisaldada kõrvallauset pärast koma', () => {
   assert.deepEqual(errorFields({ ...EXAMPLE, rolePhrase: 'Potentsiaalse liikmena' }), []);
   assert.deepEqual(errorFields({ ...EXAMPLE, rolePhrase: 'Kaaslane, kes jälgib' }), ['rolePhrase']);
 });
+
+// L37: AI logi jaoks ohutu vormivigade kokkuvõte – väljade nimed ja fikseeritud koodid, mitte tekst.
+test('vormivigade koodid: väli ja reegel, ilma sisuta', async () => {
+  const { formatErrorCodes } = await import('../shared/story-format.js');
+  const { errors } = validateStoryText({ rolePhrase: 'Kaaslane kes jälgib', want: 'soovin näha', soThat: '' });
+  assert.equal(formatErrorCodes(errors), 'soThat:empty, rolePhrase:essive, want:starts_soovin');
+});
