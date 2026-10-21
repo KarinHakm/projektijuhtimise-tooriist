@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getProject, getStage, setActiveStage, skipStage } from '../api.js';
 import { CARDS } from '../../shared/stage.js';
-import { stepsForBlock, visibleBlocks } from '../chat/target.js';
+import { startsOfferedAbove, stepsForBlock, visibleBlocks } from '../chat/target.js';
 import { goToStep } from '../stage/navigate.js';
 import { splitDemoName } from '../demo/name.js';
 import DemoTag from '../components/DemoTag.jsx';
@@ -72,17 +72,19 @@ export default function ProjectView() {
       goToStep({ card: step.card, focus: null });
       return;
     }
-    goToStep(step);
-    if (step.ai && step.focus?.startsWith('[data-step=')) {
-      const button = document.getElementById(CARDS[step.card])?.querySelector(step.focus);
-      if (button?.matches('button:not(:disabled)')) button.click();
-    }
+    const button = step.ai && step.focus?.startsWith('[data-step=') ? document.getElementById(CARDS[step.card])?.querySelector(step.focus) : null;
+    // Peidetud algusnupu (startsOfferedAbove) korral keritakse ploki juurde.
+    goToStep(button && !button.offsetParent ? { card: step.card, focus: null } : step);
+    if (button?.matches('button:not(:disabled)')) button.click();
   }, []);
 
   // L13: "Mida teeme edasi?" (1–4 sammu) iga nähtava AI väljundi ploki lõpus – server annab sammud kaardi kaupa
   // (stepsByCard). Vanade, juba vastatud vestlussõnumite ega backlog'i ülevaatuse juures plokki ei ole.
   // L37: sama ploki nähtava otsuse juurde viivat sammu ei korrata (stepsForBlock).
   const stepsAfter = (card) => stage?.stepsByCard?.[card] && <NextSteps steps={stepsForBlock(card, stage.stepsByCard[card])} onGo={go} />;
+  // L37: ploki algusnupp peidetakse, kui sama samm on juba teise ploki „Mida teeme edasi?“ all (üks nupp ühe tegevuse kohta).
+  const hiddenStarts = startsOfferedAbove(Object.fromEntries(Object.entries(stage?.stepsByCard ?? {}).map(([card, steps]) => [card, stepsForBlock(card, steps)])));
+  const blockClass = (card) => ['chat-block', ...(hiddenStarts[card] ?? []).map((n) => `chat-block--hide-${n}`)].join(' ');
 
   // L37: vestluse plokk ilmub alles siis, kui selle etapini on jõutud. Uue ploki ilmumisel (mitte avamisel) keritakse sinna.
   const blocks = visibleBlocks(stage);
@@ -156,14 +158,14 @@ export default function ProjectView() {
                 {stepsAfter('conversation')}
               </section>
               {shown('roles') && (
-                <section className="chat-block" id={CARDS.roles} tabIndex={-1} aria-labelledby="plokk-rollid">
+                <section className={blockClass('roles')} id={CARDS.roles} tabIndex={-1} aria-labelledby="plokk-rollid">
                   <BlockHead id="plokk-rollid" title="Rollid">Pakun kasutajarollid. Vali sobivad, lisa puuduvad või eemalda üleliigsed.</BlockHead>
                   <RolesPanel projectId={project.id} ready={phase === 'done'} onRolesChanged={() => setRolesVersion((v) => v + 1)} />
                   {stepsAfter('roles')}
                 </section>
               )}
               {shown('stories') && (
-                <section className="chat-block" id={CARDS.stories} tabIndex={-1} aria-labelledby="plokk-lood">
+                <section className={blockClass('stories')} id={CARDS.stories} tabIndex={-1} aria-labelledby="plokk-lood">
                   <BlockHead id="plokk-lood" title="Kasutajalood">Pakun lood põhitöövoo (happy path) järjekorras. Vali, millised lähevad backlog'i.</BlockHead>
                   <StoriesPanel
                     projectId={project.id}
@@ -175,7 +177,7 @@ export default function ProjectView() {
                 </section>
               )}
               {shown('priority') && (
-                <section className="chat-block" id={CARDS.priority} tabIndex={-1} aria-labelledby="plokk-prioriteet">
+                <section className={blockClass('priority')} id={CARDS.priority} tabIndex={-1} aria-labelledby="plokk-prioriteet">
                   <BlockHead id="plokk-prioriteet" title="Millest alustada?">Milline lugu on kliendile kõige olulisem? Pakun põhjendatud soovituse.</BlockHead>
                   <PriorityPanel
                     projectId={project.id}
@@ -186,7 +188,7 @@ export default function ProjectView() {
                 </section>
               )}
               {shown('criteria') && (
-                <section className="chat-block" id={CARDS.criteria} tabIndex={-1} aria-labelledby="plokk-kriteeriumid">
+                <section className={blockClass('criteria')} id={CARDS.criteria} tabIndex={-1} aria-labelledby="plokk-kriteeriumid">
                   <BlockHead id="plokk-kriteeriumid" title="Kriteeriumid ja mockup">Pakun valitud loole vastuvõtukriteeriumid ja mockup'i. Kinnita, muuda või eemalda.</BlockHead>
                   <CriteriaPanel projectId={project.id} focusVersion={backlogVersion} onConsistencyChanged={() => setConsistencyVersion((v) => v + 1)} />
                   {stepsAfter('criteria')}

@@ -117,7 +117,8 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
 
   return (
     <div className="criteria-mockup">
-      <p><span className="tag tag--focus">Alustame sellest</span> {story.title}</p>
+      {/* L37: alustamise loo silt on „Millest alustada?“ plokis; siin ainult lugu, millele kriteeriumid ja mockup käivad. */}
+      <p><strong>Lugu:</strong> {story.title}</p>
       <div className={`criteria-mockup__columns${device === 'web' ? ' criteria-mockup__columns--stacked' : ''}`}>
         <section aria-labelledby="criteria-title">
           <h3 id="criteria-title">Vastuvõtukriteeriumid</h3>

@@ -49,3 +49,17 @@ const IN_BLOCK = new Set(['answer-questions', 'retry-conversation']);
 export function stepsForBlock(card, steps) {
   return (steps ?? []).filter((s) => !(s.card === card && (s.id.startsWith('review-') || IN_BLOCK.has(s.id))));
 }
+
+// Ploki algusnupp (nt „Paku lugusid“), mille sama sammu („Küsi AI-lt lugude ettepanek“) pakub juba mõne teise ploki
+// „Mida teeme edasi?“ – vestluses on see topelt, seega ploki nupp peidetakse. shownSteps = { card: [nähtavad sammud] }.
+// Tagastab { card: [peidetava nupu data-step nimed] }.
+export function startsOfferedAbove(shownSteps) {
+  const hidden = {};
+  for (const [from, steps] of Object.entries(shownSteps)) {
+    for (const s of steps ?? []) {
+      const name = s.ai && s.card !== from ? s.focus?.match(/^\[data-step="([\w-]+-propose)"\]$/)?.[1] : null;
+      if (name) hidden[s.card] = [...new Set([...(hidden[s.card] ?? []), name])];
+    }
+  }
+  return hidden;
+}

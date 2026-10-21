@@ -39,3 +39,13 @@ test('täpsustuse AI juhis: muuda ainult seda, mida täpsustus nõuab; ära eema
   assert.match(text, /Muuda ainult seda, mida kliendi täpsustus nõuab\. Ära eemalda ega muuda olemasolevaid mockup'i elemente ega kriteeriume, mida täpsustus ei puuduta/);
   assert.doesNotMatch(text, /mida ükski kriteerium ei nõua/);
 });
+
+// L37: täpsustavate küsimuste juhis – mittevälistavad variandid (nt makseviisid) on mitmikvalik.
+test('täpsustavate küsimuste AI juhis nõuab mittevälistavate variantide korral mitmikvalikut (mõlemas voorus)', async () => {
+  const { buildClarifyMessages } = await import('../server/ai/tasks/clarify.js');
+  const context = { project: { name: 'P', stage: { lastDone: null, next: null } }, conversation: [], stories: [] };
+  for (const asked of [0, 2]) {
+    const text = buildClarifyMessages(context, { asked }).map((m) => m.content).join('\n');
+    assert.match(text, /Kui vastusevariandid ei välista üksteist \(nt makseviisid, funktsioonid, kanalid\), on küsimus mitmikvalik \(multiSelect = true\)/, String(asked));
+  }
+});

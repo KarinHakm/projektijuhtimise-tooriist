@@ -83,16 +83,21 @@ export function renderProjectState(context) {
   return lines.join('\n');
 }
 
+// L37: AI märkis vahel üksteist mittevälistavad variandid (nt makseviisid) ühe valikuga küsimuseks.
+const MULTI_RULE = '- Kui vastusevariandid ei välista üksteist (nt makseviisid, funktsioonid, kanalid), on küsimus mitmikvalik (multiSelect = true). Ühe valikuga küsimus (multiSelect = false) ainult siis, kui variandid välistavad üksteist (nt jah / ei / otsustame hiljem).';
+
 export function buildClarifyMessages(context, { asked }) {
   const firstRound = asked === 0;
   const remaining = MAX_QUESTIONS - asked;
   const task = firstRound
     ? `Idee on umbmäärane. Enne kasutajalugude pakkumist esita 1–${MAX_QUESTIONS} täpsustavat küsimust.
 - Esimene küsimus on: kes on rakenduse kasutajad (mitmikvalik, multiSelect = true).
-- "summary" jäta tühjaks.`
+- "summary" jäta tühjaks.
+${MULTI_RULE}`
     : `Kasutaja on vastanud. Kui teave on lugude pakkumiseks piisav, jäta "questions" tühjaks ja kirjuta "summary":
 2–4 lauset, mis võtavad kokku idee ja KÕIK kasutaja vastused, sh vabalt kirjutatud vastused.
-Kui midagi olulist on veel ebaselge, võid esitada kuni ${remaining} lisaküsimust; siis jäta "summary" tühjaks.`;
+Kui midagi olulist on veel ebaselge, võid esitada kuni ${remaining} lisaküsimust; siis jäta "summary" tühjaks.
+${MULTI_RULE}`;
 
   return [
     { role: 'system', content: SYSTEM },

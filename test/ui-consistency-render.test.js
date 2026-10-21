@@ -117,3 +117,10 @@ test('AI seose nimevihje on hall märkus kriteeriumi juures', () => {
   assert.match(html, /<p class="consistency-hint">AI seos – kriteerium ei nimeta elementi „Sugu“ sõnasõnaliselt; kinnita või vali ise\.<\/p>/);
   assert.doesNotMatch(html, /Võimalik probleem/);
 });
+
+// L37: alustamise loo silt on ainult „Millest alustada?“ plokis; kriteeriumide plokis on lihtne rida „Lugu: …“.
+test('kriteeriumide ja mockup’i plokis on „Lugu: …“, mitte alustamise loo silt', () => {
+  const html = render();
+  assert.match(html, /<p><strong>Lugu:<\/strong> Lugu<\/p>/);
+  assert.doesNotMatch(html, /tag--focus/);
+});

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeStage } from '../shared/stage.js';
-import { pickTarget, preferredTarget, stepsForBlock, visibleBlocks } from '../src/chat/target.js';
+import { pickTarget, preferredTarget, startsOfferedAbove, stepsForBlock, visibleBlocks } from '../src/chat/target.js';
 
 // L37: ühe vestluse plokid ja vestluse kasti sihtkoht etapiseisu järgi (päringuid pole).
 const NO_PENDING = { roles: false, stories: false, priority: false, criteria: false, mockup: false, refinement: false };
@@ -52,4 +52,12 @@ test('ploki all ei korrata sama ploki nähtava otsuse sammu; sammud edasi ja tei
   assert.deepEqual(stepsForBlock('criteria', built.stepsByCard.criteria).map((s) => s.id), built.stepsByCard.criteria.map((s) => s.id)); // „Sisesta kliendi täpsustus“ jääb
   assert.deepEqual(stepsForBlock('roles', [{ id: 'review-stories', card: 'stories' }]).map((s) => s.id), ['review-stories']); // teise ploki otsus jääb
   assert.deepEqual(stepsForBlock('roles', undefined), []);
+});
+
+test('järgmise ploki algusnupp peidetakse, kui sama samm on teise ploki „Mida teeme edasi?“ all', () => {
+  const st = computeStage(facts({ conversation: 'done', roles: 2, latestAi: { kind: 'roles' } }));
+  const shown = Object.fromEntries(Object.entries(st.stepsByCard).map(([c, steps]) => [c, stepsForBlock(c, steps)]));
+  assert.deepEqual(startsOfferedAbove(shown), { stories: ['stories-propose'] }); // „Paku lugusid“ peidus
+  assert.deepEqual(startsOfferedAbove({ stories: [{ id: 'propose-stories', card: 'stories', ai: true, focus: '[data-step="stories-propose"]' }] }), {}); // oma ploki samm ei peida
+  assert.deepEqual(startsOfferedAbove({ roles: [{ id: 'refine', card: 'refinement', ai: true, focus: '#chat-text' }] }), {});
 });

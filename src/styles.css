@@ -218,7 +218,8 @@ button.secondary { color: var(--accent); background: var(--card); border: 1px so
 @keyframes backlog-moved { from { background: var(--warning-soft); } to { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .backlog__item--moved { animation: none; background: var(--warning-soft); } }
 .tag--demo { color: var(--mvp); background: var(--mvp-soft); border-color: var(--mvp-border); font-weight: 600; }
-.tag--focus { margin: 0 0.25rem 0 0; color: var(--warning-text); background: var(--warning-soft); border-color: var(--warning-border); font-weight: 600; }
+/* Alustamise loo silt: aktsentvärv, et see ei meenutaks hoiatust (L37). */
+.tag--focus { margin: 0 0.25rem 0 0; color: var(--accent); background: var(--accent-soft); border-color: var(--accent-border); font-weight: 600; }
 .priority h3 { font-size: 1rem; margin: 0 0 0.5rem; }
 .priority__focus { margin: 0 0 0.75rem; }
 .priority-proposal { border: 1px dashed var(--accent); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
@@ -435,6 +436,9 @@ button.stage__button:hover { border-color: var(--accent); }
 .chat-block { padding: 0.75rem 0; border-top: 1px solid var(--border); scroll-margin-top: calc(var(--project-header-h, 0px) + 0.75rem); }
 .chat-block:first-of-type { border-top: 0; padding-top: 0; }
 .chat-block:focus { outline: none; }
+.chat-block--hide-roles-propose [data-step="roles-propose"], .chat-block--hide-stories-propose [data-step="stories-propose"],
+.chat-block--hide-priority-propose [data-step="priority-propose"], .chat-block--hide-criteria-propose [data-step="criteria-propose"],
+.chat-block--hide-mockup-propose [data-step="mockup-propose"] { display: none; }
 .chat-block__head { margin-bottom: 0.5rem; }
 .chat-block__head h3 { margin: 0.1rem 0 0.2rem; font-size: 1rem; }
 .chat-block__head p { margin: 0; }
