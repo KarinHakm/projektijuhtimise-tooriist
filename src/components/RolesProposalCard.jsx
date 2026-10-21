@@ -1,4 +1,4 @@
-import { canConfirm, ROLE_NAME_MAX, ROLES_MAX, selectedCount } from '../roles/selection.js';
+import { canConfirm, ROLE_NAME_MAX, ROLES_MAX, roleNameHint, selectedCount } from '../roles/selection.js';
 
 // AI rollide ettepanek (ainult kuvamine; olek on RolesPanel'is). Ettepanek on andmebaasis
 // olekuga "pending"; kinnitatud rollideks saab see alles nupuga "Kinnita rollid".
@@ -48,6 +48,7 @@ export default function RolesProposalCard({
         />
         <button type="submit" disabled={Boolean(busy)}>Lisa</button>
       </form>
+      {!addError && roleNameHint(newRole) && <p className="muted">{roleNameHint(newRole)}</p>}
       {addError && <p className="error">{addError}</p>}
 
       {error && <p className="error">{error}</p>}

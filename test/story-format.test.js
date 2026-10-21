@@ -69,3 +69,10 @@ test('server ja brauser kasutavad sama vormingu moodulit', async () => {
     assert.match(readFileSync(file, 'utf8'), /shared\/story-format\.js/, file);
   }
 });
+
+// L37: rolli täpsustus pärast koma on lubatud; olev kääne peab olema enne koma.
+test('roll olevas käändes võib sisaldada kõrvallauset pärast koma', () => {
+  assert.deepEqual(errorFields({ ...EXAMPLE, rolePhrase: 'Kaaslasena, kes trennis ei osale, aga jälgib' }), []);
+  assert.deepEqual(errorFields({ ...EXAMPLE, rolePhrase: 'Potentsiaalse liikmena' }), []);
+  assert.deepEqual(errorFields({ ...EXAMPLE, rolePhrase: 'Kaaslane, kes jälgib' }), ['rolePhrase']);
+});

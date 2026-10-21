@@ -1,7 +1,8 @@
 // Kasutajaloo tekstivälju ja pealkirja reegel. Kasutavad nii server kui ka brauser, et reeglid ei läheks lahku.
 //
 // Väljad:
-//   rolePhrase – roll olevas käändes, nt "Potentsiaalse liikmena" (lõpeb "-na", ei sisalda sõna "soovin")
+//   rolePhrase – roll olevas käändes, nt "Potentsiaalse liikmena" (osa enne esimest koma lõpeb "-na", nt ka
+//     "Kaaslasena, kes trennis ei osale"; ei sisalda sõna "soovin")
 //   want       – tegevus ILMA algava "soovin"-ita, nt "näha liikmepakette ja nende hindu"
 //   soThat     – kasu ILMA algava "et"-ita, nt "saaksin valida endale sobiva paketi"
 // Pealkiri (ainus reegel): "{RolePhrase} soovin {want}, et {soThat}."
@@ -39,7 +40,8 @@ export function validateStoryText(fields) {
     else if (value[field].length > FIELD_MAX[field]) error(field, `${LABELS[field]} võib olla kuni ${FIELD_MAX[field]} märki.`);
   }
   if (value.rolePhrase) {
-    if (!/na$/iu.test(value.rolePhrase)) error('rolePhrase', 'Roll peab olema olevas käändes (nt „Külastajana“).');
+    // L37: täpsustav kõrvallause pärast koma on lubatud (käsitsi lisatud roll „kaaslane, kes … jälgib“).
+    if (!/na$/iu.test(value.rolePhrase.split(',')[0].trim())) error('rolePhrase', 'Roll peab olema olevas käändes (nt „Külastajana“).');
     if (/(^|\s)soovin(\s|$)/iu.test(value.rolePhrase)) error('rolePhrase', 'Rolli väljas ei tohi olla sõna „soovin“ – see lisatakse automaatselt.');
   }
   // Ka kirjavahemärgiga kuju („soovin:“, „et,“) – vormi sildid „soovin …“ ja „et …“ võivad selleni viia.

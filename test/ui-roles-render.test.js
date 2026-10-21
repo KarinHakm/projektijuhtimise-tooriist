@@ -84,3 +84,11 @@ test('serveri veateade ja lisamise viga kuvatakse', () => {
   assert.match(html, /juba rakendatud või tagasi lükatud/);
   assert.match(html, /on juba loendis/);
 });
+
+// L37: pika või komaga rolli nime juures on vihje lühikese nime kohta (lisamist see ei keela).
+test('pika rolli nime juures on vihje lühikese nime kohta; lühikese nime juures mitte', () => {
+  assert.match(render({ newRole: 'kaaslane, kes osa ei võta, aga jälgib' }), /<p class="muted">Soovitus: kasuta lühikest rolli nime \(nt „Pealtvaataja“\)\./);
+  assert.match(render({ newRole: 'üks kaks kolm neli' }), /Soovitus: kasuta lühikest rolli nime/);
+  assert.doesNotMatch(render({ newRole: 'Potentsiaalne liige' }), /Soovitus: kasuta lühikest/);
+  assert.doesNotMatch(render({ newRole: '' }), /Soovitus: kasuta lühikest/);
+});

@@ -25,6 +25,13 @@ export function addManualRole(items, rawName) {
   return { items: [...items, { key, name, description: '', source: 'manual', checked: true }] };
 }
 
+// L37: vihje (ei keela): pikk roll („kaaslane, kes osa ei võta, aga jälgib“) teeb lood kohmakaks – soovita lühikest nime.
+export function roleNameHint(rawName) {
+  const name = rawName.trim();
+  if (!name || (!name.includes(',') && name.split(/\s+/).length <= 3)) return '';
+  return 'Soovitus: kasuta lühikest rolli nime (nt „Pealtvaataja“). Täpsustuse saad kirjutada loo kasu juurde.';
+}
+
 export const selectedCount = (items) => items.filter((i) => i.checked).length;
 
 export const canConfirm = (items) => selectedCount(items) >= 1 && selectedCount(items) <= ROLES_MAX;
