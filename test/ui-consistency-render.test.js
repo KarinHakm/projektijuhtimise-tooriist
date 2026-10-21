@@ -38,11 +38,11 @@ test('seos, kontrollimist vajav hoiatus ja viga on eristatavad', () => {
   assert.match(html, /<p class="error" role="alert">Valitud elementi ei ole kehtivas mockup’is\.<\/p>/);
 });
 
-test('AI seose juures on nupp "Kinnitan selle seose"; seoseta kriteeriumi juures seda pole', () => {
+// L37: AI seosed kinnitatakse ühe nupuga loendi all; kriteeriumi juures nuppu pole.
+test('AI seosed: üks nupp „Kinnitan kõik AI seosed (n)“ loendi all; kriteeriumi juures eraldi nuppu pole', () => {
   const html = render();
-  const items = [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => m[1]);
-  assert.match(items[0], /Seotud: 3\. nupp: Esita taotlus <span class="tag">AI<\/span><\/p><button type="button" class="secondary link-confirm">Kinnitan selle seose<\/button>/);
-  assert.doesNotMatch(items[1], /Kinnitan selle seose/);
+  assert.doesNotMatch(html, /Kinnitan selle seose/);
+  assert.match(html, /<\/ol><button type="button" class="secondary link-confirm">Kinnitan kõik AI seosed \(1\)<\/button>/);
 });
 
 test('kasutaja kinnitatud seosel nuppu pole ja allikas on "sina"', () => {
@@ -50,7 +50,7 @@ test('kasutaja kinnitatud seosel nuppu pole ja allikas on "sina"', () => {
   const d = { ...data(null), criteria: userCriteria, consistency: { ...analyzeConsistency(userCriteria, MOCKUP), fingerprint: 'x', review: null } };
   const html = render({ data: d });
   assert.match(html, /Seotud: 3\. nupp: Esita taotlus <span class="tag">sina<\/span>/);
-  assert.doesNotMatch(html, /Kinnitan selle seose/);
+  assert.doesNotMatch(html, /Kinnitan kõik AI seosed/); // kinnitamata AI seoseid pole
 });
 
 test('mockup’is on seotud kriteeriumi märgis; elemendi „ükski kriteerium ei nimeta seda“ on hall märkus, mitte hoiatus', () => {

@@ -68,7 +68,7 @@ export function CriterionRow({ item, number, busy, onAccept, onEdit, onRemove, i
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
-export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', initialDevice = 'web', onNewText, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
+export function CriteriaView({ data, items, busy = null, error = '', mockupError = '', linkError = '', newText = '', addError = '', restoreNotice = '', initialDevice = 'web', onNewText, onConfirmLinks, onAdd, onAccept, onEdit, onRemove, onSave, onPropose, onAcceptMockup, onRejectMockup, onProposeMockup, onLink, onReview, onRestore }) {
   const { story, criteria, mockup, criteriaProposal, mockupProposal } = data;
   // „Veeb | Mobiil“: üks valik kõigile selle kaardi mockup'idele; veebis saab mockup kogu kaardi laiuse.
   const [device, setDevice] = useState(initialDevice);
@@ -80,10 +80,15 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
     ...[mockup, ...(data.mockupVersions ?? [])].filter(Boolean).map((m) => [m.version, 1]),
     ...extraViews.flatMap((v) => [v.mockup, ...v.versions].map((m) => [m.version, v.viewNo])),
   ]);
-  const elementValue = (ref) => {
+  // L37: kinnitamata AI seosed (ootel mockup'i seosed mitte – need saavad versiooni mockup'i kinnitamisel).
+  const aiLinks = criteria
+    .map((c, i) => ({ c, check: data.consistency?.criteria[i] }))
+    .filter(({ c, check }) => check?.link?.source === 'ai' && !(mockupProposal && c.ref?.kind === 'element' && c.ref.version == null))
+    .map(({ c }) => ({ id: c.id, value: c.ref?.kind === 'element' ? elementValue(c.ref) : 'no_view' }));
+  function elementValue(ref) {
     const viewNo = viewOfVersion.get(ref.version) ?? 1;
     return viewNo === 1 ? `element-${ref.index}` : `element-${viewNo}-${ref.index}`;
-  };
+  }
   // Ülevaatuse tekst mitme vaate korral: kõik arvestatud versioonid.
   const versionsLabel = extraViews.length && mockup
     ? [`vaate 1 v${mockup.version}`, ...extraViews.map((v) => `vaate ${v.viewNo} v${v.mockup.version}`)].join(', ')
@@ -136,11 +141,6 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
                     {awaitingMockup
                       ? <p className="consistency-link consistency-link--none">Seotakse mockup'i elemendiga, kui kinnitad allpool mockup'i.</p>
                       : <LinkLine link={check?.link ?? null} />}
-                    {check?.link?.source === 'ai' && (
-                      <button type="button" className="secondary link-confirm" disabled={disabled} onClick={() => onLink(c.id, value)}>
-                        Kinnitan selle seose
-                      </button>
-                    )}
                     {check && <CheckWarnings warnings={awaitingMockup ? check.warnings.filter((w) => w.code !== 'stale_ref') : check.warnings} />}
                     {check && <CheckHints hints={check.hints} />}
                     {mockup && (
@@ -165,6 +165,12 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
                 );
               })}
             </ol>
+          )}
+          {/* L37: AI seosed kinnitatakse ühe nupuga (varem nupp iga kriteeriumi juures); vale seose parandab „Seo ise“. */}
+          {aiLinks.length > 0 && (
+            <button type="button" className="secondary link-confirm" disabled={disabled} onClick={() => onConfirmLinks(aiLinks)}>
+              Kinnitan kõik AI seosed ({aiLinks.length})
+            </button>
           )}
           {linkError && <p className="error" role="alert">{linkError}</p>}
           {criteriaProposal && (
@@ -246,6 +252,12 @@ export function CriteriaView({ data, items, busy = null, error = '', mockupError
 }
 
 // Kriteeriumid ja mockup alustamise loole (L09, L10). focusVersion muutub, kui alustamise lugu muutub.
+// L22: „element-<indeks>“ = vaade 1, „element-<vaade>-<indeks>“ = lisavaade → [kind, index, view] seose päringuks.
+function linkArgs(value) {
+  const m = value.match(/^element-(?:(\d+)-)?(\d+)$/);
+  return m ? ['element', Number(m[2]), m[1] ? Number(m[1]) : 1] : [value, undefined, 1];
+}
+
 export default function CriteriaPanel({ projectId, focusVersion, onConsistencyChanged }) {
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -335,10 +347,16 @@ export default function CriteriaPanel({ projectId, focusVersion, onConsistencyCh
         onProposeMockup={() => { setMockupError(''); run('mockup-propose', () => proposeMockup(projectId), (e) => setMockupError(e.message)); }}
         onLink={(criterionId, value) => {
           setLinkError('');
-          // L22: „element-<indeks>“ = vaade 1, „element-<vaade>-<indeks>“ = lisavaade.
-          const m = value.match(/^element-(?:(\d+)-)?(\d+)$/);
-          const [kind, index, view] = m ? ['element', Number(m[2]), m[1] ? Number(m[1]) : 1] : [value, undefined, 1];
-          run('link', () => linkCriterion(projectId, criterionId, kind, index, view), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
+          run('link', () => linkCriterion(projectId, criterionId, ...linkArgs(value)), (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
+        }}
+        onConfirmLinks={(links) => {
+          // L37: kõik AI seosed järjest; viimane vastus annab värske seisu.
+          setLinkError('');
+          run('link', async () => {
+            let result;
+            for (const l of links) result = await linkCriterion(projectId, l.id, ...linkArgs(l.value));
+            return result;
+          }, (e) => setLinkError(e.message)).then(() => onConsistencyChanged?.());
         }}
         restoreNotice={restoreNotice}
         onRestore={(version) => {
