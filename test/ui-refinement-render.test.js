@@ -34,13 +34,13 @@ test('ilma ettepanekuta on väli "Kliendi täpsustus" ja nupp, mis on tühja tek
   assert.doesNotMatch(render({ data: { ...DATA, proposal: null }, text: 'Lisa km' }), /disabled=""[^>]*>Koosta muudatusettepanek/);
 });
 
-// L37: projekti vaates kirjutatakse täpsustus vestluse alla ühte kasti – kaardil oma välja pole, juhis ja kooskõla hoiatus jäävad.
+// L37: projekti vaates kirjutatakse täpsustus vestluse alla ühte kasti – kaardil oma välja pole, juhis jääb (kooskõla hoiatus on ülevaatuses ja päises).
 test('ühe vestluse režiimis (showForm=false) pole kaardil tekstivälja; juhis viitab vestluse kastile', () => {
   const consistency = { warningCount: 2 };
   const html = render({ data: { ...DATA, proposal: null, consistency }, showForm: false });
   assert.doesNotMatch(html, /kliendi-tapsustus|Koosta muudatusettepanek/);
   assert.match(html, /<p class="muted">Kirjuta kliendi soov allolevasse vestluse kasti – koostan muudatusettepaneku eelvaatega enne → pärast\.<\/p>/);
-  assert.match(html, /⚠ Kontrolli: praeguses seisus on 2 kooskõla hoiatust/);
+  assert.doesNotMatch(html, /praeguses seisus on/); // L37: hoiatus on ülevaatuses ja päises, mitte täpsustuse plokis
 });
 
 test('eelvaade: loo sõnastus enne ja pärast kõrvuti; kriteeriumid eri värviga (lisandub, muutmata, eemaldub)', () => {
@@ -84,4 +84,14 @@ test('teise loo täpsustusvoog on märgitud eraldi; alustamise lugu ei muutu', (
   const html = render({ focusStoryId: 5, data: { ...DATA, proposal: null } });
   assert.match(html, /eraldi täpsustusvoog – alustamise lugu ei muutu/);
   assert.ok(html.includes('>Tagasi alustamise loo juurde</button>'));
+});
+
+// L37: muudetud komponent (sama tüüp ja tekst, uus sisu) on eelvaates mõlemal pool „Muutub“.
+test('muudetud mockup’i element on eelvaates „Muutub“, mitte „Eemaldub“ ja „Lisandub“', () => {
+  const L1 = { version: 1, title: 'V', components: [{ type: 'list', text: 'Ajad', items: ['10:00'] }] };
+  const L2 = { title: 'V', components: [{ type: 'list', text: 'Ajad', items: ['10:00 – 15 €'] }] };
+  const proposal = { ...PROPOSAL, before: { ...BEFORE, mockup: L1 }, after: { ...AFTER, mockup: L2 }, preview: { ...PROPOSAL.preview, mockup: diffMockup(L1, L2), consistency: null } };
+  const html = render({ data: { ...DATA, proposal } });
+  assert.equal((html.match(/<div class="mock-mark mock-mark--modified"><span class="mock-mark__label">Muutub<\/span>/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /mock-mark--(added|removed)/);
 });

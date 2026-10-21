@@ -24,6 +24,8 @@ export function diffCriteria(before, after) {
 const componentKey = (c) => `${c.type}|${norm(c.text)}|${(c.items ?? []).map(norm).join(';')}`;
 
 // Märgib uue mockup'i lisandunud komponendid ja vanast eemaldatud komponendid (võrdlus tüübi ja teksti järgi).
+// L37: sama tüübi ja sama tekstiga, aga muudetud sisuga (nt loendi read) komponent on „muutub“ (modified uues,
+// modifiedBefore vanas mockup'is), mitte „eemaldub + lisandub“.
 export function diffMockup(before, after) {
   const count = (list) => list.reduce((m, c) => m.set(componentKey(c), (m.get(componentKey(c)) ?? 0) + 1), new Map());
   const mark = (list, otherCounts) => {
@@ -36,5 +38,15 @@ export function diffMockup(before, after) {
   };
   const beforeList = before?.components ?? [];
   const afterList = after?.components ?? [];
-  return { added: mark(afterList, count(beforeList)), removed: mark(beforeList, count(afterList)) };
+  const added = mark(afterList, count(beforeList));
+  const removed = mark(beforeList, count(afterList));
+  const modified = afterList.map(() => false);
+  const modifiedBefore = beforeList.map(() => false);
+  afterList.forEach((c, i) => {
+    if (!added[i]) return;
+    const j = beforeList.findIndex((b, k) => removed[k] && b.type === c.type && norm(b.text) === norm(c.text));
+    if (j < 0) return;
+    added[i] = false; removed[j] = false; modified[i] = true; modifiedBefore[j] = true;
+  });
+  return { added, removed, modified, modifiedBefore };
 }

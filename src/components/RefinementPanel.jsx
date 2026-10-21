@@ -43,6 +43,9 @@ function EditForm({ proposal, rolePhrase, busy, onApply, onCancel }) {
 }
 
 // Vaade ilma andmete laadimiseta (renderdustestide jaoks eraldi).
+// Eelvaate märgid komponendi kohta: lisandub/eemaldub või muutub (L37; vanemas eelvaates modified puudub).
+const markKinds = (flags, kind, modified) => flags.map((f, i) => (f ? kind : modified?.[i] ? 'modified' : false));
+
 // showForm = false (L37): täpsustus kirjutatakse vestluse alla ühte kasti, kaardil oma tekstikasti pole.
 export function RefinementView({ data, focusStoryId = null, busy = null, error = '', notice = '', text = '', editing = false, showForm = true, onText, onPropose, onApply, onEdit, onCancelEdit, onReject, onOpenStory, onBackToFocus }) {
   const { story, proposal } = data;
@@ -71,9 +74,6 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
             placeholder="Nt: Broneeringus peab olema näha osalejate arv." />
           <button type="button" onClick={onPropose} disabled={disabled || !text.trim()}>Koosta muudatusettepanek</button>
         </>
-      )}
-      {!proposal && data.consistency?.warningCount > 0 && (
-        <p className="consistency-warning">⚠ Kontrolli: praeguses seisus on {data.consistency.warningCount} kooskõla hoiatust (vt „Kriteeriumid ja mockup“).</p>
       )}
 
       {proposal && (
@@ -118,11 +118,11 @@ export function RefinementView({ data, focusStoryId = null, busy = null, error =
               <div className={`before-after${device === 'web' ? ' before-after--stacked' : ''}`}>
                 <div>
                   <p className="before-after__label">Enne{proposal.before.mockup ? ` (versioon ${proposal.before.mockup.version})` : ''}</p>
-                  {proposal.before.mockup ? <MockupView mockup={proposal.before.mockup} marks={proposal.preview.mockup.removed} mark="removed" device={device} /> : <p className="muted">Mockup puudub.</p>}
+                  {proposal.before.mockup ? <MockupView mockup={proposal.before.mockup} marks={markKinds(proposal.preview.mockup.removed, 'removed', proposal.preview.mockup.modifiedBefore)} device={device} /> : <p className="muted">Mockup puudub.</p>}
                 </div>
                 <div>
                   <p className="before-after__label">Pärast</p>
-                  <MockupView mockup={proposal.after.mockup} marks={proposal.preview.mockup.added} mark="added" notes={proposal.preview.consistency?.components ?? null} device={device} />
+                  <MockupView mockup={proposal.after.mockup} marks={markKinds(proposal.preview.mockup.added, 'added', proposal.preview.mockup.modified)} notes={proposal.preview.consistency?.components ?? null} device={device} />
                 </div>
               </div>
               {proposal.preview.consistency && (

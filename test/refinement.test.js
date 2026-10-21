@@ -96,8 +96,11 @@ test('ettepanek jääb ootele ja midagi ei muutu; eelvaade arvutatakse koodis', 
   assert.deepEqual(p.preview.criteria.items.map((i) => i.status), ['unchanged', 'modified', 'added']);
   assert.deepEqual(p.preview.criteria.removed, []);
   assert.equal(p.preview.criteria.items[1].oldText, 'Paketi juures on hind käsitsi kirjutatud.');
-  assert.deepEqual(p.preview.mockup.removed, [false, true, true]);
-  assert.deepEqual(p.preview.mockup.added, [false, true, true]);
+  // L37: loend „Hinnad“ (sama tüüp ja tekst, uued read) on „muutub“; sünniaeg eemaldub, käibemaksu tekst lisandub.
+  assert.deepEqual(p.preview.mockup.removed, [false, false, true]);
+  assert.deepEqual(p.preview.mockup.added, [false, false, true]);
+  assert.deepEqual(p.preview.mockup.modified, [false, true, false]);
+  assert.deepEqual(p.preview.mockup.modifiedBefore, [false, true, false]);
 });
 
 test('AI päringus on loo hetkeseis (ka käsitsi kriteerium), mockup, täpsustus ja teised lood ainult lugemiseks', async () => {

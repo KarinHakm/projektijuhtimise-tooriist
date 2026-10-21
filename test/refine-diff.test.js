@@ -26,8 +26,15 @@ test('kaks viidet samale kriteeriumile: teine loetakse lisatuks', () => {
 test('mockup: lisandunud ja eemaldatud komponendid märgitakse; puuduv vana mockup = kõik lisandub', () => {
   const a = { title: 'X', components: [{ type: 'heading', text: 'P', items: [] }, { type: 'input', text: 'Sünniaeg', items: [] }] };
   const b = { title: 'X', components: [{ type: 'heading', text: 'P', items: [] }, { type: 'text', text: 'Kinnitusteade', items: [] }] };
-  assert.deepEqual(diffMockup(a, b), { added: [false, true], removed: [false, true] });
-  assert.deepEqual(diffMockup(null, b), { added: [true, true], removed: [] });
+  assert.deepEqual(diffMockup(a, b), { added: [false, true], removed: [false, true], modified: [false, false], modifiedBefore: [false, false] });
+  assert.deepEqual(diffMockup(null, b), { added: [true, true], removed: [], modified: [false, false], modifiedBefore: [] });
+});
+
+// L37: sama loend uute ridadega (nt hinnad) on „muutub“, mitte „eemaldub + lisandub“; muu tekstiga element jääb lisanduvaks.
+test('mockup: sama tüübi ja tekstiga, aga muudetud sisuga komponent on „muutub“', () => {
+  const a = { title: 'X', components: [{ type: 'list', text: 'Vabad ajad', items: ['Rada 1 – 10:00'] }, { type: 'button', text: 'Edasi', items: [] }] };
+  const b = { title: 'X', components: [{ type: 'list', text: 'Vabad ajad', items: ['Rada 1 – 10:00 – 15 €'] }, { type: 'button', text: 'Vali aeg', items: [] }] };
+  assert.deepEqual(diffMockup(a, b), { added: [false, true], removed: [false, true], modified: [true, false], modifiedBefore: [true, false] });
 });
 
 // L37: kliendi täpsustus muudab ainult küsitut – AI juhis ei nõua enam „põhjendamata“ elementide eemaldamist.

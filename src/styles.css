@@ -286,6 +286,7 @@ button.device-toggle__button[aria-pressed="true"]:not(:disabled):hover { backgro
 .mock-mark { position: relative; padding: 0.25rem; border-radius: 4px; }
 .mock-mark--added { outline: 2px solid var(--success); background: var(--success-soft); }
 .mock-mark--removed { outline: 2px solid var(--error); background: var(--error-soft); opacity: 0.8; }
+.mock-mark--modified { outline: 2px solid var(--warning-border); background: var(--warning-soft); }
 .mock-mark__label { display: block; margin-bottom: 0.2rem; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
 .other-stories { margin-top: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
 .other-stories ul { list-style: none; padding: 0; margin: 0; }

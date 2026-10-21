@@ -27,7 +27,9 @@ function Component({ c }) {
   }
 }
 
-// marks (valikuline, L11 eelvaade): iga komponendi kohta true, kui see on lisandunud/eemaldatud; mark = 'added' | 'removed'.
+// marks (valikuline, L11 eelvaade): iga komponendi kohta true (siis kehtib mark = 'added' | 'removed') või märgi liik
+// ('added' | 'removed' | 'modified', L37); false = muutmata.
+const MARK_LABELS = { added: 'Lisandub', removed: 'Eemaldub', modified: 'Muutub' };
 // notes (valikuline, L23): iga komponendi kohta { linkedBy: [kriteeriumi numbrid], hints: [{ message }] }.
 // Märkus (nt „ükski kriteerium ei nimeta seda“) on hall vihje, mitte hoiatus (L37).
 function Notes({ note }) {
@@ -67,7 +69,8 @@ export default function MockupView({ mockup, marks = null, mark = null, notes = 
         <div className="mockup__body">
           {mockup.components.map((c, i) => {
             const body = <><Component c={c} /><Notes note={notes?.[i]} /></>;
-            if (marks?.[i]) return <div key={i} className={`mock-mark mock-mark--${mark}`}><span className="mock-mark__label">{mark === 'added' ? 'Lisandub' : 'Eemaldub'}</span>{body}</div>;
+            const kind = marks?.[i] === true ? mark : marks?.[i] || null;
+          if (kind) return <div key={i} className={`mock-mark mock-mark--${kind}`}><span className="mock-mark__label">{MARK_LABELS[kind]}</span>{body}</div>;
             return notes ? <div key={i} className="mock-item">{body}</div> : <Component key={i} c={c} />;
           })}
         </div>
